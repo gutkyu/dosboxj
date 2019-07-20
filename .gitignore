@@ -3,5 +3,6 @@
 !.gitignore
 !Readme*
 !LICENSE*
+!COPYRIGHT*
 !/src/**/*.java
 !/src/main/resources/**/*

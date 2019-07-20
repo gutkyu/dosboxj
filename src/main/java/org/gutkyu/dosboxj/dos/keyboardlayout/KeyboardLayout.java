@@ -1,7 +1,6 @@
 package org.gutkyu.dosboxj.dos.keyboardlayout;
 
 import org.gutkyu.dosboxj.dos.*;
-import org.gutkyu.dosboxj.dos.codepage.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.SeekableByteChannel;
@@ -209,28 +208,34 @@ public final class KeyboardLayout implements Disposable {
                 case 852:
                 case 853:
                 case 857:
-                case 858:
+                case 858: {
+                    byte[] fontCpx = Resources.get("DOSCodePageFontEGA.cpx");
                     for (int bct = 0; bct < 6322; bct++)
-                        cpi_buf[bct] = DOSCodePageFontEGAcpx.FontCpx[bct];
+                        cpi_buf[bct] = fontCpx[bct];
                     cpi_buf_size = 6322;
                     break;
+                }
                 case 771:
                 case 772:
                 case 808:
                 case 855:
                 case 866:
-                case 872:
+                case 872: {
+                    byte[] fontCpx = Resources.get("DOSCodePageFontEGA3.cpx");
                     for (int bct = 0; bct < 5455; bct++)
-                        cpi_buf[bct] = DOSCodePageFontEGA3cpx.FontCpx[bct];
+                        cpi_buf[bct] = fontCpx[bct];
                     cpi_buf_size = 5455;
                     break;
+                }
                 case 737:
                 case 851:
-                case 869:
+                case 869: {
+                    byte[] fontCpx = Resources.get("DOSCodePageFontEGA5.cpx");
                     for (int bct = 0; bct < 5720; bct++)
-                        cpi_buf[bct] = DOSCodePageFontEGA5cpx.FontCpx[bct];
+                        cpi_buf[bct] = fontCpx[bct];
                     cpi_buf_size = 5720;
                     break;
+                }
                 default:
                     return DOSMain.KEYB_INVALIDCPFILE;
                 // break;
