@@ -20,9 +20,6 @@ import org.gutkyu.dosboxj.dos.system.drive.*;
 
 
 public final class KeyboardLayout implements Disposable {
-    private ByteBuffer keyboardLayoutBin = null;
-    private ByteBuffer keyboard2LayoutBin = null;
-    private ByteBuffer keyboard3LayoutBin = null;
 
     public KeyboardLayout() {
         for (int i = 0; i < _currentLayoutPlanes.length; i++) {
@@ -32,21 +29,6 @@ public final class KeyboardLayout implements Disposable {
         _languageCodes = null;
         _useForeignLayout = false;
         currentKeyboardFileName = "none";
-        keyboardLayoutBin = ByteBuffer
-                .allocate(KeyboardLayoutData1.part1.length + KeyboardLayoutData2.part2.length
-                        + KeyboardLayoutData3.part3.length)
-                .order(ByteOrder.LITTLE_ENDIAN).put(KeyboardLayoutData1.part1)
-                .put(KeyboardLayoutData2.part2).put(KeyboardLayoutData3.part3);
-        keyboard2LayoutBin = ByteBuffer
-                .allocate(Keyboard2LayoutData1.part1.length + Keyboard2LayoutData2.part2.length
-                        + Keyboard2LayoutData3.part3.length)
-                .order(ByteOrder.LITTLE_ENDIAN).put(Keyboard2LayoutData1.part1)
-                .put(Keyboard2LayoutData2.part2).put(Keyboard2LayoutData3.part3);
-        keyboard3LayoutBin = ByteBuffer
-                .allocate(Keyboard3LayoutData1.part1.length + Keyboard3LayoutData2.part2.length
-                        + Keyboard3LayoutData3.part3.length)
-                .order(ByteOrder.LITTLE_ENDIAN).put(Keyboard3LayoutData1.part1)
-                .put(Keyboard3LayoutData2.part2).put(Keyboard3LayoutData3.part3);
     }
 
     private void dispose(boolean disposing) {
@@ -495,8 +477,9 @@ public final class KeyboardLayout implements Disposable {
         if (keyboardFileName == "none")
             return 437;
 
-        int read_buf_size;
+        int read_buf_size = 0;
         int start_pos = 5;
+        ByteBuffer klData = null;
 
         SeekableByteChannel tempfile = openDosboxFile(keyboardFileName + ".kl");
         if (tempfile == null) {
@@ -513,36 +496,30 @@ public final class KeyboardLayout implements Disposable {
                 tempfile = openDosboxFile("keybrd2.sys");
             } else if ((start_pos = readKCLFile("keybrd3.sys", keyboardFileName, false)) != 0) {
                 tempfile = openDosboxFile("keybrd3.sys");
-            } else if ((start_pos =
-                    readKCLData(keyboardLayoutBin, 33196, keyboardFileName, true)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 33196; ct++)
-                    read_buf[read_buf_size++] = keyboardLayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboard2LayoutBin, 25431, keyboardFileName, true)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 25431; ct++)
-                    read_buf[read_buf_size++] = keyboard2LayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboard3LayoutBin, 27122, keyboardFileName, true)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 27122; ct++)
-                    read_buf[read_buf_size++] = keyboard3LayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboardLayoutBin, 33196, keyboardFileName, false)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 33196; ct++)
-                    read_buf[read_buf_size++] = keyboardLayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboard2LayoutBin, 25431, keyboardFileName, false)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 25431; ct++)
-                    read_buf[read_buf_size++] = keyboard2LayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboard3LayoutBin, 27122, keyboardFileName, false)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 27122; ct++)
-                    read_buf[read_buf_size++] = keyboard3LayoutBin.get(ct);
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout1", keyboardFileName, true)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout2", keyboardFileName, true)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout3", keyboardFileName, true)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout1", keyboardFileName, false)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout2", keyboardFileName, false)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout3", keyboardFileName, false)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
             } else {
                 start_pos = 0;
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -854,13 +831,13 @@ public final class KeyboardLayout implements Disposable {
                     DOSMain.DOS.LoadedCodepage);
     }
 
-    private int readKeyboardFile(String keyboard_file_name, int specific_layout,
+    private int readKeyboardFile(String keyboardFileName, int specific_layout,
             int requested_codepage) {
         this.reset();
 
         if (specific_layout == -1)
-            currentKeyboardFileName = keyboard_file_name;
-        if (keyboard_file_name == "none")
+            currentKeyboardFileName = keyboardFileName;
+        if (keyboardFileName == "none")
             return DOSMain.KEYB_NOERROR;
 
         // static byte read_buf[65535];
@@ -869,55 +846,50 @@ public final class KeyboardLayout implements Disposable {
 
         String nbuf = null;
         read_buf_size = 0;
-        nbuf = keyboard_file_name + ".kl";
+        ByteBuffer klData = null;
+        nbuf = keyboardFileName + ".kl";
         SeekableByteChannel tempfile = openDosboxFile(nbuf);
         if (tempfile == null) {
             // try keyboard layout libraries next
-            if ((start_pos = readKCLFile("keyboard.sys", keyboard_file_name, true)) != 0) {
+            if ((start_pos = readKCLFile("keyboard.sys", keyboardFileName, true)) != 0) {
                 tempfile = openDosboxFile("keyboard.sys");
-            } else if ((start_pos = readKCLFile("keybrd2.sys", keyboard_file_name, true)) != 0) {
+            } else if ((start_pos = readKCLFile("keybrd2.sys", keyboardFileName, true)) != 0) {
                 tempfile = openDosboxFile("keybrd2.sys");
-            } else if ((start_pos = readKCLFile("keybrd3.sys", keyboard_file_name, true)) != 0) {
+            } else if ((start_pos = readKCLFile("keybrd3.sys", keyboardFileName, true)) != 0) {
                 tempfile = openDosboxFile("keybrd3.sys");
-            } else if ((start_pos = readKCLFile("keyboard.sys", keyboard_file_name, false)) != 0) {
+            } else if ((start_pos = readKCLFile("keyboard.sys", keyboardFileName, false)) != 0) {
                 tempfile = openDosboxFile("keyboard.sys");
-            } else if ((start_pos = readKCLFile("keybrd2.sys", keyboard_file_name, false)) != 0) {
+            } else if ((start_pos = readKCLFile("keybrd2.sys", keyboardFileName, false)) != 0) {
                 tempfile = openDosboxFile("keybrd2.sys");
-            } else if ((start_pos = readKCLFile("keybrd3.sys", keyboard_file_name, false)) != 0) {
+            } else if ((start_pos = readKCLFile("keybrd3.sys", keyboardFileName, false)) != 0) {
                 tempfile = openDosboxFile("keybrd3.sys");
-            } else if ((start_pos =
-                    readKCLData(keyboardLayoutBin, 33196, keyboard_file_name, true)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 33196; ct++)
-                    read_buf[read_buf_size++] = keyboardLayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboard2LayoutBin, 25431, keyboard_file_name, true)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 25431; ct++)
-                    read_buf[read_buf_size++] = keyboard2LayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboard3LayoutBin, 27122, keyboard_file_name, true)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 27122; ct++)
-                    read_buf[read_buf_size++] = keyboard3LayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboardLayoutBin, 33196, keyboard_file_name, false)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 33196; ct++)
-                    read_buf[read_buf_size++] = keyboardLayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboard2LayoutBin, 25431, keyboard_file_name, false)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 25431; ct++)
-                    read_buf[read_buf_size++] = keyboard2LayoutBin.get(ct);
-            } else if ((start_pos =
-                    readKCLData(keyboard3LayoutBin, 27122, keyboard_file_name, false)) != 0) {
-                read_buf_size = 0;
-                for (int ct = start_pos + 2; ct < 27122; ct++)
-                    read_buf[read_buf_size++] = keyboard3LayoutBin.get(ct);
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout1", keyboardFileName, true)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout2", keyboardFileName, true)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout3", keyboardFileName, true)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout1", keyboardFileName, false)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout2", keyboardFileName, false)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
+            } else if ((klData =
+                    readKCLData("DOSKeyboardLayout3", keyboardFileName, false)) != null) {
+                start_pos = klData.position();
+                klData.get(read_buf, 2, klData.limit());
             } else {
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
-                        "Keyboard layout file %s not found", keyboard_file_name);
+                        "Keyboard layout file %s not found", keyboardFileName);
                 return DOSMain.KEYB_FILENOTFOUND;
             }
             if (tempfile != null) {
@@ -929,7 +901,7 @@ public final class KeyboardLayout implements Disposable {
                 } catch (Exception e) {
                     // todo 오류 발생 처리 추가
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
-                            "readKeyboardFile( %s ) access error", keyboard_file_name);
+                            "readKeyboardFile( %s ) access error", keyboardFileName);
                     return DOSMain.KEYB_INVALIDFILE;
                 }
             }
@@ -942,7 +914,7 @@ public final class KeyboardLayout implements Disposable {
                 if ((dr < 4) || (read_buf[0] != 0x4b) || (read_buf[1] != 0x4c)
                         || (read_buf[2] != 0x46)) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
-                            "Invalid keyboard layout file %s", keyboard_file_name);
+                            "Invalid keyboard layout file %s", keyboardFileName);
                     return DOSMain.KEYB_INVALIDFILE;
                 }
 
@@ -955,7 +927,7 @@ public final class KeyboardLayout implements Disposable {
             catch (Exception e) {
                 // todo 오류 발생 처리 추가
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
-                        "Keyboard layout file %s access error", keyboard_file_name);
+                        "Keyboard layout file %s access error", keyboardFileName);
                 return DOSMain.KEYB_INVALIDFILE;
             }
         }
@@ -1124,17 +1096,17 @@ public final class KeyboardLayout implements Disposable {
         if (found_matching_layout) {
             if (specific_layout == -1)
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Normal,
-                        "Keyboard layout %s successfully loaded", keyboard_file_name);
+                        "Keyboard layout %s successfully loaded", keyboardFileName);
             else
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Normal,
-                        "Keyboard layout %s (%i) successfully loaded", keyboard_file_name,
+                        "Keyboard layout %s (%i) successfully loaded", keyboardFileName,
                         specific_layout);
             this._useForeignLayout = true;
             return DOSMain.KEYB_NOERROR;
         }
 
         Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
-                "No matching keyboard layout found in %s", keyboard_file_name);
+                "No matching keyboard layout found in %s", keyboardFileName);
 
         // reset layout data (might have been changed by general layout)
         this.reset();
@@ -1342,11 +1314,16 @@ public final class KeyboardLayout implements Disposable {
         return 0;
     }
 
-    private int readKCLData(ByteBuffer kclData, int kclDataSize, String layoutId,
-            boolean firstIdOnly) {
+    private ByteBuffer readKCLData(String defaultKLName, String layoutId, boolean firstIdOnly) {
+        // load default keyboard layout
+        ByteBuffer kclData =
+                ByteBuffer.wrap(Resources.get(defaultKLName)).order(ByteOrder.LITTLE_ENDIAN);
+        if (kclData == null || kclData.limit() == 0)
+            return null;
+        int kclDataSize = kclData.limit();
         // check ID-bytes
         if ((kclData.get(0) != 0x4b) || (kclData.get(1) != 0x43) || (kclData.get(2) != 0x46)) {
-            return 0;
+            return null;
         }
 
         int dpos = 7 + kclData.get(6);
@@ -1382,7 +1359,8 @@ public final class KeyboardLayout implements Disposable {
                 lng_codes.set(lcpos, (char) 0);
                 if (lng_codes.equalsIgnoreCase(layoutId)) {
                     // language ID found in file, return file position
-                    return cur_pos;
+                    kclData.position(cur_pos);
+                    return kclData;
                 }
                 if (firstIdOnly)
                     break;
@@ -1392,14 +1370,15 @@ public final class KeyboardLayout implements Disposable {
                     CStringPt.copy(String.valueOf(lcnum), pt);
                     if (lng_codes.equalsIgnoreCase(layoutId)) {
                         // language ID found in file, return file position
-                        return cur_pos;
+                        kclData.position(cur_pos);
+                        return kclData;
                     }
                 }
                 dpos += 2;
             }
             dpos = cur_pos + 3 + len;
         }
-        return 0;
+        return null;
     }
 
 }

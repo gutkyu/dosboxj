@@ -2,4 +2,6 @@
 !*/
 !.gitignore
 !Readme*
+!LICENSE*
 !/src/**/*.java
+!/src/main/resources/**/*
