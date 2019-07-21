@@ -18,20 +18,20 @@ import org.gutkyu.dosboxj.util.*;
 
 public final class LocalDrive extends DOSDrive implements Disposable {
     // public LocalDrive(String startDir, short bytesSector, byte sectorsCluster, short
-    // totalClusters,
-    public LocalDrive(String startDir, int bytesSector, byte sectorsCluster, short totalClusters,
-            short freeClusters, byte mediaId) {
+    // totalClusters, byte mediaId)
+    public LocalDrive(String startDir, int bytesSector, int sectorsCluster, int totalClusters,
+            int freeClusters, int mediaId) {
         for (int i = 0; i < _srchInfo.length; i++) {
             _srchInfo[i] = new SrchInfo();
         }
 
         CStringPt.copy(startDir, basedir);
         info = String.format("local directory %s", startDir);
-        _allocation.bytesSector = bytesSector;
-        _allocation.sectorsCluster = sectorsCluster;
-        _allocation.totalClusters = totalClusters;
-        _allocation.freeClusters = freeClusters;
-        _allocation.mediaId = mediaId;
+        _allocation.bytesSector = 0xffff & bytesSector;
+        _allocation.sectorsCluster = 0xff & sectorsCluster;
+        _allocation.totalClusters = 0xffff & totalClusters;
+        _allocation.freeClusters = 0xffff & freeClusters;
+        _allocation.mediaId = 0xff & mediaId;
 
         dirCache.setBaseDir(basedir);
     }
@@ -292,17 +292,15 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         if (tempDir.get(tempDir.length() - 1) != Cross.FILESPLIT)
             tempDir.concat(end);
 
-        short id = 0;
-        RefU16Ret refId = new RefU16Ret(id);
-        if (!dirCache.findFirst(tempDir, refId)) {
+        int id = 0;
+        if ((id = dirCache.findFirst(tempDir)) < 0) {
             DOSMain.setError(DOSMain.DOSERR_PATH_NOT_FOUND);
             return false;
         }
-        id = refId.U16;
         CStringPt.copy(tempDir, _srchInfo[id].srchDir);
         dta.setDirID(id);
 
-        byte sAttr = dta.getSearchParams(tempDir);
+        int sAttr = dta.getSearchParams(tempDir);
 
         if (this.isRemote() && this.isRemovable()) {
             // cdroms behave a bit different than regular drives
@@ -346,13 +344,14 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
         CStringPt dirEnt = CStringPt.create();
         // struct stat stat_block;
-        CStringPt fullName = CStringPt.create((int) Cross.LEN);
-        CStringPt dirEntCopy = CStringPt.create((int) Cross.LEN);
+        CStringPt fullName = CStringPt.create(Cross.LEN);
+        CStringPt dirEntCopy = CStringPt.create(Cross.LEN);
 
-        byte srchAttr = 0;
-        CStringPt srchPattern = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        byte findAttr = dta.getSearchParams(srchPattern);
-        short id = dta.getDirID();
+
+        CStringPt srchPattern = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
+        int srchAttr = dta.getSearchParams(srchPattern);
+        int id = dta.getDirID();
+        int findAttr = 0;
 
         BasicFileAttributes attr = null;
         again: while (true) {
@@ -503,8 +502,8 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
 
     @Override
-    public byte getMediaByte() {
-        return _allocation.mediaId;
+    public int getMediaByte() {
+        return 0xff & _allocation.mediaId;
     }
 
     @Override
@@ -538,10 +537,10 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     private class Allocation {
         public int bytesSector;// uint16
-        public byte sectorsCluster;
-        public short totalClusters;
-        public short freeClusters;
-        public byte mediaId;
+        public int sectorsCluster;// uint8
+        public int totalClusters;// uint16
+        public int freeClusters;// uint16
+        public int mediaId;// uint8
     }
 
     private Allocation _allocation = new Allocation();

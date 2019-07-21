@@ -18,14 +18,14 @@ public final class DOSParamBlock extends MemStruct {
     }
 
     public void loadData() {
-        Exec.EnvSeg = (short) getIt(SizeSExecEnvSeg, OffSExecEnvSeg);
+        Exec.EnvSeg = 0xffff & getIt(SizeSExecEnvSeg, OffSExecEnvSeg);
         Exec.CmdTail = getIt(SizeSExecCmdTail, OffSExecCmdTail);
         Exec.FCB1 = getIt(SizeSExecFCB1, OffSExecFCB1);
         Exec.FCB2 = getIt(SizeSExecFCB2, OffSExecFCB2);
         Exec.InitSSSP = getIt(SizeSExecInitSSSP, OffSExecInitSSSP);
         Exec.InitCSIP = getIt(SizeSExecInitCSIP, OffSExecInitCSIP);
-        Overlay.LoadSeg = (short) getIt(Size_SOverlay_LoadSeg, OffSOverlayLoadseg);
-        Overlay.Relocation = (short) getIt(SizeSOverlayRelocation, OffSOverlayRelocation);
+        Overlay.LoadSeg = 0xffff & getIt(Size_SOverlay_LoadSeg, OffSOverlayLoadseg);
+        Overlay.Relocation = 0xffff & getIt(SizeSOverlayRelocation, OffSOverlayRelocation);
     }
 
     public void saveData() /* Save it as an exec block */
@@ -39,8 +39,8 @@ public final class DOSParamBlock extends MemStruct {
     }
 
     public static class SOverlay {
-        public short LoadSeg;
-        public short Relocation;
+        public int LoadSeg;// uint16
+        public int Relocation;// uint16
     }
 
     public static final int Size_SOverlay_LoadSeg = 2;
@@ -49,7 +49,7 @@ public final class DOSParamBlock extends MemStruct {
     public static final int OffSOverlayRelocation = 2;
 
     public static class SExec {
-        public short EnvSeg;
+        public int EnvSeg;// uint16
         public int CmdTail;
         public int FCB1;
         public int FCB2;

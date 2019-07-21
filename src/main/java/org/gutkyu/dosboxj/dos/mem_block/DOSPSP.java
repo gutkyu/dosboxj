@@ -169,8 +169,9 @@ public final class DOSPSP extends MemStruct {
         saveIt(Size_psp_parent, Off_psp_parent, parent);
     }
 
-    public short getParent() {
-        return (short) getIt(Size_psp_parent, Off_psp_parent);
+    // uint16
+    public int getParent() {
+        return 0xffff & getIt(Size_psp_parent, Off_psp_parent);
     }
 
     public void setStack(int stackPt) {
@@ -213,7 +214,7 @@ public final class DOSPSP extends MemStruct {
         if (fileNum > 20) {
             // Allocate needed paragraphs
             fileNum += 2; // Add a few more files for safety
-            short para = (short) ((fileNum / 16) + ((fileNum % 16) > 0 ? 1 : 0));
+            int para = 0xffff & ((fileNum / 16) + ((fileNum % 16) > 0 ? 1 : 0));
             int data = Memory.realMake(DOSMain.getMemory(para), 0);
             saveIt(Size_file_table, Off_file_table, data);
             saveIt(Size_max_files, Off_max_files, fileNum);

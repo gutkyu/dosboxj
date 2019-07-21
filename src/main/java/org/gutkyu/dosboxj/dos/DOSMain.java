@@ -143,10 +143,8 @@ public final class DOSMain {
 
         String name1 = null;
         String name2 = null;
-        CStringPt name1pt =
-                CStringPt.create((int) DOSNAMEBUF + 2 + (int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        CStringPt name2pt =
-                CStringPt.create((int) DOSNAMEBUF + 2 + (int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt name1pt = CStringPt.create(DOSNAMEBUF + 2 + DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt name2pt = CStringPt.create(DOSNAMEBUF + 2 + DOSSystem.DOS_NAMELENGTH_ASCII);
 
         switch (Register.getRegAH()) {
             case 0x00: /* Terminate Program */
@@ -770,11 +768,11 @@ public final class DOSMain {
             {
                 int toread = Register.getRegCX();
                 DOS.Echo = true;
-                BufRef refBuf = new BufRef(dosCopyBuf, 0, toread);
-                if (readFile(Register.getRegBX(), refBuf)) {
+                if (readFile(Register.getRegBX(), dosCopyBuf, 0, toread)) {
+                    toread = ReadSize;
                     Memory.blockWrite(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
-                            refBuf.Buf, refBuf.StartIndex, refBuf.Len);
-                    toread = (int) refBuf.Len;
+                            dosCopyBuf, 0, toread);
+                    // toread = (int) refBuf.Len;
                     Register.setRegAX(toread);
                     Callback.scf(false);
                 } else {
@@ -790,9 +788,8 @@ public final class DOSMain {
                 int towrite = Register.getRegCX();
                 Memory.blockRead(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         dosCopyBuf, 0, towrite);
-                BufRef refBuf = new BufRef(dosCopyBuf, 0, towrite);
-                if (writeFile(Register.getRegBX(), refBuf)) {
-                    towrite = refBuf.Len;
+                if (writeFile(Register.getRegBX(), dosCopyBuf, 0, towrite)) {
+                    towrite = DOSMain.WrittenSize;
                     Register.setRegAX(towrite);
                     Callback.scf(false);
                 } else {
@@ -1150,8 +1147,8 @@ public final class DOSMain {
             {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegSI(),
                         DOSNAMEBUF);
-                CStringPt name2cstr = CStringPt
-                        .create(DOSMain.DOSNAMEBUF + 2 + (int) DOSSystem.DOS_NAMELENGTH_ASCII);
+                CStringPt name2cstr =
+                        CStringPt.create(DOSMain.DOSNAMEBUF + 2 + DOSSystem.DOS_NAMELENGTH_ASCII);
                 if (canonicalize(name1, name2cstr)) {
                     Memory.blockWrite(Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDI(),
                             name2cstr);
@@ -1197,8 +1194,8 @@ public final class DOSMain {
                         if (Register.getRegCX() > 0x06)
                             Memory.writeW(data + 0x05, DOS.LoadedCodepage);
                         if (Register.getRegCX() > 0x08) {
-                            int amount = (Register.getRegCX() >= 0x29) ? 0x22
-                                    : (int) (Register.getRegCX() - 7);
+                            int amount =
+                                    (Register.getRegCX() >= 0x29) ? 0x22 : Register.getRegCX() - 7;
                             Memory.blockWrite(data + 0x07, DOS.tables.Country, 0, amount);
                             Register.setRegCX(
                                     (Register.getRegCX() >= 0x29) ? 0x29 : Register.getRegCX());
@@ -2627,8 +2624,8 @@ public final class DOSMain {
             return false;
         }
         int name_int = 0;
-        CStringPt tempdir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
-        CStringPt upname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt tempdir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
+        CStringPt upname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         int r, w;
         short drive = getDefaultDrive();
         /* First get the drive */
@@ -2712,8 +2709,8 @@ public final class DOSMain {
             fullname.set(0, '\0');
         int lastdir = 0;
         int t = 0;
-        while (fullname.get((int) t) != 0) {
-            if ((fullname.get((int) t) == '\\') && (fullname.get((int) t + 1) != 0))
+        while (fullname.get(t) != 0) {
+            if ((fullname.get(t) == '\\') && (fullname.get(t + 1) != 0))
                 lastdir = t;
             t++;
         }
@@ -2748,19 +2745,19 @@ public final class DOSMain {
                 // only dots?
                 if (dots && (templen > 1)) {
                     int cDots = templen - 1;
-                    for (iDown = (int) fullname.length() - 1; iDown >= 0; iDown--) {
+                    for (iDown = fullname.length() - 1; iDown >= 0; iDown--) {
                         if (fullname.get(iDown) == '\\' || iDown == 0) {
-                            lastdir = (int) iDown;
+                            lastdir = iDown;
                             cDots--;
                             if (cDots == 0)
                                 break;
                         }
                     }
-                    fullname.set((int) lastdir, (char) 0);
+                    fullname.set(lastdir, (char) 0);
                     t = 0;
                     lastdir = 0;
-                    while (fullname.get((int) t) != 0) {
-                        if ((fullname.get((int) t) == '\\') && (fullname.get((int) t + 1) != 0))
+                    while (fullname.get(t) != 0) {
+                        if ((fullname.get(t) == '\\') && (fullname.get(t + 1) != 0))
                             lastdir = t;
                         t++;
                     }
@@ -2771,7 +2768,7 @@ public final class DOSMain {
                 }
 
 
-                lastdir = (int) fullname.length();
+                lastdir = fullname.length();
 
                 if (lastdir != 0)
                     fullname.concat("\\");
@@ -2815,6 +2812,7 @@ public final class DOSMain {
     public static int resultMakeFullNameDrive = 0;
 
     // TODO makeName 메소드 대체
+    // fullname -> resultMakeFullName, drive -> resultMakeFullNameDrive
     public static boolean makeFullName(String name, int maxNameSize) {
         if (name == null || name == "" || name.charAt(0) == 0 || name.charAt(0) == ' ') {
             /*
@@ -2949,7 +2947,7 @@ public final class DOSMain {
                     int cDots = templen - 1;
                     for (iDown = fullname.length() - 1; iDown >= 0; iDown--) {
                         if (fullname.charAt(iDown) == '\\' || iDown == 0) {
-                            lastdir = (int) iDown;
+                            lastdir = iDown;
                             cDots--;
                             if (cDots == 0)
                                 break;
@@ -3056,7 +3054,7 @@ public final class DOSMain {
     public static boolean changeDir(String dir) {
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fulldir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         if (!makeName(dir, fulldir, refDrive))
             return false;
         drive = refDrive.U8;
@@ -3072,7 +3070,7 @@ public final class DOSMain {
     public static boolean makeDir(String dir) {
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fulldir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         int len = dir.length();
         if (len == 0 || dir.charAt(len - 1) == 0x5c) {// '\\' 0x5c
             setError(DOSERR_PATH_NOT_FOUND);
@@ -3099,7 +3097,7 @@ public final class DOSMain {
          */
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fulldir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         if (!makeName(dir, fulldir, refDrive))
             return false;
         drive = refDrive.U8;
@@ -3110,7 +3108,7 @@ public final class DOSMain {
             return false;
         }
         /* See if it's current directory */
-        CStringPt currdir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt currdir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         currdir.set(0, (char) 0);
         getCurrentDir((byte) (drive + 1), currdir);
         if (currdir.equalsIgnoreCase(fulldir)) {
@@ -3130,10 +3128,10 @@ public final class DOSMain {
     public static boolean rename(String oldname, String newname) {
         byte driveold = 0;
         RefU8Ret refDriveO = new RefU8Ret(driveold);
-        CStringPt fullold = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullold = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drivenew = 0;
         RefU8Ret refDriveN = new RefU8Ret(drivenew);
-        CStringPt fullnew = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullnew = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         if (!makeName(oldname, fullold, refDriveO))
             return false;
         driveold = refDriveO.U8;
@@ -3172,21 +3170,17 @@ public final class DOSMain {
         return false;
     }
 
-    public static boolean findFirst(String search, short attr) {
+    public static boolean findFirst(String search, int attr) {
         return findFirst(search, attr, false);
     }
 
-    public static boolean findFirst(String search, int attr) {
-        return findFirst(search, (short) attr, false);
-    }
-
-    public static boolean findFirst(String search, short attr, boolean fcb_findfirst) {
+    public static boolean findFirst(String search, int attr, boolean fcb_findfirst) {
         DOSDTA dta = new DOSDTA(DOS.getDTA());
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fullsearch = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
-        CStringPt dir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
-        CStringPt pattern = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullsearch = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
+        CStringPt dir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
+        CStringPt pattern = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         int len = search.length();
         // '\\' 0x5c
         if (len >= 0 && search.charAt(len - 1) == 0x5c && !((len > 2)
@@ -3213,7 +3207,7 @@ public final class DOSMain {
             CStringPt.copy(fullsearch, dir);
         }
 
-        dta.setupSearch(drive, (byte) attr, pattern);
+        dta.setupSearch(drive, 0xff & attr, pattern);
 
         if (device) {
             find_last = pattern.lastPositionOf('.');
@@ -3248,10 +3242,10 @@ public final class DOSMain {
 
 
     public static byte ReadByte;
-    public static int ReadLength;
+    public static int ReadSize;
 
     // bool(uint16, ref bytes[], offset, len )
-    public static boolean readFile(int entry, BufRef buf) {
+    public static boolean readFile(int entry, byte[] buf, int offset, int size) {
         int handle = realHandle(entry);
         if (handle >= DOS_FILES) {
             setError(DOSERR_INVALID_HANDLE);
@@ -3262,13 +3256,9 @@ public final class DOSMain {
             setError(DOSERR_INVALID_HANDLE);
             return false;
         }
-        /*
-         * if ((Files[handle].flags & 0x0f) == OPEN_WRITE)) { DOS_SetError(DOSERR_INVALID_HANDLE);
-         * return false; }
-         */
 
         // short toread = amount;
-        boolean ret = file.read(buf.Buf, buf.StartIndex, buf.Len);
+        boolean ret = file.read(buf, offset, size);
         // amount = toread;
         return ret;
     }
@@ -3285,41 +3275,18 @@ public final class DOSMain {
             setError(DOSERR_INVALID_HANDLE);
             return false;
         }
-        /*
-         * if ((Files[handle].flags & 0x0f) == OPEN_WRITE)) { DOS_SetError(DOSERR_INVALID_HANDLE);
-         * return false; }
-         */
 
         boolean ret = file.read();
-        ReadLength = file.readSize();
+        ReadSize = file.readSize();
         ReadByte = file.getReadByte();
         return ret;
 
     }
 
-    public static boolean writeFile(short entry, CStringPt data, RefU16Ret refAmount) {
-        int handle = realHandle(entry);
-        if (handle >= DOS_FILES) {
-            setError(DOSERR_INVALID_HANDLE);
-            return false;
-        }
-        DOSFile file = Files[handle];
-        if (file == null || !file.isOpen()) {
-            setError(DOSERR_INVALID_HANDLE);
-            return false;
-        }
-        /*
-         * if ((Files[handle].flags & 0x0f) == OPEN_READ)) { DOS_SetError(DOSERR_INVALID_HANDLE);
-         * return false; }
-         */
-        byte[] buf = data.getAsciiBytes();
-        boolean result = file.write(buf, 0, buf.length);
-        refAmount.U16 = (short) file.writtenSize();
-        return result;
-    }
+    public static int WrittenSize;
 
     // public static boolean WriteFile(short entry, BufRef buf)
-    public static boolean writeFile(int entry, BufRef buf) {
+    public static boolean writeFile(int entry, byte[] buf, int offset, int size) {
         int handle = realHandle(entry);
         if (handle >= DOS_FILES) {
             setError(DOSERR_INVALID_HANDLE);
@@ -3330,18 +3297,13 @@ public final class DOSMain {
             setError(DOSERR_INVALID_HANDLE);
             return false;
         }
-        /*
-         * if ((Files[handle].flags & 0x0f) == OPEN_READ)) { DOS_SetError(DOSERR_INVALID_HANDLE);
-         * return false; }
-         */
-        // short towrite = amount;
-        boolean ret = file.write(buf.Buf, buf.StartIndex, buf.Len);
-        buf.Len = file.writtenSize();
-        // amount = towrite;
+        boolean ret = file.write(buf, offset, size);
+        WrittenSize = file.writtenSize();
         return ret;
     }
 
-    public static boolean writeFile(short entry, U8Ref buf) {
+    // (uint16, uint8)
+    public static boolean writeFile(int entry, byte buf, int size) {
         int handle = realHandle(entry);
         if (handle >= DOS_FILES) {
             setError(DOSERR_INVALID_HANDLE);
@@ -3352,16 +3314,13 @@ public final class DOSMain {
             setError(DOSERR_INVALID_HANDLE);
             return false;
         }
-        /*
-         * if ((Files[handle].flags & 0x0f) == OPEN_READ)) { DOS_SetError(DOSERR_INVALID_HANDLE);
-         * return false; }
-         */
-        boolean ret = file.write(buf.U8, buf.Len);
-        buf.Len = file.writtenSize();
+        boolean ret = file.write(buf, size);
+        WrittenSize = file.writtenSize();
         return ret;
     }
 
-    public static boolean writeFile(short entry, byte buf) {
+    // (uint16, uint8)
+    public static boolean writeFile(int entry, byte buf) {
         int handle = realHandle(entry);
         if (handle >= DOS_FILES) {
             setError(DOSERR_INVALID_HANDLE);
@@ -3372,16 +3331,14 @@ public final class DOSMain {
             setError(DOSERR_INVALID_HANDLE);
             return false;
         }
-        /*
-         * if ((Files[handle].flags & 0x0f) == OPEN_READ)) { DOS_SetError(DOSERR_INVALID_HANDLE);
-         * return false; }
-         */
-        return file.write(buf);
+        boolean ret = file.write(buf);
+        WrittenSize = file.writtenSize();
+        return ret;
     }
 
     // return pos
     // 실패하면 -1 반환
-    public static long seekFile(short entry, long pos, int type) {
+    public static long seekFile(int entry, long pos, int type) {
         int handle = realHandle(entry);
         if (handle >= DOS_FILES) {
             setError(DOSERR_INVALID_HANDLE);
@@ -3393,10 +3350,6 @@ public final class DOSMain {
             return -1;
         }
         return file.seek(pos, type);
-    }
-
-    public static long seekFile(int entry, long pos, int type) {
-        return seekFile((short) entry, pos, type);
     }
 
     // boolean (uint16)
@@ -3445,7 +3398,7 @@ public final class DOSMain {
         String temp = name;
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fulldir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         if (!makeName(temp, fulldir, refDrive))
             return false;
         drive = refDrive.U8;
@@ -3656,7 +3609,7 @@ public final class DOSMain {
 
 
     public static boolean unlinkFile(String name) {
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
         if (!makeName(name, fullname, refDrive))
@@ -3672,7 +3625,7 @@ public final class DOSMain {
     }
 
     public static boolean getFileAttr(String name, RefU16Ret refAttr) {
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
         if (!makeName(name, fullname, refDrive))
@@ -3693,7 +3646,7 @@ public final class DOSMain {
     // public static boolean SetFileAttr(String name, short attr)
     public static boolean setFileAttr(String name, int attr) {
         RefU16Ret refAttrTmp = new RefU16Ret((short) 0);
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
         if (!makeName(name, fullname, refDrive))
@@ -3712,7 +3665,7 @@ public final class DOSMain {
         // TODO Add Better support for devices and shit but will it be needed i doubt it :)
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         if (!makeName(name, fullname, refDrive))
             return false;
         drive = refDrive.U8;
@@ -4021,7 +3974,7 @@ public final class DOSMain {
                 CStringPt.copy("        ", CStringPt.clone(fcb_namePt, Off_FCB_name));
             if (!hasext & (parser & PARSE_BLNK_FEXT) == 0)
                 CStringPt.copy("   ", CStringPt.clone(fcb_namePt, Off_FCB_ext));
-            fcb.setName((byte) fcb_namePt.get(Off_FCB_drive + 0),
+            fcb.setName(0xff & fcb_namePt.get(Off_FCB_drive + 0),
                     CStringPt.clone(fcb_namePt, Off_FCB_name),
                     CStringPt.clone(fcb_namePt, Off_FCB_ext));
             changeRef.Change = (byte) CStringPt.diff(str, string_begin);
@@ -4047,30 +4000,21 @@ public final class DOSMain {
 
     private static void saveFindResult(DOSFCB findFCB) {
 
-        DOSDTA find_dta = new DOSDTA(DOS.tables.TempDTA);
-        CStringPt name = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        int size = 0;
-        short date = 0;
-        short time = 0;
-        byte attr = 0;
-        RefU32Ret refSize = new RefU32Ret(size);
-        RefU16Ret refDate = new RefU16Ret(date);
-        RefU16Ret refTime = new RefU16Ret(time);
-        RefU8Ret refAttr = new RefU8Ret(attr);
-        byte drive;
+        DOSDTA findDTA = new DOSDTA(DOS.tables.TempDTA);
+        CStringPt name = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         CStringPt file_name = CStringPt.create(9);
         CStringPt ext = CStringPt.create(4);
-        find_dta.getResult(name, refSize, refDate, refTime, refAttr);
-        size = refSize.U32;
-        date = (short) refDate.U16;
-        time = (short) refTime.U16;
-        attr = (byte) refAttr.U8;
-        drive = (byte) (findFCB.getDrive() + 1);
+        findDTA.getResultName(file_name);
+        int size = findDTA.getResultSize();
+        int date = findDTA.getResultDate();
+        int time = findDTA.getResultTime();
+        int attr = findDTA.getResultAttr();
+        int drive = findFCB.getDrive() + 1;
         /* Create a correct file and extention */
         doDTAExtendName(name, file_name, ext);
         DOSFCB fcb = new DOSFCB(Memory.realSeg(DOS.getDTA()), Memory.realOff(DOS.getDTA()));// TODO
         fcb.create(findFCB.extended());
-        fcb.setName(drive, file_name, ext);
+        fcb.setName(0xff & drive, file_name, ext);
         fcb.setAttr(attr); /* Only adds attribute if fcb is extended */
         fcb.setSizeDateTime(size, date, time);
 
@@ -4097,7 +4041,7 @@ public final class DOSMain {
         /* First check if the name is correct */
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         if (!makeName(shortname.toString(), fullname, refDrive))
             return false;
         drive = refDrive.U8;
@@ -4141,7 +4085,7 @@ public final class DOSMain {
         DOS.setDTA(DOS.tables.TempDTA);
         CStringPt name = CStringPt.create(DOSSystem.DOS_FCBNAME);
         fcb.getName(name);
-        byte attr = DOSSystem.DOS_ATTR_ARCHIVE;
+        int attr = DOSSystem.DOS_ATTR_ARCHIVE;
         // todo : ref attr -> attr을 인자로 전달해도 영향을 주지 않음, 생략처리
         attr = fcb.getAttr(); /* Gets search attributes if extended */
         boolean ret = findFirst(name.toString(), attr, true);
@@ -4177,10 +4121,9 @@ public final class DOSMain {
         if ((pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
             return FCB_READ_NODATA;
         int toread = recSize;
-        BufRef refCopyBuf = new BufRef(dosCopyBuf, 0, toread);
-        if (!readFile(fHandle, refCopyBuf))
+        if (!readFile(fHandle, dosCopyBuf, 0, toread))
             return FCB_READ_NODATA;
-        toread = refCopyBuf.Len;
+        toread = ReadSize;
         if (toread == 0)
             return FCB_READ_NODATA;
         if (toread < recSize) { // Zero pad copybuffer to rec_size
@@ -4216,10 +4159,9 @@ public final class DOSMain {
             return FCB_ERR_WRITE;
         Memory.blockRead(Memory.real2Phys(DOS.getDTA()) + recNo * recSize, dosCopyBuf, 0, recSize);
         int towrite = recSize;
-        BufRef refBuf = new BufRef(dosCopyBuf, 0, towrite);
-        if (!writeFile(fHandle, refBuf))
+        if (!writeFile(fHandle, dosCopyBuf, 0, towrite))
             return FCB_ERR_WRITE;
-        towrite = refBuf.Len;
+        towrite = DOSMain.WrittenSize;
         long size = 0;
         int date = 0;
         int time = 0;
@@ -4261,10 +4203,9 @@ public final class DOSMain {
         if ((pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
             return FCB_ERR_WRITE;
         int towrite = 0;
-        BufRef refBuf = new BufRef(dosCopyBuf, 0, towrite);
-        if (!writeFile(fHandle, refBuf))
+        if (!writeFile(fHandle, dosCopyBuf, 0, towrite))
             return FCB_ERR_WRITE;
-        towrite = refBuf.Len;
+        towrite = WrittenSize;
         long size = 0;
         int date = 0;
         int time = 0;
@@ -4375,7 +4316,7 @@ public final class DOSMain {
     }
 
     private static boolean doFCBGetFileSize(int seg, int offset) {
-        CStringPt shortname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt shortname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         int entry = 0;
         int handle;
         int recSize = 0;
@@ -4464,7 +4405,7 @@ public final class DOSMain {
         alloc.freeClusters = 0;
         Drives[drive].allocationInfo(alloc);
         Register.segSet16(Register.SEG_NAME_DS, Memory.realSeg(DOS.tables.MediaId));
-        Register.setRegBX(Memory.realOff((int) (DOS.tables.MediaId + drive * 2)));
+        Register.setRegBX(Memory.realOff(DOS.tables.MediaId + drive * 2));
         return true;
     }
 
@@ -4723,7 +4664,7 @@ public final class DOSMain {
         }
         Memory.writeW(envWrite, 1);
         envWrite += 2;
-        CStringPt namebuf = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt namebuf = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         if (canonicalize(name, namebuf)) {
             Memory.blockWrite(envWrite, namebuf);
             return true;
@@ -4734,7 +4675,7 @@ public final class DOSMain {
     public static boolean newPSP(int segment, int size) {
         DOSPSP psp = new DOSPSP(segment);
         psp.makeNew(size);
-        short parentPSPSeg = psp.getParent();
+        int parentPSPSeg = psp.getParent();// uint16
         DOSPSP pspParent = new DOSPSP(parentPSPSeg);
         psp.copyFileTable(pspParent, false);
         // copy command line as well (Kings Quest AGI -cga switch)
@@ -4746,7 +4687,7 @@ public final class DOSMain {
     public static boolean childPSP(int segment, int size) {
         DOSPSP psp = new DOSPSP(segment);
         psp.makeNew(size);
-        short parentPSPSeg = psp.getParent();
+        int parentPSPSeg = psp.getParent();// uint16
         DOSPSP pspParent = new DOSPSP(parentPSPSeg);
         psp.copyFileTable(pspParent, true);
         psp.setCommandTail(Memory.realMake(parentPSPSeg, 0x80));
@@ -4757,16 +4698,17 @@ public final class DOSMain {
         return true;
     }
 
-    private static void setupPSP(short pspseg, short memsize, short envseg) {
+    // (uint16, uint16, uint16)
+    private static void setupPSP(int pspSeg, int memSize, int envSeg) {
         /* Fix the PSP for psp and environment MCB's */
-        DOSMCB mcb = new DOSMCB(pspseg - 1);
-        mcb.setPSPSeg(pspseg);
-        mcb.setSegPt(envseg - 1);
-        mcb.setPSPSeg(pspseg);
+        DOSMCB mcb = new DOSMCB(pspSeg - 1);
+        mcb.setPSPSeg(pspSeg);
+        mcb.setSegPt(envSeg - 1);
+        mcb.setPSPSeg(pspSeg);
 
-        DOSPSP psp = new DOSPSP(pspseg);
-        psp.makeNew(memsize);
-        psp.setEnvironment(envseg);
+        DOSPSP psp = new DOSPSP(pspSeg);
+        psp.makeNew(memSize);
+        psp.setEnvironment(envSeg);
 
         /* Copy file handles */
         DOSPSP oldpsp = new DOSPSP(DOS.getPSP());
@@ -4774,7 +4716,8 @@ public final class DOSMain {
 
     }
 
-    private static void setupCMDLine(short pspSeg, DOSParamBlock block) {
+    // (uint16, DOSParamBlock)
+    private static void setupCMDLine(int pspSeg, DOSParamBlock block) {
         DOSPSP psp = new DOSPSP(pspSeg);
         // if cmdtail==0 it will inited as empty in SetCommandTail
         psp.setCommandTail(block.Exec.CmdTail);
@@ -4785,7 +4728,7 @@ public final class DOSMain {
         byte[] head = new byte[Size_EXE_Header];
         int i;
         int fHandle = 0;
-        short len;
+        int len;
         long pos;
         int pspSeg = 0, envSeg = 0, loadSeg, memSize = 0, readSize;
         int loadAddress;
@@ -4806,23 +4749,22 @@ public final class DOSMain {
         }
         /* Check for EXE or COM File */
         boolean isCom = false;
-        if (!openFile(name, (byte) DOSSystem.OPEN_READ)) {
+        if (!openFile(name, DOSSystem.OPEN_READ)) {
             setError(DOSERR_FILE_NOT_FOUND);
             return false;
         }
         fHandle = FileEntry;
         len = Size_EXE_Header;
-        BufRef refHead = new BufRef(head, 0, len);
-        if (!readFile(fHandle, refHead)) {
-            closeFile((short) fHandle);
+        if (!readFile(fHandle, head, 0, len)) {
+            closeFile(fHandle);
             return false;
         }
-        len = (short) refHead.Len;
+        len = ReadSize;
         if (len < Size_EXE_Header) {
             if (len == 0) {
                 /* Prevent executing zero byte files */
                 setError(DOSERR_ACCESS_DENIED);
-                closeFile((short) fHandle);
+                closeFile(fHandle);
                 return false;
             }
             /* Otherwise must be a .com file */
@@ -4860,7 +4802,7 @@ public final class DOSMain {
             envSeg = block.Exec.EnvSeg;
             RefU32Ret refEnvSeg = new RefU32Ret(envSeg);
             if (!makeEnv(name, refEnvSeg)) {
-                closeFile((short) fHandle);
+                closeFile(fHandle);
                 return false;
             }
             /* Get Memory */
@@ -4879,9 +4821,8 @@ public final class DOSMain {
                     pos = 0;
                     pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
                     int dataread = 0x1800;
-                    BufRef refLoadBuf = new BufRef(loadBuf, 0, dataread);
-                    readFile(fHandle, refLoadBuf);
-                    dataread = refLoadBuf.Len;
+                    readFile(fHandle, loadBuf, 0, dataread);
+                    dataread = ReadSize;
                     if (dataread < 0x1800)
                         maxsize = dataread;
                     if (minsize > maxsize)
@@ -4902,16 +4843,15 @@ public final class DOSMain {
                     pos = 0;
                     pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
                     int dataread = 0xf800;
-                    BufRef refLoadBuf = new BufRef(loadBuf, 0, dataread);
-                    readFile(fHandle, refLoadBuf);
-                    dataread = refLoadBuf.Len;
+                    readFile(fHandle, loadBuf, 0, dataread);
+                    dataread = ReadSize;
                     if (dataread < 0xf800)
-                        minsize = (short) (((dataread + 0x10) >>> 4) + 0x20);
+                        minsize = 0xffff & (((dataread + 0x10) >>> 4) + 0x20);
                 }
                 if (maxfree < minsize) {
-                    closeFile((short) fHandle);
+                    closeFile(fHandle);
                     setError(DOSERR_INSUFFICIENT_MEMORY);
-                    freeMemory((short) envSeg);
+                    freeMemory(envSeg);
                     return false;
                 }
             }
@@ -4957,30 +4897,25 @@ public final class DOSMain {
             pos = 0;
             pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
             readSize = 0xffff - 256;
-            BufRef refLoadBuf = new BufRef(loadBuf, 0, readSize);
-            readFile(fHandle, refLoadBuf);
-            readSize = refLoadBuf.Len;
+            readFile(fHandle, loadBuf, 0, readSize);
+            readSize = ReadSize;
             Memory.blockWrite(loadAddress, loadBuf, 0, readSize);
         } else { /* EXE Load in 32kb blocks and then relocate */
             pos = headerSize;
             pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
-            BufRef refLoadBuf = new BufRef(loadBuf, 0, 0);
             while (imagesize > 0x7FFF) {
                 readSize = 0x8000;
-                refLoadBuf.set(loadBuf, 0, readSize);
-
-                readFile(fHandle, refLoadBuf);
-                readSize = refLoadBuf.Len;
+                readFile(fHandle, loadBuf, 0, readSize);
+                readSize = ReadSize;
                 Memory.blockWrite(loadAddress, loadBuf, 0, readSize);
                 // if (readsize!=0x8000) LOG(LOG_EXEC,LOG_NORMAL)("Illegal header");
                 loadAddress += 0x8000;
                 imagesize -= 0x8000;
             }
             if (imagesize > 0) {
-                readSize = (short) imagesize;
-                refLoadBuf.set(loadBuf, 0, readSize);
-                readFile(fHandle, refLoadBuf);
-                readSize = refLoadBuf.Len;
+                readSize = imagesize;
+                readFile(fHandle, loadBuf, 0, readSize);
+                readSize = ReadSize;
                 Memory.blockWrite(loadAddress, loadBuf, 0, readSize);
                 // if (readsize!=imagesize) LOG(LOG_EXEC,LOG_NORMAL)("Illegal header");
             }
@@ -4993,12 +4928,10 @@ public final class DOSMain {
             pos = ByteConv.getShort(head, Off_EXE_Header_reloctable);
             pos = seekFile(fHandle, pos, 0);
             int headRelocations = ByteConv.getShort(head, Off_EXE_Header_relocations);
-            BufRef refReLocPt = new BufRef();
             for (i = 0; i < headRelocations; i++) {
                 readSize = 4;
-                refReLocPt.set(relocpt, 0, readSize);
-                readFile(fHandle, refReLocPt);
-                readSize = refReLocPt.Len;
+                readFile(fHandle, relocpt, 0, readSize);
+                readSize = ReadSize;
                 // relocpt=host_readd((HostPt)&relocpt); //Endianize
                 int uintrelocpt = ByteConv.getInt(relocpt, 0);
                 int address = Memory.physMake(Memory.realSeg(uintrelocpt) + loadSeg,
@@ -5012,8 +4945,8 @@ public final class DOSMain {
         /* Setup a psp */
         if (flags != OVERLAY) {
             // Create psp after closing exe, to avoid dead file handle of exe in copied psp
-            setupPSP((short) pspSeg, (short) memSize, (short) envSeg);
-            setupCMDLine((short) pspSeg, block);
+            setupPSP(pspSeg, memSize, envSeg);
+            setupCMDLine(pspSeg, block);
         }
         Callback.scf(false); /* Carry flag cleared for caller if successfull */
         if (flags == OVERLAY)

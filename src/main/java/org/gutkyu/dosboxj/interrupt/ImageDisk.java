@@ -82,9 +82,10 @@ public final class ImageDisk implements Disposable {
         return sector_size;
     }
 
-    public byte getBiosType() {
+    // uint8
+    public int getBiosType() {
         if (!hardDrive) {
-            return (byte) BIOSDisk.DiskGeometryList[floppytype].BiosValue;
+            return 0xff & BIOSDisk.DiskGeometryList[floppytype].BiosValue;
         } else
             return 0;
     }
@@ -124,7 +125,7 @@ public final class ImageDisk implements Disposable {
             } else {
                 int equipment = Memory.readW(BIOS.BIOS_CONFIGURATION);
                 if ((equipment & 1) != 0) {
-                    int numofdisks = (int) (equipment >>>6) & 3;
+                    int numofdisks = (int) (equipment >>> 6) & 3;
                     numofdisks++;
                     if (numofdisks > 1)
                         numofdisks = 1;// max 2 floppies at the moment

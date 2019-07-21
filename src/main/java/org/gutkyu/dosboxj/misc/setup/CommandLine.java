@@ -276,10 +276,11 @@ public final class CommandLine {
         shift(1);
     }
 
-    public short getArgLength() {
+    // uint16
+    public int getArgLength() {
         if (cmds.size() == 0)
             return 0;
-        return (short) cmds.stream().mapToInt(s -> s.length() + 1).reduce(0,
+        return cmds.stream().mapToInt(s -> s.length() + 1).reduce(0,
                 (subtotal, len) -> subtotal + len);
     }
 

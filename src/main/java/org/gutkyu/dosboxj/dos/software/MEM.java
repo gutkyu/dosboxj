@@ -41,7 +41,7 @@ public final class MEM extends Program {
             writeOut(Message.get("PROGRAM_MEM_CONVEN"), blocks * 16 / 1024);
 
         if (umbStart != 0xffff) {
-            DOSMain.linkUMBsToMemChain((short) 1);
+            DOSMain.linkUMBsToMemChain(1);
             DOSMain.setMemAllocStrategy(0x40); // search in UMBs only
 
             int largestBlock = 0, total_blocks = 0, block_count = 0;

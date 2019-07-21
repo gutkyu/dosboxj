@@ -46,7 +46,8 @@ public abstract class DOSDrive {
 
     public abstract boolean fileStat(String name, FileStatBlock statBlock);
 
-    public abstract byte getMediaByte();
+    // uint8
+    public abstract int getMediaByte();
 
     public void setDir(String path) {
         curdir = path;

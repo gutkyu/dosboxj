@@ -72,9 +72,8 @@ public final class VirtualDrive extends DOSDrive {
     @Override
     public boolean findFirst(CStringPt _dir, DOSDTA dta, boolean fcbFindFirst) {
         searchFile = VFile.firstFile;
-        byte attr = 0;
         CStringPt pattern = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        attr = dta.getSearchParams(pattern);
+        int attr = dta.getSearchParams(pattern);
         if (attr == DOSSystem.DOS_ATTR_VOLUME) {
             dta.setResult(cstrDOSBOX, 0, 0, 0, DOSSystem.DOS_ATTR_VOLUME);
             return true;
@@ -94,9 +93,8 @@ public final class VirtualDrive extends DOSDrive {
 
     @Override
     public boolean findNext(DOSDTA dta) {
-        byte attr = 0;
         CStringPt pattern = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        attr = dta.getSearchParams(pattern);
+        int attr = dta.getSearchParams(pattern);
         while (searchFile != null) {
             if (Drives.compareWildFile(searchFile.Name.toString(), pattern.toString())) {
                 dta.setResult(searchFile.Name, searchFile.Size, searchFile.Date, searchFile.Time,
@@ -167,8 +165,8 @@ public final class VirtualDrive extends DOSDrive {
     }
 
     @Override
-    public byte getMediaByte() {
-        return (byte) 0xF8;
+    public int getMediaByte() {
+        return 0xF8;
     }
 
     @Override

@@ -22,18 +22,18 @@ public final class BIOSDisk {
 
     public static class DiskGeo {
         public int KSize; /* Size in kilobytes */
-        public short SectorsTrack; /* Sectors per track */
-        public short HeadsCylinder; /* Heads per cylinder */
-        public short CylinderCount; /* Cylinders per side */
-        public short BiosValue; /* Type to return from BIOS */
+        public int SectorsTrack; /* Sectors per track, uint16 */
+        public int HeadsCylinder; /* Heads per cylinder, uint16 */
+        public int CylinderCount; /* Cylinders per side, uint16 */
+        public int BiosValue; /* Type to return from BIOS, uint16 */
 
         public DiskGeo(int KSize, int SectorsTrack, int HeadsCylinder, int CylinderCount,
                 int BiosValue) {
             this.KSize = KSize;
-            this.SectorsTrack = (short) SectorsTrack;
-            this.HeadsCylinder = (short) HeadsCylinder;
-            this.CylinderCount = (short) CylinderCount;
-            this.BiosValue = (short) BiosValue;
+            this.SectorsTrack = 0xffff & SectorsTrack;
+            this.HeadsCylinder = 0xffff & HeadsCylinder;
+            this.CylinderCount = 0xffff & CylinderCount;
+            this.BiosValue = 0xffff & BiosValue;
         }
     }
 

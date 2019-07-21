@@ -3,7 +3,6 @@ package org.gutkyu.dosboxj.dos.software;
 import org.gutkyu.dosboxj.misc.*;
 import org.gutkyu.dosboxj.dos.DOSMain;
 import org.gutkyu.dosboxj.dos.mem_block.*;
-import org.gutkyu.dosboxj.util.*;
 
 public final class Intro extends Program {
     public static Program makeProgram() {

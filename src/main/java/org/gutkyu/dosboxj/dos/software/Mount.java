@@ -88,28 +88,28 @@ public final class Mount extends Program {
         type = Cmd.findString("-t", true);
         boolean iscdrom = (type == "cdrom"); // Used for mscdex bug cdrom label name emulation
         if (type == "floppy" || type == "dir" || type == "cdrom") {
-            short[] sizes = new short[4];
-            byte mediaid;
+            int[] sizes = new int[4];
+            int mediaId;
             String strSize;
             if (type == "floppy") {
                 strSize = "512,1,2880,2880";/* All space free */
-                mediaid = (byte) 0xF0; /* Floppy 1.44 media */
+                mediaId = 0xF0; /* Floppy 1.44 media */
             } else if (type == "dir") {
                 // 512*127*16383==~1GB total size
                 // 512*127*4031==~250MB total free size
                 strSize = "512,127,16383,4031";
-                mediaid = (byte) 0xF8; /* Hard Disk */
+                mediaId = 0xF8; /* Hard Disk */
             } else if (type == "cdrom") {
                 strSize = "2048,1,65535,0";
-                mediaid = (byte) 0xF8; /* Hard Disk */
+                mediaId = 0xF8; /* Hard Disk */
             } else {
                 writeOut(Message.get("PROGAM_MOUNT_ILL_TYPE"), type);
                 return;
             }
             /* Parse the free space in mb's (kb's for floppies) */
-            String mb_size = null;
-            if ((mb_size = Cmd.findString("-freesize", true)) != null) {
-                short sizemb = (short) Integer.parseInt(mb_size);
+            String mbSize = null;
+            if ((mbSize = Cmd.findString("-freesize", true)) != null) {
+                int sizemb = Integer.parseInt(mbSize);
                 if (type == "floppy") {
                     strSize = String.format("512,1,2880,%d", sizemb * 1024 / (512 * 1));
                 } else {
@@ -126,14 +126,14 @@ public final class Mount extends Program {
             while (scanIdx < strSize.length()) {
                 if (strSize.charAt(scanIdx) == ',') {
                     number[index] = (char) 0;
-                    sizes[count++] = (short) Integer.parseInt(new String(number));
+                    sizes[count++] = Integer.parseInt(new String(number));
                     index = 0;
                 } else
                     number[index++] = strSize.charAt(scanIdx);
                 scanIdx++;
             }
             number[index] = (char) 0;
-            sizes[count++] = (short) Integer.parseInt(new String(number));
+            sizes[count++] = Integer.parseInt(new String(number));
 
             // get the drive letter
             TempLine = Cmd.findCommand(1);
@@ -181,7 +181,7 @@ public final class Mount extends Program {
 
             if (TempLine.charAt(TempLine.length() - 1) != Cross.FILESPLIT)
                 TempLine += Cross.FILESPLIT;
-            byte bit8size = (byte) sizes[1];
+            int bit8Size = 0xff & sizes[1];
 
             // TODO have to implement CDROM
             /*
@@ -192,8 +192,8 @@ public final class Mount extends Program {
             if ((TempLine == "c:\\") || (TempLine == "C:\\") || (TempLine == "c:/")
                     || (TempLine == "C:/"))
                 writeOut(Message.get("PROGRAM_MOUNT_WARNING_WIN"));
-            newdrive = new LocalDrive(TempLine, 0xffff & sizes[0], bit8size, sizes[2], sizes[3],
-                    mediaid);
+            newdrive = new LocalDrive(TempLine, 0xffff & sizes[0], bit8Size, 0xffff & sizes[2],
+                    0xffff & sizes[3], mediaId);
 
         } else {
             writeOut(Message.get("PROGRAM_MOUNT_ILL_TYPE"), type);
@@ -210,7 +210,7 @@ public final class Mount extends Program {
             Support.exceptionExit("DOS:Can't create drive");
         DOSMain.Drives[drive - 'A'] = newdrive;
         /* Set the correct media byte in the table */
-        Memory.writeB((int) (Memory.real2Phys(DOSMain.DOS.tables.MediaId) + (drive - 'A') * 2),
+        Memory.writeB(Memory.real2Phys(DOSMain.DOS.tables.MediaId) + (drive - 'A') * 2,
                 newdrive.getMediaByte());
         writeOut(Message.get("PROGRAM_MOUNT_STATUS_2"), drive, newdrive.getInfo());
         /* check if volume label is given and don't allow it to updated in the future */

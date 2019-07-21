@@ -548,8 +548,8 @@ public final class FATDrive extends DOSDrive implements Disposable {
     @Override
     public boolean findFirst(CStringPt dir, DOSDTA dta, boolean fcbFindFirst) {
         byte[] dummyClust = new byte[SIZE_direntry_Total];
-        byte attr = 0;
-        CStringPt pattern = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        int attr = 0;
+        CStringPt pattern = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         attr = dta.getSearchParams(pattern);
         if (attr == DOSSystem.DOS_ATTR_VOLUME) {
             if (getLabel().toString() == "") {
@@ -568,7 +568,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
             return false;
         }
         _cwdDirCluster = refDirClust.U32;
-        dta.setDirID((short) 0);
+        dta.setDirID(0);
         dta.setDirIDCluster(_cwdDirCluster & 0xffff);
         return findNextInternal(_cwdDirCluster, dta, dummyClust);
     }
@@ -695,21 +695,21 @@ public final class FATDrive extends DOSDrive implements Disposable {
         sect = LoadedDisk.getGeometrySectors();
         sectsize = LoadedDisk.getGeometrySectSize();
         alloc.bytesSector = 0xffff & sectsize;
-        alloc.sectorsCluster = _bootbuffer[OFF_bootstrap_sectorspercluster];
+        alloc.sectorsCluster = 0xff & _bootbuffer[OFF_bootstrap_sectorspercluster];
         if (_countOfClusters < 65536)
-            alloc.totalClusters = (short) _countOfClusters;
+            alloc.totalClusters = _countOfClusters;
         else {
             // maybe some special handling needed for fat32
-            alloc.totalClusters = (short) 65535;
+            alloc.totalClusters = 65535;
         }
         for (i = 0; i < _countOfClusters; i++)
             if (getClusterValue(i + 2) == 0)
                 countFree++;
         if (countFree < 65536)
-            alloc.freeClusters = (short) countFree;
+            alloc.freeClusters = countFree;
         else {
             // maybe some special handling needed for fat32
-            alloc.freeClusters = (short) 65535;
+            alloc.freeClusters = 65535;
         }
 
         return true;
@@ -731,7 +731,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public byte getMediaByte() {
+    public int getMediaByte() {
         return LoadedDisk.getBiosType();
     }
 
@@ -914,12 +914,12 @@ public final class FATDrive extends DOSDrive implements Disposable {
         int logentsector; /* Logical entry sector */
         int entryoffset = 0; /* Index offset within sector */
         int tmpsector;
-        short dirPos = 0;
+        int dirPos = 0;
 
         while (entNum >= 0) {
 
-            logentsector = (int) dirPos / 16;
-            entryoffset = (int) dirPos % 16;
+            logentsector = dirPos / 16;
+            entryoffset = dirPos % 16;
 
             if (dirClustNumber == 0) {
 
@@ -954,12 +954,12 @@ public final class FATDrive extends DOSDrive implements Disposable {
         int logentsector; /* Logical entry sector */
         int entryoffset = 0; /* Index offset within sector */
         int tmpsector = 0;
-        short dirPos = 0;
+        int dirPos = 0;
 
         while (entNum >= 0) {
 
-            logentsector = (int) dirPos / 16;
-            entryoffset = (int) dirPos % 16;
+            logentsector = dirPos / 16;
+            entryoffset = dirPos % 16;
 
             if (dirClustNumber == 0) {
                 if (dirPos >= ByteConv.getShort(_bootbuffer, OFF_bootstrap_rootdirentries))
@@ -1123,18 +1123,18 @@ public final class FATDrive extends DOSDrive implements Disposable {
         int logEntSector; /* Logical entry sector */
         int entryOffset; /* Index offset within sector */
         int tmpSector;
-        byte attrs = 0;
-        short dirPos = 0;
-        CStringPt srchPattern = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        CStringPt findName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        CStringPt extension = CStringPt.create((int) 4);
+        int attrs = 0;
+        int dirPos = 0;
+        CStringPt srchPattern = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt findName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt extension = CStringPt.create(4);
 
         attrs = dta.getSearchParams(srchPattern);
         dirPos = dta.getDirID();
 
         nextfile: while (true) {
-            logEntSector = (int) dirPos / 16;
-            entryOffset = (int) dirPos % 16;
+            logEntSector = dirPos / 16;
+            entryOffset = dirPos % 16;
 
             if (dirClustNumber == 0) {
                 LoadedDisk.readAbsoluteSector(_firstRootDirSect + logEntSector, sectBuf, 0);
@@ -1223,19 +1223,16 @@ public final class FATDrive extends DOSDrive implements Disposable {
         if ((len > 0) && (dir.charAt(len - 1) != '\\')) {
             // Log.LOG_MSG("Testing for dir %s", dir);
             // findDir = strtok(dirtoken, "\\");
-            RefU32Ret refSize = new RefU32Ret(0);
-            RefU16Ret refDate = new RefU16Ret(0);
-            RefU16Ret refTime = new RefU16Ret(0);
-            RefU8Ret refAttr = new RefU8Ret(0);
 
             int idx = 0;
             int endIdx = dir.indexOf('\\');
             findDir = dir.substring(idx, endIdx);
 
+            DOSDTA imgDTA = BIOSDisk.ImgDTA;
             while (endIdx >= 0 && endIdx < dir.length()) {
 
-                BIOSDisk.ImgDTA.setupSearch((byte) 0, DOSSystem.DOS_ATTR_DIRECTORY, findDir);
-                BIOSDisk.ImgDTA.setDirID((short) 0);
+                imgDTA.setupSearch(0, DOSSystem.DOS_ATTR_DIRECTORY, findDir);
+                imgDTA.setDirID(0);
 
                 idx = endIdx + 1;
                 endIdx = dir.indexOf('\\', idx);
@@ -1245,16 +1242,10 @@ public final class FATDrive extends DOSDrive implements Disposable {
 
                 findDir = dir.substring(idx, endIdx);
 
-                CStringPt findName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-                short findDate = 0, findTime = 0;
-                int findSize = 0;
-                byte findAttr = 0;
-                if (!findNextInternal(currentClust, BIOSDisk.ImgDTA, foundEntry)) {
+                if (!findNextInternal(currentClust, imgDTA, foundEntry)) {
                     return false;
                 } else {
-                    BIOSDisk.ImgDTA.getResult(findName, refSize, refDate, refTime, refAttr);
-                    findAttr = refAttr.U8;
-                    if ((findAttr & DOSSystem.DOS_ATTR_DIRECTORY) == 0)
+                    if ((imgDTA.getResultAttr() & DOSSystem.DOS_ATTR_DIRECTORY) == 0)
                         return false;
                 }
                 currentClust = ByteConv.getShort(foundEntry, OFF_direntry_loFirstClust);
@@ -1284,15 +1275,11 @@ public final class FATDrive extends DOSDrive implements Disposable {
         // 그렇지 않으면 파일경로로 보는 듯
         // 파일이 속한 디렉토리이름(절대 경로가 아님)을 구한다.
 
+        DOSDTA imgDTA = BIOSDisk.ImgDTA;
         /* Skip if testing in root directory */
         if ((len > 0) && (fileName.charAt(len - 1) != '\\')) {
             // Log.LOG_MSG("Testing for filename %s", filename);
             // findDir = strtok(dirtoken, "\\");
-
-            RefU32Ret refSize = new RefU32Ret(0);
-            RefU16Ret refDate = new RefU16Ret(0);
-            RefU16Ret refTime = new RefU16Ret(0);
-            RefU8Ret refAttr = new RefU8Ret(0);
 
             int idx = 0;
             int end_idx = fileName.indexOf('\\');
@@ -1300,26 +1287,16 @@ public final class FATDrive extends DOSDrive implements Disposable {
             while (end_idx >= 0 && end_idx < fileName.length()) {
                 findDir = fileName.substring(idx, end_idx);
 
-                BIOSDisk.ImgDTA.setupSearch((byte) 0, DOSSystem.DOS_ATTR_DIRECTORY, findDir);
-                BIOSDisk.ImgDTA.setDirID((short) 0);
+                imgDTA.setupSearch(0, DOSSystem.DOS_ATTR_DIRECTORY, findDir);
+                imgDTA.setDirID(0);
 
                 findFile = findDir;
-                if (!findNextInternal(currentClust, BIOSDisk.ImgDTA, foundEntry))
+                if (!findNextInternal(currentClust, imgDTA, foundEntry))
                     break;
                 else {
                     // Found something. See if it's a directory (findfirst always finds regular
                     // files)
-                    CStringPt findName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-                    int findSize = 0;
-                    short findDate = 0, findTime = 0;
-                    byte findAttr = 0;
-                    refSize.U32 = findSize;
-                    refDate.U16 = findDate;
-                    refTime.U16 = findTime;
-                    refAttr.U8 = findAttr;
-                    BIOSDisk.ImgDTA.getResult(findName, refSize, refDate, refTime, refAttr);
-                    findAttr = refAttr.U8;
-                    if ((findAttr & DOSSystem.DOS_ATTR_DIRECTORY) == 0)
+                    if ((imgDTA.getResultAttr() & DOSSystem.DOS_ATTR_DIRECTORY) == 0)
                         break;
                 }
                 currentClust = ByteConv.getShort(foundEntry, OFF_direntry_loFirstClust);
@@ -1332,16 +1309,16 @@ public final class FATDrive extends DOSDrive implements Disposable {
         }
 
         /* Search found directory for our file */
-        BIOSDisk.ImgDTA.setupSearch((byte) 0, (byte) 0x7, findFile);
-        BIOSDisk.ImgDTA.setDirID((short) 0);
-        if (!findNextInternal(currentClust, BIOSDisk.ImgDTA, foundEntry))
+        imgDTA.setupSearch(0, 0x7, findFile);
+        imgDTA.setDirID(0);
+        if (!findNextInternal(currentClust, imgDTA, foundEntry))
             return false;
 
         for (int i = 0; i < SIZE_direntry_Total; i++) {
             useEntry[i] = foundEntry[i];
         }
-        refDirClust.U32 = (int) currentClust;
-        refSubEntry.U32 = ((int) BIOSDisk.ImgDTA.getDirID() - 1);
+        refDirClust.U32 = currentClust;
+        refSubEntry.U32 = imgDTA.getDirID() - 1;
         return true;
     }
 
@@ -1350,12 +1327,12 @@ public final class FATDrive extends DOSDrive implements Disposable {
         int logEntSector; /* Logical entry sector */
         int entryOffset; /* Index offset within sector */
         int tmpSector;
-        short dirPos = 0;
+        int dirPos = 0;
 
         while (true) {
 
-            logEntSector = (int) dirPos / 16;
-            entryOffset = (int) dirPos % 16;
+            logEntSector = dirPos / 16;
+            entryOffset = dirPos % 16;
 
             if (dirClustNumber == 0) {
                 if (dirPos >= ByteConv.getShort(_bootbuffer, OFF_bootstrap_rootdirentries))

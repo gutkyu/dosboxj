@@ -694,7 +694,7 @@ public final class KeyboardLayout implements Disposable {
                         diacritics_start += (short) (diacritics[diacritics_start + 1] * 2 + 2);
 
                     BIOSKeyboard
-                            .addKeyToBuffer((short) ((key << 8) | diacritics[diacritics_start]));
+                            .addKeyToBuffer(0xffff & ((key << 8) | diacritics[diacritics_start]));
                     _diacriticsCharacter = 0;
                     break;
             }
@@ -1046,7 +1046,7 @@ public final class KeyboardLayout implements Disposable {
 
 
             // get table offset
-            table_offset = Memory.hostReadW(read_buf, (short) (start_pos + 0x16 + sub_map * 8));
+            table_offset = Memory.hostReadW(read_buf, 0xffff & (start_pos + 0x16 + sub_map * 8));
             if (table_offset == 0)
                 continue; // non-present table
 
@@ -1162,14 +1162,14 @@ public final class KeyboardLayout implements Disposable {
                     for (short i = 0; i < diacritics_length; i++) {
                         if (diacritics[diacritics_start + i * 2] == (layoutedKey & 0xff)) {
                             // add diacritics to keybuf
-                            BIOSKeyboard.addKeyToBuffer((short) ((short) (key << 8)
-                                    | diacritics[diacritics_start + i * 2 + 1]));
+                            BIOSKeyboard.addKeyToBuffer(0xffff
+                                    & ((key << 8) | diacritics[diacritics_start + i * 2 + 1]));
                             return true;
                         }
                     }
                     // add standard-diacritics to keybuf
                     BIOSKeyboard.addKeyToBuffer(
-                            (short) ((short) (key << 8) | diacritics[diacritics_start - 2]));
+                            0xffff & ((key << 8) | diacritics[diacritics_start - 2]));
                 }
             }
 
@@ -1177,7 +1177,7 @@ public final class KeyboardLayout implements Disposable {
             if (isKeypair)
                 BIOSKeyboard.addKeyToBuffer(layoutedKey);
             else
-                BIOSKeyboard.addKeyToBuffer((short) ((key << 8) | (short) (layoutedKey & 0xff)));
+                BIOSKeyboard.addKeyToBuffer(0xffff & ((key << 8) | (layoutedKey & 0xff)));
 
             return true;
         }

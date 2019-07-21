@@ -84,7 +84,7 @@ public final class DOSShell extends DOSShellBase {
     protected void doCommand(CStringPt line) {
         /* First split the line into command and arguments */
         line.trim();
-        CStringPt cmdBuffer = CStringPt.create((int) ShellInner.CMD_MAXLINE);
+        CStringPt cmdBuffer = CStringPt.create(ShellInner.CMD_MAXLINE);
         CStringPt cmdWrite = CStringPt.clone(cmdBuffer);
         while (line.get() != 0) {
             if (line.get() == 32)
@@ -199,11 +199,8 @@ public final class DOSShell extends DOSShellBase {
         int save_dta = DOSMain.DOS.getDTA();
         DOSMain.DOS.setDTA(DOSMain.DOS.tables.TempDTA);
         DOSDTA dta = new DOSDTA(DOSMain.DOS.getDTA());
-        int size = 0;
-        short date = 0;
-        short time = 0;
-        byte attr = 0;
-        CStringPt name = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        int attr = 0;// uint8
+        CStringPt name = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         List<CopySource> sources = new ArrayList<CopySource>();
         // ignore /b and /t switches: always copy binary
         while (Support.scanCmdBool(args, "B"));
@@ -222,11 +219,7 @@ public final class DOSShell extends DOSShellBase {
         // Concatating files go as follows: All parts except for the last bear the concat flag.
         // This construction allows them to be counted (only the non concat set)
         CStringPt sourceP = CStringPt.getZero();
-        CStringPt sourceX = CStringPt.create((int) (DOSSystem.DOS_PATHLENGTH + Cross.LEN));
-        RefU32Ret refSize = new RefU32Ret(0);
-        RefU16Ret refDate = new RefU16Ret(0);
-        RefU16Ret refTime = new RefU16Ret(0);
-        RefU8Ret refAttr = new RefU8Ret(0);
+        CStringPt sourceX = CStringPt.create(DOSSystem.DOS_PATHLENGTH + Cross.LEN);
 
         while (!(sourceP = Support.stripWord(args)).isEmpty() && sourceP.get() != 0) {
             do {
@@ -234,7 +227,7 @@ public final class DOSShell extends DOSShellBase {
                 if (!plus.isEmpty())
                     plus.set((char) 0);
                 plus.movePtToR1();
-                CStringPt.safeCopy(sourceP, sourceX, (int) Cross.LEN);
+                CStringPt.safeCopy(sourceP, sourceX, Cross.LEN);
                 boolean hasDriveSpec = false;
                 int sourceXLen = sourceX.length();
                 if (sourceXLen > 0) {
@@ -244,8 +237,8 @@ public final class DOSShell extends DOSShellBase {
                 if (!hasDriveSpec) {
                     if (DOSMain.findFirst(sourceP.toString(),
                             0xffff & ~DOSSystem.DOS_ATTR_VOLUME)) {
-                        dta.getResult(name, refSize, refDate, refTime, refAttr);
-                        attr = refAttr.U8;
+                        dta.getResultName(name);
+                        attr = dta.getResultAttr();
                         if ((attr & DOSSystem.DOS_ATTR_DIRECTORY) != 0
                                 && sourceP.positionOf("*.*").isEmpty())
                             sourceX.concat("\\*.*");
@@ -289,8 +282,8 @@ public final class DOSShell extends DOSShellBase {
             }
 
             /* Make a full path in the args */
-            CStringPt pathSource = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
-            CStringPt pathTarget = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+            CStringPt pathSource = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
+            CStringPt pathTarget = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
 
             if (!DOSMain.canonicalize(source.filename, pathSource)) {
                 writeOut(Message.get("SHELL_ILLEGAL_PATH"));
@@ -314,8 +307,8 @@ public final class DOSShell extends DOSShellBase {
             // add '\\' if target is a directoy
             if (pathTarget.get(pathTarget.length() - 1) != '\\') {
                 if (DOSMain.findFirst(pathTarget.toString(), 0xffff & ~DOSSystem.DOS_ATTR_VOLUME)) {
-                    dta.getResult(name, refSize, refDate, refTime, refAttr);
-                    attr = refAttr.U8;
+                    dta.getResultName(name);
+                    attr = dta.getResultAttr();
                     if ((attr & DOSSystem.DOS_ATTR_DIRECTORY) != 0)
                         pathTarget.concat("\\");
                 }
@@ -334,8 +327,8 @@ public final class DOSShell extends DOSShellBase {
             CStringPt nameSource = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
 
             while (ret) {
-                dta.getResult(name, refSize, refDate, refTime, refAttr);
-                attr = refAttr.U8;
+                dta.getResultName(name);
+                attr = dta.getResultAttr();
                 if ((attr & DOSSystem.DOS_ATTR_DIRECTORY) == 0) {
                     CStringPt.copy(pathSource, nameSource);
                     nameSource.concat(name);
@@ -364,11 +357,13 @@ public final class DOSShell extends DOSShellBase {
                                 // possible.
                                 boolean failed = false;
                                 int toread = 0x8000;
-                                BufRef refBuf = new BufRef(buffer, 0, toread);
                                 do {
-                                    failed |= DOSMain.readFile(sourceHandle, refBuf);
-                                    failed |= DOSMain.writeFile(0xffff & targetHandle, refBuf);
-                                } while (refBuf.Len == 0x8000);
+                                    failed |= DOSMain.readFile(sourceHandle, buffer, 0, toread);
+                                    toread = DOSMain.ReadSize;
+                                    failed |= DOSMain.writeFile(0xffff & targetHandle, buffer, 0,
+                                            toread);
+                                    toread = DOSMain.WrittenSize;
+                                } while (toread == 0x8000);
                                 failed |= DOSMain.closeFile(sourceHandle);
                                 failed |= DOSMain.closeFile(0xffff & targetHandle);
                                 writeOut(" %s\n", name);
@@ -440,7 +435,7 @@ public final class DOSShell extends DOSShellBase {
             return;
 
         CStringPt numformat = CStringPt.create(16);
-        CStringPt path = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt path = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
 
         String line = null;
         if ((line = getEnvStr("DIRCMD")) != null) {
@@ -469,7 +464,7 @@ public final class DOSShell extends DOSShellBase {
         int wSize = optW ? 5 : 1;
         byteCount = fileCount = dirCount = 0;
 
-        CStringPt buffer = CStringPt.create((int) Cross.LEN);
+        CStringPt buffer = CStringPt.create(Cross.LEN);
         args.trim();
         int argLen = args.length();
         if (argLen == 0) {
@@ -520,22 +515,15 @@ public final class DOSShell extends DOSShellBase {
             return;
         }
 
-        RefU32Ret refSize = new RefU32Ret(0);
-        RefU16Ret refDate = new RefU16Ret(0);
-        RefU16Ret refTime = new RefU16Ret(0);
-        RefU8Ret refAttr = new RefU8Ret(0);
-
+        CStringPt name = null;
+        int size, date, time, attr;
         do { /* File name and extension */
-            CStringPt name = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-            int size = 0;
-            short date = 0;
-            short time = 0;
-            byte attr = 0;
-            dta.getResult(name, refSize, refDate, refTime, refAttr);
-            size = refSize.U32;
-            date = refDate.U16;
-            time = refTime.U16;
-            attr = refAttr.U8;
+            name = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
+            dta.getResultName(name);
+            size = dta.getResultSize();
+            date = dta.getResultDate();
+            time = dta.getResultTime();
+            attr = dta.getResultAttr();
             /* Skip non-directories if option AD is present */
             if (optAD && (attr & DOSSystem.DOS_ATTR_DIRECTORY) == 0)
                 continue;
@@ -635,8 +623,8 @@ public final class DOSShell extends DOSShellBase {
         }
         /* If delete accept switches mind the space infront of them. See the dir /p code */
 
-        CStringPt full = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
-        CStringPt buffer = CStringPt.create((int) Cross.LEN);
+        CStringPt full = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
+        CStringPt buffer = CStringPt.create(Cross.LEN);
         args = expandDot(args, buffer);
         args.lTrim();
         if (!DOSMain.canonicalize(args.toString(), full)) {
@@ -653,19 +641,14 @@ public final class DOSShell extends DOSShellBase {
         // end can't be 0, but if it is we'll get a nice crash, who cares :)
         CStringPt end = CStringPt.clone(full.lastPositionOf('\\'), 1);
         end.set((char) 0);
-        CStringPt name = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        int size = 0;
-        short time = 0, date = 0;
-        byte attr = 0;
-        RefU32Ret refSize = new RefU32Ret(size);
-        RefU16Ret refDate = new RefU16Ret(time);
-        RefU16Ret refTime = new RefU16Ret(date);
-        RefU8Ret refAttr = new RefU8Ret(attr);
+        CStringPt name = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
+        int attr = 0;// uint8
 
         DOSDTA dta = new DOSDTA(DOSMain.DOS.getDTA());
         while (res) {
-            dta.getResult(name, refSize, refDate, refTime, refAttr);
-            attr = refAttr.U8;
+            dta.getResultName(name);
+            attr = dta.getResultAttr();
+
             if ((attr & (DOSSystem.DOS_ATTR_DIRECTORY | DOSSystem.DOS_ATTR_READ_ONLY)) == 0) {
                 CStringPt.copy(name, end);
                 if (!DOSMain.unlinkFile(full.toString()))
@@ -738,7 +721,7 @@ public final class DOSShell extends DOSShellBase {
         args.lTrim();
         if (args.get() == 0) {
             byte drive = (byte) (DOSMain.getDefaultDrive() + 'A');
-            CStringPt dir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+            CStringPt dir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
             DOSMain.getCurrentDir(0, dir);
             writeOut("{0}:\\{1}\n", (char) drive, dir);
         } else if (args.length() == 2 && args.get(1) == ':') {
@@ -816,7 +799,7 @@ public final class DOSShell extends DOSShellBase {
             p.set((char) 0);
             p.movePtToR1();
             /* parse p for envirionment variables */
-            CStringPt parsed = CStringPt.create((int) ShellInner.CMD_MAXLINE);
+            CStringPt parsed = CStringPt.create(ShellInner.CMD_MAXLINE);
             CStringPt p_parsed = parsed;
             while (p.get() != 0) {
                 if (p.get() != '%') {
@@ -997,10 +980,10 @@ public final class DOSShell extends DOSShellBase {
             do {
                 // n = 1;
                 DOSMain.readFile(handle);
-                n = DOSMain.ReadLength;
+                n = DOSMain.ReadSize;
                 c = DOSMain.ReadByte;
                 DOSMain.writeFile(DOSMain.STDOUT, c, n);
-                n = DOSMain.writtenSize();
+                n = DOSMain.WrittenSize;
             } while (n != 0);
             DOSMain.closeFile(handle);
             if (args.get() != 0)
@@ -1036,7 +1019,7 @@ public final class DOSShell extends DOSShellBase {
              * abc.shr. File must appear in C:\
              */
 
-            CStringPt dirSource = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+            CStringPt dirSource = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
             dirSource.set(0, (char) 0);
             // Copy first and then modify, makes GCC happy
             CStringPt.copy(arg1, dirSource);
@@ -1046,7 +1029,7 @@ public final class DOSShell extends DOSShellBase {
             if ((dirSource.length() == 2) && (dirSource.get(1) == ':'))
                 dirSource.concat("\\"); // X: add slash
 
-            CStringPt dirCurrent = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH + 1);
+            CStringPt dirCurrent = CStringPt.create(DOSSystem.DOS_PATHLENGTH + 1);
             dirCurrent.set(0, '\\'); // Absolute addressing so we can return properly
             CStringPt paramDirCurrent = CStringPt.clone(dirCurrent, 1);
             DOSMain.getCurrentDir(0, paramDirCurrent);
@@ -1085,7 +1068,7 @@ public final class DOSShell extends DOSShellBase {
         if (help(args, "SUBST"))
             return;
         LocalDrive ldp = null;
-        CStringPt mountString = CStringPt.create((int) (DOSSystem.DOS_PATHLENGTH + Cross.LEN + 20));
+        CStringPt mountString = CStringPt.create(DOSSystem.DOS_PATHLENGTH + Cross.LEN + 20);
         CStringPt tempStr = CStringPt.create(2);
         tempStr.set(0, (char) 0);
         tempStr.set(1, (char) 0);
@@ -1113,7 +1096,7 @@ public final class DOSShell extends DOSShellBase {
             arg = command.findCommand(2);
             byte drive = 0;
             RefU8Ret refDrive = new RefU8Ret(drive);
-            CStringPt fulldir = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+            CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
             if (!DOSMain.makeName(arg.toUpperCase(), fulldir, refDrive))
                 throw new DOSException("0");
             drive = refDrive.U8;
@@ -1121,7 +1104,7 @@ public final class DOSShell extends DOSShellBase {
             if (!(DOSMain.Drives[drive] instanceof LocalDrive))
                 throw new DOSException("0");
             ldp = (LocalDrive) drv;
-            CStringPt newname = CStringPt.create((int) Cross.LEN);
+            CStringPt newname = CStringPt.create(Cross.LEN);
             CStringPt.copy(ldp.basedir, newname);
             newname.concat(fulldir);
             ldp.dirCache.expandName(newname);
@@ -1225,7 +1208,7 @@ public final class DOSShell extends DOSShellBase {
         do {
             DOSMain.readFile(DOSMain.STDIN);
             c = DOSMain.ReadByte;
-            n = DOSMain.ReadLength;
+            n = DOSMain.ReadSize;
         } while (c == 0 || (ptr = rem.positionOf(optS ? (char) c : Character.toUpperCase((char) c)))
                 .isEmpty());
         c = optS ? c : (byte) Character.toUpperCase((char) c);
@@ -1243,8 +1226,7 @@ public final class DOSShell extends DOSShellBase {
         if (help(args, "PATH"))
             return;
         if (!args.isEmpty() && args.get() != 0 && args.length() > 0) {
-            CStringPt pathstring =
-                    CStringPt.create((int) (DOSSystem.DOS_PATHLENGTH + Cross.LEN + 20));
+            CStringPt pathstring = CStringPt.create(DOSSystem.DOS_PATHLENGTH + Cross.LEN + 20);
             pathstring.set(0, (char) 0);
             CStringPt.copy("set PATH=", pathstring);
             while (!args.isEmpty() && args.get() != 0 && (args.get() == '=' || args.get() == ' '))
@@ -1327,7 +1309,7 @@ public final class DOSShell extends DOSShellBase {
                         "Reopening the input handle.This is a bug!");
             }
             c = DOSMain.ReadByte;
-            n = DOSMain.ReadLength;
+            n = DOSMain.ReadSize;
             if (n == 0) {
                 size = 0; // Kill the while loop
                 continue;
@@ -1337,7 +1319,7 @@ public final class DOSShell extends DOSShellBase {
                 {
                     DOSMain.readFile(InputHandle);
                     c = DOSMain.ReadByte;
-                    n = DOSMain.ReadLength;
+                    n = DOSMain.ReadSize;
                     switch (c) {
 
                         case 0x3d: /* F3 */
@@ -1346,14 +1328,14 @@ public final class DOSShell extends DOSShellBase {
                             currHisStr = _history.getFirst();
                             currHisIdx = 0;
                             if (currHisStr != null && currHisStr.length() > strLen) {
-                                int readerIdx = (int) strLen;
+                                int readerIdx = strLen;
                                 while (readerIdx < currHisStr.length()
                                         && (c = (byte) currHisStr.charAt(readerIdx++)) != 0) {
                                     line.set(strIndex++, (char) c);
                                     DOSMain.writeFile(DOSMain.STDOUT, c);
                                 }
                                 strLen = strIndex = currHisStr.length();
-                                size = (int) ShellInner.CMD_MAXLINE - strIndex - 2;
+                                size = ShellInner.CMD_MAXLINE - strIndex - 2;
                                 line.set(strLen, (char) 0);
                             }
                             break;
@@ -1404,10 +1386,9 @@ public final class DOSShell extends DOSShellBase {
                             CStringPt.copy(currHisStr, line);
                             len = currHisStr.length();
                             strLen = strIndex = len;
-                            size = (int) ShellInner.CMD_MAXLINE - strIndex - 2;
-                            RefU16Ret refLen = new RefU16Ret(len);
-                            DOSMain.writeFile(DOSMain.STDOUT, line, refLen);
-                            len = refLen.U16;
+                            size = ShellInner.CMD_MAXLINE - strIndex - 2;
+                            DOSMain.writeFile(DOSMain.STDOUT, line.getAsciiBytes(), 0, len);
+                            len = DOSMain.WrittenSize;
                             currHisStr = _history.get(++currHisIdx);
                             break;
                         }
@@ -1442,10 +1423,9 @@ public final class DOSShell extends DOSShellBase {
                             CStringPt.copy(currHisStr, line);
                             len = currHisStr.length();
                             strLen = strIndex = len;
-                            size = (int) ShellInner.CMD_MAXLINE - strIndex - 2;
-                            RefU16Ret refLen = new RefU16Ret(len);
-                            DOSMain.writeFile(DOSMain.STDOUT, line, refLen);
-                            len = refLen.U16;
+                            size = ShellInner.CMD_MAXLINE - strIndex - 2;
+                            DOSMain.writeFile(DOSMain.STDOUT, line.getAsciiBytes(), 0, len);
+                            len = DOSMain.WrittenSize;
                             currHisStr = _history.get(++currHisIdx);
 
                             break;
@@ -1456,11 +1436,8 @@ public final class DOSShell extends DOSShellBase {
                                 break;
                             short a = (short) (strLen - strIndex - 1);
                             byte[] text = CStringPt.clone(line, strIndex + 1).getAsciiBytes();
-                            BufRef buf = new BufRef();
-                            buf.Buf = text;
-                            buf.StartIndex = 0;
-                            buf.Len = text.length;
-                            DOSMain.writeFile(DOSMain.STDOUT, buf);// write buffer to screen
+                            DOSMain.writeFile(DOSMain.STDOUT, text, 0, text.length);// write buffer
+                                                                                    // to screen
                             outc((byte) ' ');
                             outc(8);
                             for (int i = strIndex; i < strLen - 1; i++) {
@@ -1541,7 +1518,7 @@ public final class DOSShell extends DOSShellBase {
                                 .isEmpty())
                             _completionIndex = CStringPt.diff(path, line) + 1;
 
-                        CStringPt mask = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+                        CStringPt mask = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
                         if (!pCompletionStart.isEmpty()) {
                             CStringPt.copy(pCompletionStart, mask);
                             CStringPt dotPos = mask.lastPositionOf('.');
@@ -1571,19 +1548,13 @@ public final class DOSShell extends DOSShellBase {
 
                         DOSDTA dta = new DOSDTA(DOSMain.DOS.getDTA());
                         CStringPt name = CStringPt.getZero();
-                        int sz = 0;
-                        short date = 0;
-                        short time = 0;
-                        byte att = 0;
-                        RefU32Ret refSize = new RefU32Ret(sz);
-                        RefU16Ret refDate = new RefU16Ret(date);
-                        RefU16Ret refTime = new RefU16Ret(time);
-                        RefU8Ret refAttr = new RefU8Ret(att);
+                        int att = 0;// uint8
 
                         LinkedList<String> executable = new LinkedList<String>();
                         while (res) {
-                            dta.getResult(name, refSize, refDate, refTime, refAttr);
-                            att = refAttr.U8;
+                            dta.getResultName(name);
+                            att = dta.getResultAttr();
+
                             // add result to completion list
 
                             CStringPt ext; // file extension
@@ -1628,9 +1599,9 @@ public final class DOSShell extends DOSShellBase {
                         len = currCmpStr.length();
                         strLen = strIndex = _completionIndex + len;
                         size = ShellInner.CMD_MAXLINE - strIndex - 2;
-                        RefU16Ret refLen = new RefU16Ret(len);
-                        DOSMain.writeFile(DOSMain.STDOUT, CStringPt.create(currCmpStr), refLen);
-                        len = refLen.U16;
+                        DOSMain.writeFile(DOSMain.STDOUT,
+                                CStringPt.create(currCmpStr).getAsciiBytes(), 0, len);
+                        len = DOSMain.WrittenSize;
                     }
                 }
                     break;
@@ -1651,10 +1622,10 @@ public final class DOSShell extends DOSShellBase {
                     // mem_readb(BIOS_KEYBOARD_FLAGS1)&0x80) dev_con.h ?
                     if (strIndex < strLen && true) {
                         outc((byte) ' ');// move cursor one to the right.
-                        short a = (short) (strLen - strIndex);
-                        RefU16Ret refLen = new RefU16Ret(a);
-                        DOSMain.writeFile(DOSMain.STDOUT, line, refLen);// write buffer to screen
-                        a = refLen.U16;
+                        int a = strLen - strIndex;
+                        // write buffer to screen
+                        DOSMain.writeFile(DOSMain.STDOUT, line.getAsciiBytes(), 0, a);
+                        a = DOSMain.WrittenSize;
                         outc(8);// undo the cursor the right.
                         for (int i = strLen; i > strIndex; i--) {
                             line.set(i, line.get(i - 1)); // move internal buffer
@@ -1702,18 +1673,18 @@ public final class DOSShell extends DOSShellBase {
          * hardware changes in do_command
          */
         // stores results from Which
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH + 4);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH + 4);
         CStringPt pFullname;
-        CStringPt line = CStringPt.create((int) ShellInner.CMD_MAXLINE);
+        CStringPt line = CStringPt.create(ShellInner.CMD_MAXLINE);
 
         if (args.length() != 0) {
             if (args.get() != ' ') { // put a space in front
                 line.set(0, ' ');
                 line.set(1, (char) 0);
-                line.concat(args, (int) ShellInner.CMD_MAXLINE - 2);
-                line.set((int) ShellInner.CMD_MAXLINE - 1, (char) 0);
+                line.concat(args, ShellInner.CMD_MAXLINE - 2);
+                line.set(ShellInner.CMD_MAXLINE - 1, (char) 0);
             } else {
-                CStringPt.safeCopy(args, line, (int) ShellInner.CMD_MAXLINE);
+                CStringPt.safeCopy(args, line, ShellInner.CMD_MAXLINE);
             }
         } else {
             line.set(0, (char) 0);
@@ -1741,7 +1712,7 @@ public final class DOSShell extends DOSShellBase {
             // Check if the result will fit in the parameters. Else abort
             if (fullname.length() > (DOSSystem.DOS_PATHLENGTH - 1))
                 return false;
-            CStringPt tempName = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH + 4);
+            CStringPt tempName = CStringPt.create(DOSSystem.DOS_PATHLENGTH + 4);
             CStringPt tempFullname;
             // try to add .com, .exe and .bat extensions to filename
 
@@ -1860,7 +1831,7 @@ public final class DOSShell extends DOSShellBase {
     static String batExt = ".BAT";
     static String comExt = ".COM";
     static String exeExt = ".EXE";
-    static CStringPt whichRet = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH + 4);
+    static CStringPt whichRet = CStringPt.create(DOSSystem.DOS_PATHLENGTH + 4);
 
     protected CStringPt which(CStringPt name) {
         int nameLen = name.length();
@@ -1888,7 +1859,7 @@ public final class DOSShell extends DOSShellBase {
 
 
         /* No Path in filename look through path environment string */
-        CStringPt path = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt path = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         String temp = null;
         if ((temp = getEnvStr("PATH")) == null)
             return CStringPt.getZero();
@@ -1917,7 +1888,7 @@ public final class DOSShell extends DOSShellBase {
                 /* If max size. move till next ; and terminate path */
                 while (pathenv.get() != ';')
                     pathenv.movePtToR1();
-                path.set((int) DOSSystem.DOS_PATHLENGTH - 1, (char) 0);
+                path.set(DOSSystem.DOS_PATHLENGTH - 1, (char) 0);
             } else
                 path.set(i_path, (char) 0);
 

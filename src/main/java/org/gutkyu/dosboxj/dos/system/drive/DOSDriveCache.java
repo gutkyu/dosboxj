@@ -225,17 +225,19 @@ public class DOSDriveCache implements Disposable {
         return false;
     }
 
-    public boolean findFirst(CStringPt path, RefU16Ret refId) {
-        short dirID = 0;
+    // return dirId
+    // if not find, return -1
+    public int findFirst(CStringPt path) {
+        int dirID = 0;
         // Cache directory in
         RefU16Ret refDirID = new RefU16Ret(dirID);
         if (!openDir(path, refDirID))
-            return false;
+            return -1;
         dirID = refDirID.U16;
         // Find a free slot.
         // If the next one isn't free, move on to the next, if none is free => reset and assume the
         // worst
-        short local_findcounter = 0;
+        int local_findcounter = 0;
         while (local_findcounter < DOSSystem.MAX_OPENDIRS) {
             if (dirFindFirst[this.nextFreeFindFirst] == null)
                 break;
@@ -244,7 +246,7 @@ public class DOSDriveCache implements Disposable {
             local_findcounter++;
         }
 
-        short dirFindFirstID = this.nextFreeFindFirst++;
+        int dirFindFirstID = this.nextFreeFindFirst++;
         if (this.nextFreeFindFirst >= DOSSystem.MAX_OPENDIRS)
             this.nextFreeFindFirst = 0; // Increase and wrap around for the next search.
 
@@ -290,11 +292,10 @@ public class DOSDriveCache implements Disposable {
         }
 
         // LOG(LOG_MISC,LOG_ERROR)("DIRCACHE: FindFirst : %s (ID:%02X)",path,dirFindFirstID);
-        refId.U16 = dirFindFirstID;
-        return true;
+        return dirFindFirstID;
     }
 
-    public boolean findNext(short id, CStringPt result) {
+    public boolean findNext(int id, CStringPt result) {
         // out of range ?
         if ((id >= DOSSystem.MAX_OPENDIRS) || dirFindFirst[id] == null) {
             Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,

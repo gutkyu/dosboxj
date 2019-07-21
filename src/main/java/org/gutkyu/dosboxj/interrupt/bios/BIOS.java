@@ -748,7 +748,7 @@ public final class BIOS {
 
         if (!isplayback) {
             /* mark transfer as recording operation */
-            Memory.realWriteW(0x40, 0xd2, (short) (delay | 0x1000));
+            Memory.realWriteW(0x40, 0xd2, 0xffff & (delay | 0x1000));
         }
     }
 

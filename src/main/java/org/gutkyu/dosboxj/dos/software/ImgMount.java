@@ -78,7 +78,7 @@ public final class ImgMount extends Program {
             type = "iso"; // Tiny hack for people who like to type -t cdrom
         byte mediaId;
         if (type == "floppy" || type == "hdd" || type == "iso") {
-            short[] sizes = new short[4];
+            int[] sizes = new int[4];
             boolean imgsizedetect = false;
 
             String strSize = "";
@@ -97,7 +97,7 @@ public final class ImgMount extends Program {
             } else {
                 int i = 0;
                 for (String sz : strSize.split(",")) {
-                    sizes[i++] = (short) Integer.parseInt(sz);
+                    sizes[i++] = Integer.parseInt(sz);
                 }
             }
 
@@ -236,7 +236,7 @@ public final class ImgMount extends Program {
                     sizes[0] = 512;
                     sizes[1] = 63;
                     sizes[2] = 16;
-                    sizes[3] = (short) sectors;
+                    sizes[3] = sectors;
                     Log.logMsg("autosized image file: %d:%d:%d:%d", sizes[0], sizes[1], sizes[2],
                             sizes[3]);
                 }

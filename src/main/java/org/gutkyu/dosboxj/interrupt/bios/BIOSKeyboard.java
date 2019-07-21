@@ -445,7 +445,7 @@ public final class BIOSKeyboard {
                     break;
 
                 default: /* Normal Key */
-                    short asciiscan;
+                    int asciiscan;
                     /* Now Handle the releasing of keys and see if they match up for a code */
                     /* Handle the actual scancode */
                     if ((scancode & 0x80) != 0) {
@@ -485,16 +485,16 @@ public final class BIOSKeyboard {
                         /* extended key (numblock), return and slash need special handling */
                         if (scancode == 0x1c) { /* return */
                             if ((flags1 & 0x08) != 0)
-                                asciiscan = (short) 0xa600;
+                                asciiscan = 0xa600;
                             else
-                                asciiscan = (short) ((asciiscan & 0xff) | 0xe000);
+                                asciiscan = (asciiscan & 0xff) | 0xe000;
                         } else if (scancode == 0x35) { /* slash */
                             if ((flags1 & 0x08) != 0)
-                                asciiscan = (short) 0xa400;
+                                asciiscan = 0xa400;
                             else if ((flags1 & 0x04) != 0)
-                                asciiscan = (short) 0x9500;
+                                asciiscan = 0x9500;
                             else
-                                asciiscan = (short) 0xe02f;
+                                asciiscan = 0xe02f;
                         }
                     }
                     addKey(0xffff & asciiscan);

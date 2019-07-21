@@ -202,7 +202,8 @@ public final class EMS {
         return (byte) EMM_NO_ERROR;
     }
 
-    public static byte EMMAllocateSystemHandle(short pages) {
+    // byte(uint16)
+    public static byte EMMAllocateSystemHandle(int pages) {
         /* Check for enough free pages */
         if ((Memory.freeTotal() / 4) < pages) {
             return (byte) EMM_OUT_OF_LOG;
@@ -1585,7 +1586,7 @@ public final class EMS {
             }
 
             // allocate OS-dedicated handle (ems handle zero, 128kb)
-            EMMAllocateSystemHandle((short) 8);
+            EMMAllocateSystemHandle(8);
 
 
             if (ENABLE_VCPI == 0)

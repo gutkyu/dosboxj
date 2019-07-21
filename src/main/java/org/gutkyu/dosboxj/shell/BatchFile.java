@@ -54,14 +54,13 @@ class BatchFile implements Disposable {
         int n = 0;
         CStringPt temp = CStringPt.create(ShellInner.CMD_MAXLINE);
         CStringPt cmdWrite = temp;
-        U8Ref refChar = new U8Ref(c, n);
         // emptyline:
         while (true) {
             do {
                 n = 1;
                 DOSMain.readFile(fileHandle);
                 c = DOSMain.ReadByte;
-                n = DOSMain.ReadLength;
+                n = DOSMain.ReadSize;
                 if (n > 0) {
                     /*
                      * Why are we filtering this ? Exclusion list: tab for batch files escape for
@@ -185,7 +184,7 @@ class BatchFile implements Disposable {
                 n = 1;
                 DOSMain.readFile(fileHandle);
                 c = DOSMain.ReadByte;
-                n = DOSMain.ReadLength;
+                n = DOSMain.ReadSize;
                 if (n > 0) {
                     if (c > 31)
                         cmdWrite.set((char) c);

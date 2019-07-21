@@ -11,7 +11,8 @@ public final class DOSDTA extends MemStruct {
         setRealPt(addr);
     }
 
-    public void setupSearch(byte sDrive, byte sAttr, String pattern) {
+    // (uint8, uint8, string)
+    public void setupSearch(int sDrive, int sAttr, String pattern) {
         saveIt(Size_sDTA_sdrive, Off_sDTA_sdrive, sDrive);
         saveIt(Size_sDTA_sattr, Off_sDTA_sattr, sAttr);
         /* Fill with spaces */
@@ -19,46 +20,47 @@ public final class DOSDTA extends MemStruct {
         for (i = 0; i < 11; i++)
             Memory.writeB(pt + Off_sDTA_sname + i, 0x20);// 아스키 문자 = ' '
         CStringPt csPattern = CStringPt.create(pattern);
-        CStringPt find_ext = csPattern.positionOf('.');
-        if (!find_ext.isEmpty()) {
-            int size = (int) CStringPt.diff(find_ext, csPattern);
+        CStringPt findExt = csPattern.positionOf('.');
+        if (!findExt.isEmpty()) {
+            int size = CStringPt.diff(findExt, csPattern);
             if (size > 8)
                 size = 8;
             Memory.blockWrite(pt + Off_sDTA_sname, csPattern);
-            find_ext.movePtToR1();// find_ext++;
-            Memory.blockWrite(pt + Off_sDTA_sext, find_ext,
-                    find_ext.length() > 3 ? 3 : (int) find_ext.length());
+            findExt.movePtToR1();// find_ext++;
+            Memory.blockWrite(pt + Off_sDTA_sext, findExt,
+                    findExt.length() > 3 ? 3 : findExt.length());
         } else {
             Memory.blockWrite(pt + Off_sDTA_sname, csPattern,
-                    csPattern.length() > 8 ? 8 : (int) csPattern.length());
+                    csPattern.length() > 8 ? 8 : csPattern.length());
         }
     }
 
-    public void setupSearch(byte _sdrive, byte _sattr, CStringPt pattern) {
-        saveIt(Size_sDTA_sdrive, Off_sDTA_sdrive, _sdrive);
-        saveIt(Size_sDTA_sattr, Off_sDTA_sattr, _sattr);
+    public void setupSearch(int sDrive, int sAttr, CStringPt pattern) {
+        saveIt(Size_sDTA_sdrive, Off_sDTA_sdrive, sDrive);
+        saveIt(Size_sDTA_sattr, Off_sDTA_sattr, sAttr);
         /* Fill with spaces */
         int i;
         for (i = 0; i < 11; i++)
             Memory.writeB(pt + Off_sDTA_sname + i, 0x20);// 아스키 문자 = ' '
-        CStringPt find_ext = pattern.positionOf('.');
-        if (!find_ext.isEmpty()) {
-            int size = (int) CStringPt.diff(find_ext, pattern);
+        CStringPt findExt = pattern.positionOf('.');
+        if (!findExt.isEmpty()) {
+            int size = CStringPt.diff(findExt, pattern);
             if (size > 8)
                 size = 8;
             Memory.blockWrite(pt + Off_sDTA_sname, pattern, size);
-            find_ext.movePtToR1(); // find_ext++;
-            Memory.blockWrite(pt + Off_sDTA_sext, find_ext,
-                    find_ext.length() > 3 ? 3 : (int) find_ext.length());
+            findExt.movePtToR1(); // find_ext++;
+            Memory.blockWrite(pt + Off_sDTA_sext, findExt,
+                    findExt.length() > 3 ? 3 : findExt.length());
         } else {
             Memory.blockWrite(pt + Off_sDTA_sname, pattern,
-                    pattern.length() > 8 ? 8 : (int) pattern.length());
+                    pattern.length() > 8 ? 8 : pattern.length());
         }
     }
 
     // 인자 _name은 크기 고정
     // dos_system.DOS_NAMELENGTH_ASCII
-    public void setResult(CStringPt name, int size, int date, int time, byte attr) {
+    public void setResult(CStringPt name, int size, int date, int time, int attr) {
+        attr &= 0xff;
         Memory.blockWrite(pt + Off_sDTA_name, name, DOSSystem.DOS_NAMELENGTH_ASCII);
         saveIt(Size_sDTA_size, Off_sDTA_size, size);
         saveIt(Size_sDTA_date, Off_sDTA_date, date);
@@ -72,8 +74,9 @@ public final class DOSDTA extends MemStruct {
     }
 
     // return attr
-    public byte getSearchParams(CStringPt pattern) {
-        byte attr = (byte) getIt(Size_sDTA_sattr, Off_sDTA_sattr);
+    // uint8(string)
+    public int getSearchParams(CStringPt pattern) {
+        int attr = 0xff & getIt(Size_sDTA_sattr, Off_sDTA_sattr);
         byte[] temp = new byte[11];
         Memory.blockRead(pt + Off_sDTA_sname, temp, 0, 11);
         pattern.setBytes(temp, 0, 8);
@@ -84,17 +87,37 @@ public final class DOSDTA extends MemStruct {
 
     }
 
-    public void getResult(CStringPt name, RefU32Ret refSize, RefU16Ret refDate, RefU16Ret refTime,
-            RefU8Ret refAttr) {
+    // 4개함수로 분할
+    // getResult(CStringPt name, RefU32Ret refSize, RefU16Ret refDate, RefU16Ret refTime, RefU8Ret
+    // refAttr)
+
+    // a part of getResult
+    public void getResultName(CStringPt name) {
         Memory.blockRead(pt + Off_sDTA_name, name, DOSSystem.DOS_NAMELENGTH_ASCII);
-        refSize.U32 = getIt(Size_sDTA_size, Off_sDTA_size);
-        refDate.U16 = (short) getIt(Size_sDTA_date, Off_sDTA_date);
-        refTime.U16 = (short) getIt(Size_sDTA_time, Off_sDTA_time);
-        refAttr.U8 = (byte) getIt(Size_sDTA_attr, Off_sDTA_attr);
     }
 
+    // a part of getResult
+    public int getResultSize() {
+        return getIt(Size_sDTA_size, Off_sDTA_size);
+    }
 
-    public void setDirID(short entry) {
+    // a part of getResult
+    public int getResultDate() {
+        return 0xffff & getIt(Size_sDTA_date, Off_sDTA_date);
+    }
+
+    // a part of getResult
+    public int getResultTime() {
+        return 0xffff & getIt(Size_sDTA_time, Off_sDTA_time);
+    }
+
+    // a part of getResult
+    public int getResultAttr() {
+        return 0xff & getIt(Size_sDTA_attr, Off_sDTA_attr);
+    }
+
+    // (uint16)
+    public void setDirID(int entry) {
         saveIt(Size_sDTA_dirID, Off_sDTA_dirID, entry);
     }
 
@@ -102,12 +125,12 @@ public final class DOSDTA extends MemStruct {
         saveIt(Size_sDTA_dirCluster, Off_sDTA_dirCluster, entry);
     }
 
-    public short getDirID() {
-        return (short) getIt(Size_sDTA_dirID, Off_sDTA_dirID);
+    public int getDirID() {
+        return 0xffff & getIt(Size_sDTA_dirID, Off_sDTA_dirID);
     }
 
-    public short getDirIDCluster() {
-        return (short) getIt(Size_sDTA_dirCluster, Off_sDTA_dirCluster);
+    public int getDirIDCluster() {
+        return 0xffff & getIt(Size_sDTA_dirCluster, Off_sDTA_dirCluster);
     }
 
     // ------------------------------------ struct sDTA start ----------------------------------//

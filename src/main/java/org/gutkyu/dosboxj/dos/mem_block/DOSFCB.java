@@ -42,7 +42,8 @@ public final class DOSFCB extends MemStruct {
             extended = false;
     }
 
-    public void setName(byte drive, CStringPt fName, CStringPt ext) {
+    // (uint8, string, string)
+    public void setName(int drive, CStringPt fName, CStringPt ext) {
         saveIt(Size_sFCB_drive, Off_sFCB_drive, drive);
         Memory.blockWrite(pt + Off_sFCB_filename, fName, 8);
         Memory.blockWrite(pt + Off_sFCB_ext, ext, 3);
@@ -169,13 +170,15 @@ public final class DOSFCB extends MemStruct {
         return extended;
     }
 
-    public byte getAttr() {
+    // uint8
+    public int getAttr() {
         if (extended)
-            return (byte) Memory.readB(pt - 1);
+            return 0xff & Memory.readB(pt - 1);
         return 0;
     }
 
-    public void setAttr(byte attr) {
+    // (uint8)
+    public void setAttr(int attr) {
         if (extended)
             Memory.writeB(pt - 1, attr);
     }

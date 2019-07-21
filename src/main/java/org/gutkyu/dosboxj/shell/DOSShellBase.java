@@ -20,7 +20,7 @@ public abstract class DOSShellBase extends Program {
     protected int _completionIndex;
 
     /* The shell's variables */
-    public short InputHandle;
+    public int InputHandle;// uint16
     public BatchFile BatFile = null;
     public boolean Echo;
     public boolean Exit;
