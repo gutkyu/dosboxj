@@ -164,11 +164,11 @@ public abstract class Program implements Disposable {
     }
 
     public void writeOutNoParsing(byte[] format) {
-        short size = (short) CStringHelper.strlen(format);
+        int size = CStringHelper.strlen(format);
         int bufIdx = 0;
         byte outByte = 0;
-        for (short i = 0; i < size; i++) {
-            short s = 1;
+        for (int i = 0; i < size; i++) {
+            // short s = 1;
             if (format[bufIdx + i] == 0xA && i > 0 && format[bufIdx + i - 1] != 0xD) {
                 outByte = 0xD;
                 DOSMain.writeFile(DOSMain.STDOUT, outByte);
@@ -181,11 +181,11 @@ public abstract class Program implements Disposable {
     }
 
     public void writeOutNoParsing(CStringPt format) {
-        short size = (short) format.length();
+        int size = format.length();
         int bufIdx = 0;
         byte outByte = 0;
-        for (short i = 0; i < size; i++) {
-            short s = 1;
+        for (int i = 0; i < size; i++) {
+            // short s = 1;
             if (format.get(bufIdx + i) == 0xA && i > 0 && format.get(bufIdx + i - 1) != 0xD) {
                 outByte = 0xD;
                 DOSMain.writeFile(DOSMain.STDOUT, outByte);
@@ -204,8 +204,8 @@ public abstract class Program implements Disposable {
         // char const* buf = format;
         String buf = format;
         byte outByte = 0;
-        for (short i = 0; i < size; i++) {
-            short s = 1;
+        for (int i = 0; i < size; i++) {
+            // short s = 1;
             if (buf.charAt(i) == 0xA && i > 0 && buf.charAt(i - 1) != 0xD) {
                 outByte = 0xD;
                 DOSMain.writeFile(DOSMain.STDOUT, outByte);

@@ -1074,7 +1074,7 @@ public final class INT10Mode {
         /* Program CRTC */
         /* First disable write protection */
         IO.write(crtcBase, 0x11);
-        IO.write((int) (crtcBase + 1), IO.read((int) (crtcBase + 1)) & 0x7f);
+        IO.write((int) (crtcBase + 1), IO.read((0xffff & crtcBase) + 1) & 0x7f);
         /* Clear all the regs */
         for (byte ct = 0x0; ct <= 0x18; ct++) {
             IO.write(crtcBase, ct);
@@ -1350,7 +1350,7 @@ public final class INT10Mode {
         IO.write((int) (crtcBase + 1), mode_control);
         /* Renable write protection */
         IO.write(crtcBase, 0x11);
-        IO.write((int) (crtcBase + 1), 0xff & (IO.read((int) (crtcBase + 1)) | 0x80));
+        IO.write((int) (crtcBase + 1), 0xff & (IO.read((0xffff & crtcBase) + 1) | 0x80));
 
         if (DOSBox.SVGACard == DOSBox.SVGACards.S3Trio) {
             /* Setup the correct clock */

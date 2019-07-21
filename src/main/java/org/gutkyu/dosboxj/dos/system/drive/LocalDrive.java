@@ -17,7 +17,9 @@ import org.gutkyu.dosboxj.misc.*;
 import org.gutkyu.dosboxj.util.*;
 
 public final class LocalDrive extends DOSDrive implements Disposable {
-    public LocalDrive(String startDir, short bytesSector, byte sectorsCluster, short totalClusters,
+    // public LocalDrive(String startDir, short bytesSector, byte sectorsCluster, short
+    // totalClusters,
+    public LocalDrive(String startDir, int bytesSector, byte sectorsCluster, short totalClusters,
             short freeClusters, byte mediaId) {
         for (int i = 0; i < _srchInfo.length; i++) {
             _srchInfo[i] = new SrchInfo();
@@ -107,7 +109,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public DOSFile fileCreate(String name, short attributes) {
+    public DOSFile fileCreate(String name, int attributes) {
         DOSFile file = null;
         // TODO Maybe care for attributes but not likely
         CStringPt newName = CStringPt.create((int) Cross.LEN);
@@ -305,8 +307,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         if (this.isRemote() && this.isRemovable()) {
             // cdroms behave a bit different than regular drives
             if (sAttr == DOSSystem.DOS_ATTR_VOLUME) {
-                dta.setResult(dirCache.getLabel(), 0, (short) 0, (short) 0,
-                        (byte) DOSSystem.DOS_ATTR_VOLUME);
+                dta.setResult(dirCache.getLabel(), 0, 0, 0, DOSSystem.DOS_ATTR_VOLUME);
                 return true;
             }
         } else {
@@ -319,16 +320,14 @@ public final class LocalDrive extends DOSDrive implements Disposable {
                     DOSMain.setError(DOSMain.DOSERR_NO_MORE_FILES);
                     return false;
                 }
-                dta.setResult(dirCache.getLabel(), 0, (short) 0, (short) 0,
-                        (byte) DOSSystem.DOS_ATTR_VOLUME);
+                dta.setResult(dirCache.getLabel(), 0, 0, 0, DOSSystem.DOS_ATTR_VOLUME);
                 return true;
             } else if ((sAttr & DOSSystem.DOS_ATTR_VOLUME) != 0 && (dir.get() == 0)
                     && !fcbFindfirst) {
                 // should check for a valid leading directory instead of 0
                 // exists==true if the volume label matches the searchmask and the path is valid
                 if (Drives.compareWildFile(dirCache.getLabel().toString(), tempDir.toString())) {
-                    dta.setResult(dirCache.getLabel(), 0, (short) 0, (short) 0,
-                            (byte) DOSSystem.DOS_ATTR_VOLUME);
+                    dta.setResult(dirCache.getLabel(), 0, 0, 0, DOSSystem.DOS_ATTR_VOLUME);
                     return true;
                 }
             }
@@ -389,7 +388,8 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         }
         /* file is okay, setup everything to be copied in DTA Block */
         CStringPt findName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
-        short findDate, findTime;
+        int findDate;// uint16
+        int findTime;// uint16
         int findSize = 0;
 
         if (dirEntCopy.length() < DOSSystem.DOS_NAMELENGTH_ASCII) {
@@ -400,10 +400,8 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         FileTime mTime = attr.lastModifiedTime();
         LocalDateTime dt = LocalDateTime.ofInstant(mTime.toInstant(), ZoneOffset.UTC);
         if (dt != null) {
-            findDate = DOSMain.packDate((short) dt.getYear(), (short) dt.getMonthValue(),
-                    (short) dt.getDayOfMonth());
-            findTime = DOSMain.packTime((short) dt.getHour(), (short) dt.getMinute(),
-                    (short) dt.getSecond());
+            findDate = DOSMain.packDate(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
+            findTime = DOSMain.packTime(dt.getHour(), dt.getMinute(), dt.getSecond());
         } else {
             findTime = 6;
             findDate = 4;
@@ -494,10 +492,8 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         FileTime mtime = attr.lastModifiedTime();
         LocalDateTime dt = LocalDateTime.ofInstant(mtime.toInstant(), ZoneOffset.UTC);
         if (dt != null) {
-            statBlock.Date = DOSMain.packDate((short) dt.getYear(), (short) dt.getMonthValue(),
-                    (short) dt.getDayOfMonth());
-            statBlock.Time = DOSMain.packTime((short) dt.getHour(), (short) dt.getMinute(),
-                    (short) dt.getSecond());
+            statBlock.Date = DOSMain.packDate(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
+            statBlock.Time = DOSMain.packTime(dt.getHour(), dt.getMinute(), dt.getSecond());
         } else {
 
         }
@@ -541,7 +537,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     private SrchInfo[] _srchInfo = new SrchInfo[DOSSystem.MAX_OPENDIRS];
 
     private class Allocation {
-        public short bytesSector;
+        public int bytesSector;// uint16
         public byte sectorsCluster;
         public short totalClusters;
         public short freeClusters;

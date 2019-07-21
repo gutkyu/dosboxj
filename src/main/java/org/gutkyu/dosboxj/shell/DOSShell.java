@@ -329,11 +329,9 @@ public final class DOSShell extends DOSShellBase {
                 return;
             }
 
-            short sourceHandle = 0, targetHandle = 0;
-            RefU16Ret RefSourceHandle = new RefU16Ret(sourceHandle);
-            RefU16Ret RefTargetHandle = new RefU16Ret(targetHandle);
-            CStringPt nameTarget = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
-            CStringPt nameSource = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+            int sourceHandle = 0, targetHandle = 0;
+            CStringPt nameTarget = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
+            CStringPt nameSource = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
 
             while (ret) {
                 dta.getResult(name, refSize, refDate, refTime, refAttr);
@@ -342,25 +340,24 @@ public final class DOSShell extends DOSShellBase {
                     CStringPt.copy(pathSource, nameSource);
                     nameSource.concat(name);
                     // Open Source
-                    if (DOSMain.openFile(nameSource.toString(), 0, RefSourceHandle)) {
-                        sourceHandle = RefSourceHandle.U16;
+                    if (DOSMain.openFile(nameSource.toString(), 0)) {
+                        sourceHandle = DOSMain.FileEntry;
                         // Create Target or open it if in concat mode
                         CStringPt.copy(pathTarget, nameTarget);
                         if (nameTarget.get(nameTarget.length() - 1) == '\\')
                             nameTarget.concat(name);
 
                         // Don't create a newfile when in concat mode
-                        if (oldSource.concat
-                                || DOSMain.createFile(nameTarget.toString(), 0, RefTargetHandle)) {
-                            targetHandle = RefTargetHandle.U16;
+                        if (oldSource.concat || DOSMain.createFile(nameTarget.toString(), 0)) {
+                            targetHandle = DOSMain.FileEntry;
                             int dummy = 0;
                             RefU32Ret refPos = new RefU32Ret(dummy);
                             // In concat mode. Open the target and seek to the eof
                             if (!oldSource.concat || (DOSMain.openFile(nameTarget.toString(),
-                                    (byte) DOSSystem.OPEN_READWRITE, RefTargetHandle)
-                                    && (dummy = (int) DOSMain.seekFile(targetHandle, dummy,
-                                            (byte) DOSSystem.DOS_SEEK_END)) >= 0)) {
-                                targetHandle = RefTargetHandle.U16;
+                                    DOSSystem.OPEN_READWRITE)
+                                    && (dummy = (int) DOSMain.seekFile(0xffff & targetHandle, dummy,
+                                            DOSSystem.DOS_SEEK_END)) >= 0)) {
+                                targetHandle = DOSMain.FileEntry;
 
                                 // Copy
                                 // buffer = new byte[0x8000];// static, otherwise stack overflow
@@ -370,10 +367,10 @@ public final class DOSShell extends DOSShellBase {
                                 BufRef refBuf = new BufRef(buffer, 0, toread);
                                 do {
                                     failed |= DOSMain.readFile(sourceHandle, refBuf);
-                                    failed |= DOSMain.writeFile(targetHandle, refBuf);
+                                    failed |= DOSMain.writeFile(0xffff & targetHandle, refBuf);
                                 } while (refBuf.Len == 0x8000);
                                 failed |= DOSMain.closeFile(sourceHandle);
-                                failed |= DOSMain.closeFile(targetHandle);
+                                failed |= DOSMain.closeFile(0xffff & targetHandle);
                                 writeOut(" %s\n", name);
                                 if (!source.concat)
                                     count++; // Only count concat files once
@@ -560,11 +557,11 @@ public final class DOSShell extends DOSShellBase {
                         ext.movePtToR1();
                     }
                 }
-                byte day = (byte) (date & 0x001f);
-                byte month = (byte) ((date >>> 5) & 0x000f);
-                short year = (short) ((date >>> 9) + 1980);
-                byte hour = (byte) ((time >>> 5) >>> 6);
-                byte minute = (byte) ((time >>> 5) & 0x003f);
+                int day = date & 0x001f;
+                int month = (date >>> 5) & 0x000f;
+                int year = (date >>> 9) + 1980;
+                int hour = (time >>> 5) >>> 6;
+                int minute = (time >>> 5) & 0x003f;
 
                 if ((attr & DOSSystem.DOS_ATTR_DIRECTORY) != 0) {
                     if (optW) {
@@ -614,7 +611,7 @@ public final class DOSShell extends DOSShellBase {
             if (DOSMain.Drives[drive] != null) {
                 DriveAllocationInfo alloc = new DriveAllocationInfo(0, 0, 0, 0);
                 DOSMain.Drives[drive].allocationInfo(alloc);
-                freeSpace = (int) alloc.bytesSector * alloc.sectorsCluster * alloc.freeClusters;
+                freeSpace = alloc.bytesSector * alloc.sectorsCluster * alloc.freeClusters;
             }
             formatNumber(freeSpace, numformat);
             writeOut(Message.get("SHELL_CMD_DIR_BYTES_FREE"), dirCount,
@@ -985,26 +982,26 @@ public final class DOSShell extends DOSShellBase {
             writeOut(Message.get("SHELL_SYNTAXERROR"));
             return;
         }
-        short handle = 0;
-        RefU16Ret refHandle = new RefU16Ret(handle);
-        U8Ref refBuf = new U8Ref(0, 0);
+        int handle = 0;
         CStringPt word;
         // nextfile:
         while (true) {
             word = Support.stripWord(args);
-            if (!DOSMain.openFile(word.toString(), 0, refHandle)) {
+            if (!DOSMain.openFile(word.toString(), 0)) {
                 writeOut(Message.get("SHELL_CMD_FILE_NOT_FOUND"), word);
                 return;
             }
-            handle = refHandle.U16;
-            // short n; byte c = 0 ;
-            refBuf.set(0, 0);
+            handle = DOSMain.FileEntry;
+            int n;
+            byte c = 0;
             do {
                 // n = 1;
-                refBuf.Len = 1;
-                DOSMain.readFile(handle, refBuf);
-                DOSMain.writeFile(DOSMain.STDOUT, refBuf);
-            } while (refBuf.Len != 0);
+                DOSMain.readFile(handle);
+                n = DOSMain.ReadLength;
+                c = DOSMain.ReadByte;
+                DOSMain.writeFile(DOSMain.STDOUT, c, n);
+                n = DOSMain.writtenSize();
+            } while (n != 0);
             DOSMain.closeFile(handle);
             if (args.get() != 0)
                 continue;// goto nextfile;
@@ -1077,10 +1074,7 @@ public final class DOSShell extends DOSShellBase {
         if (help(args, "PAUSE"))
             return;
         writeOut(Message.get("SHELL_CMD_PAUSE"));
-        byte c = 0;
-        short n = 1;
-        U8Ref refChar = new U8Ref(c, n);
-        DOSMain.readFile(DOSMain.STDIN, refChar);
+        DOSMain.readFile(DOSMain.STDIN);
     }
 
     private void cmdSUBST(CStringPt args) {
@@ -1158,7 +1152,7 @@ public final class DOSShell extends DOSShellBase {
         byte oldMemstrat = (byte) (DOSMain.getMemAllocStrategy() & 0xff);
         if (umbStart == 0x9fff) {
             if ((umbFlag & 1) == 0)
-                DOSMain.linkUMBsToMemChain((short) 1);
+                DOSMain.linkUMBsToMemChain(1);
             DOSMain.setMemAllocStrategy(0x80); // search in UMBs first
             this.parseLine(args);
             byte currentUmbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
@@ -1228,11 +1222,10 @@ public final class DOSShell extends DOSShellBase {
         }
 
         int n = 1;
-        U8Ref refChar = new U8Ref(c, n);
         do {
-            DOSMain.readFile(DOSMain.STDIN, refChar);
-            c = refChar.U8;
-            n = refChar.Len;
+            DOSMain.readFile(DOSMain.STDIN);
+            c = DOSMain.ReadByte;
+            n = DOSMain.ReadLength;
         } while (c == 0 || (ptr = rem.positionOf(optS ? (char) c : Character.toUpperCase((char) c)))
                 .isEmpty());
         c = optS ? c : (byte) Character.toUpperCase((char) c);
@@ -1309,12 +1302,10 @@ public final class DOSShell extends DOSShellBase {
         int size = ShellInner.CMD_MAXLINE - 2; // lastcharacter+0
         byte c = 0;
         int n = 1;
-        U8Ref refChar = new U8Ref(c, n);
         int strLen = 0;
         int strIndex = 0;
         int len = 0;
         boolean currentHist = false; // current command stored in history?
-        RefU16Ret refDummy = new RefU16Ret(0);
 
         line.set(0, '\0');
         String currHisStr = null;
@@ -1327,16 +1318,16 @@ public final class DOSShell extends DOSShellBase {
         int currCmpIdx = 0;
         while (size > 0) {
             DOSMain.DOS.Echo = false;
-            while (!DOSMain.readFile(InputHandle, refChar)) {
-                short dummy = 0;
-                refDummy.U16 = dummy;
+            while (!DOSMain.readFile(InputHandle)) {
+                int dummy = 0;
                 DOSMain.closeFile(InputHandle);
-                DOSMain.openFile("con", 2, refDummy);
+                DOSMain.openFile("con", 2);
+                dummy = DOSMain.FileEntry;
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                         "Reopening the input handle.This is a bug!");
             }
-            c = refChar.U8;
-            n = refChar.Len;
+            c = DOSMain.ReadByte;
+            n = DOSMain.ReadLength;
             if (n == 0) {
                 size = 0; // Kill the while loop
                 continue;
@@ -1344,9 +1335,9 @@ public final class DOSShell extends DOSShellBase {
             switch (c) {
                 case 0x00: /* Extended Keys */
                 {
-                    DOSMain.readFile(InputHandle, refChar);
-                    c = refChar.U8;
-                    n = refChar.Len;
+                    DOSMain.readFile(InputHandle);
+                    c = DOSMain.ReadByte;
+                    n = DOSMain.ReadLength;
                     switch (c) {
 
                         case 0x3d: /* F3 */
@@ -1497,7 +1488,7 @@ public final class DOSShell extends DOSShellBase {
                             line.set(--strLen, (char) 0);
                             strIndex--;
                             /* Go back to redraw */
-                            for (short i = (short) strIndex; i < strLen; i++)
+                            for (int i = strIndex; i < strLen; i++)
                                 outc((byte) line.get(i));
                         } else {
                             line.set(--strIndex, '\0');

@@ -192,7 +192,8 @@ public final class Mount extends Program {
             if ((TempLine == "c:\\") || (TempLine == "C:\\") || (TempLine == "c:/")
                     || (TempLine == "C:/"))
                 writeOut(Message.get("PROGRAM_MOUNT_WARNING_WIN"));
-            newdrive = new LocalDrive(TempLine, sizes[0], bit8size, sizes[2], sizes[3], mediaid);
+            newdrive = new LocalDrive(TempLine, 0xffff & sizes[0], bit8size, sizes[2], sizes[3],
+                    mediaid);
 
         } else {
             writeOut(Message.get("PROGRAM_MOUNT_ILL_TYPE"), type);

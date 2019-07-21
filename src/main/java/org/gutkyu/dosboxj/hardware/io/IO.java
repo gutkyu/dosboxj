@@ -396,8 +396,9 @@ public final class IO {
         IO.writeB(port, 0xff & val);
     }
 
-    public static byte read(int port) {
-        return (byte) IO.readB(port);
+    // uint8 (int)
+    public static int read(int port) {
+        return IO.readB(port);
     }
     // -- #endregion
 }

@@ -17,13 +17,13 @@ class InitPageUserROHandler extends PageHandler {
 
     @Override
     public void writeW(int addr, int val) {
-        initPage(addr, (short) (val & 0xffff));
+        initPage(addr, val & 0xffff);
         Memory.hostWriteW(Paging.getTLBEntry(addr).Read + addr, (val & 0xffff));
     }
 
     @Override
     public void writeD(int addr, int val) {
-        initPage(addr, (int) val);
+        initPage(addr, val);
         Memory.hostWriteD(Paging.getTLBEntry(addr).Read + addr, val);
     }
 
@@ -44,7 +44,7 @@ class InitPageUserROHandler extends PageHandler {
 
     @Override
     public boolean writeWChecked(int addr, int val) {
-        int writecode = initPageCheckOnly(addr, (short) (val & 0xffff));
+        int writecode = initPageCheckOnly(addr, val & 0xffff);
         if (writecode != 0) {
             int tlb_addr;
             if (writecode > 1)

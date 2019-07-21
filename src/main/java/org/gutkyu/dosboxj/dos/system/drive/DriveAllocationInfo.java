@@ -1,12 +1,12 @@
 package org.gutkyu.dosboxj.dos.system.drive;
 
 public final class DriveAllocationInfo {
-    public short bytesSector;
+    public int bytesSector;// uint16
     public byte sectorsCluster;
     public short totalClusters;
     public short freeClusters;
 
-    public DriveAllocationInfo(short bytesSector, byte sectorsCluster, short totalClusters,
+    public DriveAllocationInfo(int bytesSector, byte sectorsCluster, short totalClusters,
             short freeClusters) {
         this.bytesSector = bytesSector;
         this.sectorsCluster = sectorsCluster;
@@ -20,7 +20,6 @@ public final class DriveAllocationInfo {
 
     public DriveAllocationInfo(int bytesSector, int sectorsCluster, int totalClusters,
             int freeClusters) {
-        this((short) bytesSector, (byte) sectorsCluster, (short) totalClusters,
-                (short) freeClusters);
+        this(bytesSector, (byte) sectorsCluster, (short) totalClusters, (short) freeClusters);
     }
 }

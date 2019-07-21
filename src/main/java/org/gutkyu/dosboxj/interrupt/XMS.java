@@ -78,7 +78,7 @@ public final class XMS {
     // ---------------------------------- struct XMS_MemMove end ---------------------------------//
 
     private static int enableA20(boolean enable) {
-        byte val = IO.read(0x92);
+        int val = IO.read(0x92);
         if (enable)
             IO.write(0x92, 0xff & (val | 2));
         else
@@ -397,8 +397,8 @@ public final class XMS {
                  */
                 byte umb_flag = DOSMain.DOSInfoBlock.getUMBChainState();
                 if ((umb_flag & 1) == 0)
-                    DOSMain.linkUMBsToMemChain((short) 1);
-                byte old_memstrat = (byte) (DOSMain.getMemAllocStrategy() & 0xff);
+                    DOSMain.linkUMBsToMemChain(1);
+                int oldMemstrat = DOSMain.getMemAllocStrategy() & 0xff;
                 DOSMain.setMemAllocStrategy(0x40); // search in UMBs only
 
                 int size = Register.getRegDX();
@@ -423,7 +423,7 @@ public final class XMS {
                 byte current_umb_flag = DOSMain.DOSInfoBlock.getUMBChainState();
                 if ((current_umb_flag & 1) != (umb_flag & 1))
                     DOSMain.linkUMBsToMemChain(umb_flag);
-                DOSMain.setMemAllocStrategy(old_memstrat);
+                DOSMain.setMemAllocStrategy(oldMemstrat);
             }
                 break;
             case XMS_DEALLOCATE_UMB: /* 11 */

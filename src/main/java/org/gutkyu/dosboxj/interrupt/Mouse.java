@@ -639,7 +639,7 @@ public final class Mouse {
             LastPressedX = new short[MOUSE_BUTTONS];
             LastPressedY = new short[MOUSE_BUTTONS];
             EventQueue = new ButtonEvent[QUEUE_SIZE];
-            for(int i = 0; i < QUEUE_SIZE; i++){
+            for (int i = 0; i < QUEUE_SIZE; i++) {
                 EventQueue[i] = new ButtonEvent();
             }
             BackData = new byte[CURSORX * CURSORY];
@@ -1168,13 +1168,13 @@ public final class Mouse {
     // ***************************************************************************
 
     private byte[] gfxReg3CE = new byte[9];
-    byte index3C4, gfxReg3C5;
+    int index3C4, gfxReg3C5;// uint8
 
     private void aaveVgaRegisters() {
         if (DOSBox.isVGAArch()) {
             for (byte i = 0; i < 9; i++) {
                 IO.write(0x3CE, i);
-                gfxReg3CE[i] = IO.read(0x3CF);
+                gfxReg3CE[i] = (byte) IO.read(0x3CF);
             }
             /* Setup some default values in GFX regs that should work */
             IO.write(0x3CE, 3);

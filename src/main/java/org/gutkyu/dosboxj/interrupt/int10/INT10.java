@@ -215,7 +215,7 @@ public final class INT10 {
                     }
                     case 0x08: /* READ OVERSCAN (BORDER COLOR) REGISTER */
                     {
-                        byte regVal = PAL.getOverscanBorderColor();
+                        int regVal = PAL.getOverscanBorderColor();
                         Register.setRegBH(regVal);
                         break;
                     }
@@ -258,8 +258,8 @@ public final class INT10 {
                     }
                     case 0x1A: /* GET VIDEO DAC COLOR PAGE */
                     {
-                        byte mode = PAL.getDACPageMode();
-                        byte page = PAL.getDACPage(mode);
+                        int mode = PAL.getDACPageMode();
+                        int page = PAL.getDACPage(mode);
                         Register.setRegBL(mode);
                         Register.setRegBH(page);
                         break;
@@ -560,10 +560,10 @@ public final class INT10 {
                             break;
                         }
                         IO.write(0x3c4, 0x1);
-                        byte clocking = IO.read(0x3c5);
+                        int clocking = IO.read(0x3c5);
 
                         if (Register.getRegAL() == 0)
-                            clocking &= (byte) ~0x20;
+                            clocking &= 0xff & ~0x20;
                         else
                             clocking |= 0x20;
 
@@ -615,7 +615,7 @@ public final class INT10 {
                         Register.setRegBX(0xffff);
                     Register.setRegAX(0x1A); // high part destroyed or zeroed depending on BIOS
                 } else if (Register.getRegAL() == 1) { // set dcc
-                    short newidx = 0xff;
+                    int newIdx = 0xff;
                     // walk the tables...
                     int vsavept = (int) Memory.realReadD(BIOSMEM_SEG, BIOSMEM_VS_POINTER);
                     int svstable = (int) Memory.realReadD(Memory.realSeg(vsavept),
@@ -627,21 +627,20 @@ public final class INT10 {
                                 Memory.realOff(dcctable) + 0x00);
                         if (entries != 0) {
                             int ct;
-                            short swpidx =
-                                    (short) (Register.getRegBH() | (Register.getRegBL() << 8));
+                            int swpIdx = Register.getRegBH() | (Register.getRegBL() << 8);
                             // search the ddc index in the dcc table
                             for (ct = 0; ct < entries; ct++) {
-                                short dccentry = (short) Memory.realReadW(Memory.realSeg(dcctable),
+                                int dccEntry = Memory.realReadW(Memory.realSeg(dcctable),
                                         Memory.realOff(dcctable) + 0x04 + ct * 2);
-                                if ((dccentry == Register.getRegBX()) || (dccentry == swpidx)) {
-                                    newidx = (byte) ct;
+                                if ((dccEntry == Register.getRegBX()) || (dccEntry == swpIdx)) {
+                                    newIdx = 0xff & ct;
                                     break;
                                 }
                             }
                         }
                     }
 
-                    Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_DCC_INDEX, newidx);
+                    Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_DCC_INDEX, newIdx);
                     Register.setRegAX(0x1A); // high part destroyed or zeroed depending on BIOS
                 }
                 break;
@@ -760,9 +759,11 @@ public final class INT10 {
                                     VESA.setCPUWindow(Register.getRegBL(), Register.getRegDL()));
                             Register.setRegAL(0x4f);
                         } else if (Register.getRegBH() == 1) { /* Get CPU Window */
-                            short regVal = 0;
-                            Register.setRegAH(0x00);
-                            Register.setRegDX(VESA.getCPUWindow(Register.getRegBL()));
+                            int regAH = VESA.tryCPUWindow(Register.getRegBL());
+                            Register.setRegAH(regAH);
+                            if (regAH == 0) {
+                                Register.setRegDX(VESA.getCPUWindow());
+                            }
                             Register.setRegAL(0x4f);
                         } else {
                             Log.logging(Log.LogTypes.INT10, Log.LogServerities.Error,
@@ -1323,10 +1324,10 @@ public final class INT10 {
                 break;
             case TANDY16: {
                 IO.write(0x3d4, 0x09);
-                byte scanlines_m1 = IO.read(0x3d5);
-                short off = (short) ((y >>> ((scanlines_m1 == 1) ? 1 : 2))
+                int scanlinesM1 = IO.read(0x3d5);
+                short off = (short) ((y >>> ((scanlinesM1 == 1) ? 1 : 2))
                         * (INT10Mode.CurMode.SWidth >>> 1) + (x >>> 1));
-                off += (short) ((8 * 1024) * (y & scanlines_m1));
+                off += (short) ((8 * 1024) * (y & scanlinesM1));
                 byte old = (byte) Memory.realReadB(0xb800, off);
                 byte[] p = new byte[2];
                 p[1] = (byte) ((old >>> 4) & 0xf);

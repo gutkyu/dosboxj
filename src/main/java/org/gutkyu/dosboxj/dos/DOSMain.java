@@ -71,12 +71,14 @@ public final class DOSMain {
     }
 
 
-    public static short packTime(short hour, short min, short sec) {
-        return (short) ((hour & 0x1f) << 11 | (min & 0x3f) << 5 | ((sec / 2) & 0x1f));
+    // uint16(uint16, uint16, uint16)
+    public static int packTime(int hour, int min, int sec) {
+        return 0xffff & ((hour & 0x1f) << 11 | (min & 0x3f) << 5 | ((sec / 2) & 0x1f));
     }
 
-    public static short packDate(short year, short mon, short day) {
-        return (short) (((year - 1980) & 0x7f) << 9 | (mon & 0x3f) << 5 | (day & 0x1f));
+    // uint16(uint16, uint16, uint16)
+    public static int packDate(int year, int mon, int day) {
+        return 0xffff & (((year - 1980) & 0x7f) << 9 | (mon & 0x3f) << 5 | (day & 0x1f));
     }
 
     /* Dos Error Codes */
@@ -155,10 +157,9 @@ public final class DOSMain {
                 break;
             case 0x01: /* Read character from STDIN, with echo */
             {
-                U8Ref rb = new U8Ref(0, 1);
                 DOS.Echo = true;
-                readFile(STDIN, rb);
-                Register.setRegAL(rb.U8);
+                readFile(STDIN);
+                Register.setRegAL(ReadByte);
                 DOS.Echo = false;
             }
                 break;
@@ -212,15 +213,15 @@ public final class DOSMain {
                         }
                         byte c = 0;
                         short n = 1;
-                        U8Ref rb = new U8Ref(0, 1);
-                        readFile(STDIN, rb);
-                        Register.setRegAL(rb.U8);
+                        readFile(STDIN);
+                        c = ReadByte;
+                        Register.setRegAL(c);
                         Callback.szf(false);
                         break;
                     }
                     default: {
                         byte c = (byte) Register.getRegDL();
-                        short n = 1;
+                        // short n = 1;
                         writeFile(STDOUT, c);
 
                         Register.setRegAL(Register.getRegDL());
@@ -230,22 +231,20 @@ public final class DOSMain {
                 break;
             case 0x07: /* Character Input, without echo */
             {
-                U8Ref rb = new U8Ref(0, 1);
-                readFile(STDIN, rb);
-                Register.setRegAL(rb.U8);
+                readFile(STDIN);
+                Register.setRegAL(ReadByte);
                 break;
             }
             case 0x08: /* Direct Character Input, without echo (checks for breaks officially :) */
             {
-                U8Ref rb = new U8Ref(0, 1);
-                readFile(STDIN, rb);
-                Register.setRegAL(rb.U8);
+                readFile(STDIN);
+                Register.setRegAL(ReadByte);
                 break;
             }
             case 0x09: /* Write string to STDOUT */
             {
                 byte c = 0;
-                short n = 1;
+                // short n = 1;
                 int buf = Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX();
                 while ((c = (byte) Memory.readB(buf++)) != '$') {
                     writeFile(STDOUT, c);
@@ -259,34 +258,33 @@ public final class DOSMain {
                 int free = Memory.readB(data);
                 byte read = 0;
                 byte c = 0;
-                short n = 1;
-                U8Ref buf = new U8Ref(0, 1);
+                // short n = 1;
                 if (free == 0)
                     break;
                 for (;;) {
-                    readFile(STDIN, buf);
-                    if (buf.U8 == 8) { // Backspace
+                    readFile(STDIN);
+                    c = ReadByte;
+                    if (ReadByte == 8) { // Backspace
                         if (read != 0) {
                             // Something to backspace.
                             // STDOUT treats backspace as non-destructive.
-                            writeFile(STDOUT, buf);
-                            buf.U8 = (byte) ' ';
-                            writeFile(STDOUT, buf);
-                            buf.U8 = 8;
-                            writeFile(STDOUT, buf);
+                            writeFile(STDOUT, c);
+                            c = (byte) ' ';
+                            writeFile(STDOUT, c);
+                            c = 8;
+                            writeFile(STDOUT, c);
                             --read;
                         }
                         continue;
                     }
                     if (read >= free) { // Keyboard buffer full
-                        buf.U8 = 7;
-                        buf.Len = 1;
-                        writeFile(STDOUT, buf);
+                        c = 7;
+                        writeFile(STDOUT, c);
                         continue;
                     }
-                    writeFile(STDOUT, buf);
-                    Memory.writeB(data + read + 2, buf.U8);
-                    if (buf.U8 == 13)
+                    writeFile(STDOUT, c);
+                    Memory.writeB(data + read + 2, c);
+                    if (c == 13)
                         break;
                     read++;
                 }
@@ -306,11 +304,12 @@ public final class DOSMain {
             case 0x0c: /* Flush Buffer and read STDIN call */
             {
                 /* flush STDIN-buffer */
-                // byte c = 0; short n;
-                U8Ref rb = new U8Ref(0, 1);
+                byte c = 0;
+                int n;
                 while (getSTDINStatus()) {
-                    rb.Len = 1;
-                    readFile(STDIN, rb);
+                    n = 1;
+                    readFile(STDIN);
+                    c = ReadByte;
                 }
                 switch (Register.getRegAL()) {
                     case 0x1:
@@ -383,14 +382,14 @@ public final class DOSMain {
                         "DOS:0x16 FCB-Delete used, result:al=%d", Register.getRegAL());
                 break;
             case 0x14: /* Sequential read from FCB */
-                Register.setRegAL(doFCBRead(Register.segValue(Register.SEG_NAME_DS),
-                        Register.getRegDX(), (short) 0));
+                Register.setRegAL(
+                        doFCBRead(Register.segValue(Register.SEG_NAME_DS), Register.getRegDX(), 0));
                 Log.logging(Log.LogTypes.FCB, Log.LogServerities.Normal,
                         "DOS:0x14 FCB-Read used, result:al=%d", Register.getRegAL());
                 break;
             case 0x15: /* Sequential write to FCB */
                 Register.setRegAL(doFCBWrite(Register.segValue(Register.SEG_NAME_DS),
-                        Register.getRegDX(), (short) 0));
+                        Register.getRegDX(), 0));
                 Log.logging(Log.LogTypes.FCB, Log.LogServerities.Normal,
                         "DOS:0x15 FCB-Write used, result:al=%d", Register.getRegAL());
                 break;
@@ -503,8 +502,7 @@ public final class DOSMain {
                 int y = DOS.Date.Year - a;
                 int m = DOS.Date.Month + 12 * a - 2;
                 Register.setRegAL(
-                        (byte) ((DOS.Date.Day + y + (y / 4) - (y / 100) + (y / 400) + (31 * m) / 12)
-                                % 7));
+                        ((DOS.Date.Day + y + (y / 4) - (y / 100) + (y / 400) + (31 * m) / 12) % 7));
                 Register.setRegCX(DOS.Date.Year);
                 Register.setRegDH(DOS.Date.Month);
                 Register.setRegDL(DOS.Date.Day);
@@ -523,9 +521,9 @@ public final class DOSMain {
                     Register.setRegAL(0xff);
                     break;
                 }
-                DOS.Date.Year = (short) Register.getRegCX();
-                DOS.Date.Month = (byte) Register.getRegDH();
-                DOS.Date.Day = (byte) Register.getRegDL();
+                DOS.Date.Year = Register.getRegCX();
+                DOS.Date.Month = Register.getRegDH();
+                DOS.Date.Day = Register.getRegDL();
                 Register.setRegAL(0);
                 break;
             case 0x2c: /* Get System Time */
@@ -738,9 +736,8 @@ public final class DOSMain {
             {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         DOSNAMEBUF);
-                RefU16Ret refEntry = new RefU16Ret(Register.Regs[Register.AX].getWord());
-                if (createFile(name1, Register.getRegCX(), refEntry)) {
-                    Register.Regs[Register.AX].setWord(refEntry.U16);
+                if (createFile(name1, Register.getRegCX())) {
+                    Register.Regs[Register.AX].setWord(FileEntry);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -752,9 +749,8 @@ public final class DOSMain {
             {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         DOSNAMEBUF);
-                RefU16Ret refEntry = new RefU16Ret(Register.Regs[Register.AX].getWord());
-                if (openFile(name1, Register.getRegAL(), refEntry)) {
-                    Register.Regs[Register.AX].setWord(refEntry.U16);
+                if (openFile(name1, Register.getRegAL())) {
+                    Register.Regs[Register.AX].setWord(FileEntry);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -1114,17 +1110,16 @@ public final class DOSMain {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         DOSNAMEBUF);
                 int handle = 0;
-                RefU16Ret refFHandle = new RefU16Ret(handle);
-                if (openFile(name1, 0, refFHandle)) {
-                    handle = refFHandle.U16;
+                if (openFile(name1, 0)) {
+                    handle = FileEntry;
                     closeFile(handle);
                     setError(DOSERR_FILE_ALREADY_EXISTS);
                     Register.setRegAX(DOS.ErrorCode);
                     Callback.scf(true);
                     break;
                 }
-                if (createFile(name1, Register.getRegCX(), refFHandle)) {
-                    Register.setRegAX(refFHandle.U16);
+                if (createFile(name1, Register.getRegCX())) {
+                    Register.setRegAX(FileEntry);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -1326,12 +1321,10 @@ public final class DOSMain {
             {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegSI(),
                         DOSNAMEBUF);
-                RefU16Ret refEntry = new RefU16Ret(Register.Regs[Register.AX].getWord());
-                RefU16Ret refStatus = new RefU16Ret(Register.Regs[Register.CX].getWord());
                 if (openFileExtended(name1, Register.getRegBX(), Register.getRegCX(),
-                        Register.getRegDX(), refEntry, refStatus)) {
-                    Register.Regs[Register.AX].setWord(refEntry.U16);
-                    Register.Regs[Register.CX].setWord(refStatus.U16);
+                        Register.getRegDX())) {
+                    Register.Regs[Register.AX].setWord(FileExtendedEntry);
+                    Register.Regs[Register.CX].setWord(FileExtendedStatus);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -3254,7 +3247,11 @@ public final class DOSMain {
     }
 
 
-    public static boolean readFile(short entry, BufRef buf) {
+    public static byte ReadByte;
+    public static int ReadLength;
+
+    // bool(uint16, ref bytes[], offset, len )
+    public static boolean readFile(int entry, BufRef buf) {
         int handle = realHandle(entry);
         if (handle >= DOS_FILES) {
             setError(DOSERR_INVALID_HANDLE);
@@ -3276,11 +3273,8 @@ public final class DOSMain {
         return ret;
     }
 
-    public static boolean readFile(int entry, BufRef buf) {
-        return readFile((short) entry, buf);
-    }
-
-    public static boolean readFile(short entry, U8Ref readByte) {
+    // bool(uint16, ref byte, uint16)
+    public static boolean readFile(int entry) {
         int handle = realHandle(entry);
         if (handle >= DOS_FILES) {
             setError(DOSERR_INVALID_HANDLE);
@@ -3297,8 +3291,8 @@ public final class DOSMain {
          */
 
         boolean ret = file.read();
-        readByte.Len = file.readSize();
-        readByte.U8 = file.getReadByte();
+        ReadLength = file.readSize();
+        ReadByte = file.getReadByte();
         return ret;
 
     }
@@ -3460,15 +3454,20 @@ public final class DOSMain {
         return true;
     }
 
-    public static boolean createFile(String name, short attributes, RefU16Ret refEntry) {
+    public static int FileEntry;
+
+    // 생성한 file handle은 FileEntry에 저장
+    // bool(string, uint16 , ref uint16)
+    public static boolean createFile(String name, int attributes) {
+        attributes &= 0xffff;
         // Creation of a device is the same as opening it
         // Tc201 installer
         if (findDevice(name) != DOS_DEVICES)
-            return openFile(name, (byte) DOSSystem.OPEN_READ, refEntry);
+            return openFile(name, DOSSystem.OPEN_READ);
 
         Log.logging(Log.LogTypes.FILES, Log.LogServerities.Normal,
                 "file create attributes %X file %s", attributes, name);
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
         DOSPSP psp = new DOSPSP(DOS.getPSP());
@@ -3489,8 +3488,8 @@ public final class DOSMain {
             return false;
         }
         /* We have a position in the main table now find one in the psp table */
-        refEntry.U16 = psp.findFreeFileEntry();
-        if (refEntry.U16 == 0xff) {
+        FileEntry = 0xffff & psp.findFreeFileEntry();
+        if (FileEntry == 0xff) {
             setError(DOSERR_TOO_MANY_OPEN_FILES);
             return false;
         }
@@ -3504,7 +3503,7 @@ public final class DOSMain {
         if (foundit) {
             Files[handle].setDrive(drive);
             Files[handle].addRef();
-            psp.setFileHandle(refEntry.U16, handle);
+            psp.setFileHandle(FileEntry, handle);
             return true;
         } else {
             if (!pathExists(name))
@@ -3515,11 +3514,10 @@ public final class DOSMain {
         }
     }
 
-    public static boolean createFile(String name, int attributes, RefU16Ret refEntry) {
-        return createFile(name, (short) attributes, refEntry);
-    }
-
-    public static boolean openFile(String name, byte flags, RefU16Ret refEntry) {
+    // 오픈한 file handle은 FileEntry에 저장
+    // bool(string, uint8 , ref uint16 )
+    public static boolean openFile(String name, int flags) {
+        flags &= 0xff;
         /* First check for devices */
         if (flags > 2)
             Log.logging(Log.LogTypes.FILES, Log.LogServerities.Error,
@@ -3543,7 +3541,7 @@ public final class DOSMain {
             }
         }
 
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
         int i;
@@ -3565,9 +3563,9 @@ public final class DOSMain {
             return false;
         }
         /* We have a position in the main table now find one in the psp table */
-        refEntry.U16 = psp.findFreeFileEntry();
+        FileEntry = 0xffff & psp.findFreeFileEntry();
 
-        if (refEntry.U16 == 0xff) {
+        if (FileEntry == 0xff) {
             setError(DOSERR_TOO_MANY_OPEN_FILES);
             return false;
         }
@@ -3581,7 +3579,7 @@ public final class DOSMain {
         }
         if (exists || device) {
             Files[handle].addRef();
-            psp.setFileHandle(refEntry.U16, handle);
+            psp.setFileHandle(FileEntry, handle);
             return true;
         } else {
             // Test if file exists, but opened in read-write mode (and writeprotected)
@@ -3598,12 +3596,10 @@ public final class DOSMain {
         }
     }
 
-    public static boolean openFile(String name, int flags, RefU16Ret refEntry) {
-        return openFile(name, (byte) flags, refEntry);
-    }
+    public static int FileExtendedStatus;
+    public static int FileExtendedEntry;
 
-    public static boolean openFileExtended(String name, int flags, int createAttr, int action,
-            RefU16Ret refEntry, RefU16Ret refStatus) {
+    public static boolean openFileExtended(String name, int flags, int createAttr, int action) {
         // FIXME: Not yet supported : Bit 13 of flags (int 0x24 on critical error)
         short result = 0;
         if (action == 0) {
@@ -3617,7 +3613,8 @@ public final class DOSMain {
                 return false;
             }
         }
-        if (openFile(name, (byte) (flags & 0xff), refEntry)) {
+        if (openFile(name, flags & 0xff)) {
+            FileExtendedEntry = FileEntry;
             // File already exists
             switch (action & 0x0f) {
                 case 0x00: // failed
@@ -3627,10 +3624,11 @@ public final class DOSMain {
                     result = 1;
                     break;
                 case 0x02: // replace
-                    closeFile(refEntry.U16);
-                    if (!createFile(name, createAttr, refEntry))
+                    closeFile(FileEntry);
+                    if (!createFile(name, createAttr))
                         return false;
                     result = 3;
+                    FileExtendedEntry = FileEntry;
                     break;
                 default:
                     setError(DOSERR_FUNCTION_NUMBER_INVALID);
@@ -3644,14 +3642,15 @@ public final class DOSMain {
                 return false;
             }
             // Create File
-            if (!createFile(name, createAttr, refEntry)) {
+            if (!createFile(name, createAttr)) {
                 // uses error code from failed create
                 return false;
             }
+            FileExtendedEntry = FileEntry;
             result = 2;
         }
         // success
-        refStatus.U16 = result;
+        FileExtendedStatus = result;
         return true;
     }
 
@@ -3812,7 +3811,7 @@ public final class DOSMain {
                 tempname.set(i, (char) ((rnd.nextInt() % 26) + 'A'));
             }
             tempname.set(8, (char) 0);
-        } while ((!createFile(name.toString(), (short) 0, refEntry))
+        } while ((!createFile(name.toString(), 0))
                 && (DOS.ErrorCode == DOSERR_FILE_ALREADY_EXISTS));
         if (DOS.ErrorCode != 0)
             return false;
@@ -4081,11 +4080,10 @@ public final class DOSMain {
     private static boolean doFCBCreate(int seg, int offset) {
         DOSFCB fcb = new DOSFCB(seg, offset);
         CStringPt shortname = CStringPt.create(DOSSystem.DOS_FCBNAME);
-        RefU16Ret refFHandle = new RefU16Ret((short) 0);
         fcb.getName(shortname);
-        if (!createFile(shortname.toString(), DOSSystem.DOS_ATTR_ARCHIVE, refFHandle))
+        if (!createFile(shortname.toString(), DOSSystem.DOS_ATTR_ARCHIVE))
             return false;
-        fcb.openFile((byte) refFHandle.U16);
+        fcb.openFile((byte) FileEntry);
         return true;
     }
 
@@ -4119,10 +4117,9 @@ public final class DOSMain {
                 return true;
             }
         }
-        RefU16Ret refEntry = new RefU16Ret((short) handle);
-        if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READWRITE, refEntry))
+        if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READWRITE))
             return false;
-        handle = refEntry.U16;
+        handle = FileEntry;
         fcb.openFile((byte) handle);
         return true;
     }
@@ -4169,35 +4166,35 @@ public final class DOSMain {
     // private static byte doFCBRead(short seg, short offset, short recNo)
     private static int doFCBRead(int seg, int offset, int recNo) {
         DOSFCB fcb = new DOSFCB(seg, offset);
-        byte fhandle = 0, cur_rec = 0;
-        short cur_block = 0, rec_size = 0;
-        fhandle = fcb.getSeqDataFileHandle();
-        rec_size = fcb.getSeqDataFileSize();
-        cur_block = fcb.getBlock();
-        cur_rec = fcb.getRecord();
-        long pos = (long) (((cur_block * 128) + cur_rec) * rec_size);
-        if ((pos = seekFile(fhandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
+        int fHandle = 0;// uint8
+        int curRec = 0;// uint8
+        int curBlock = 0, recSize = 0;
+        fHandle = fcb.getSeqDataFileHandle();
+        recSize = fcb.getSeqDataFileSize();
+        curBlock = fcb.getBlock();
+        curRec = fcb.getRecord();
+        long pos = (long) (((curBlock * 128) + curRec) * recSize);
+        if ((pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
             return FCB_READ_NODATA;
-        short toread = rec_size;
+        int toread = recSize;
         BufRef refCopyBuf = new BufRef(dosCopyBuf, 0, toread);
-        if (!readFile(fhandle, refCopyBuf))
+        if (!readFile(fHandle, refCopyBuf))
             return FCB_READ_NODATA;
-        toread = (short) refCopyBuf.Len;
+        toread = refCopyBuf.Len;
         if (toread == 0)
             return FCB_READ_NODATA;
-        if (toread < rec_size) { // Zero pad copybuffer to rec_size
+        if (toread < recSize) { // Zero pad copybuffer to rec_size
             int i = toread;
-            while (i < rec_size)
+            while (i < recSize)
                 dosCopyBuf[i++] = 0;
         }
-        Memory.blockWrite(Memory.real2Phys(DOS.getDTA()) + recNo * rec_size, dosCopyBuf, 0,
-                rec_size);
-        if (++cur_rec > 127) {
-            cur_block++;
-            cur_rec = 0;
+        Memory.blockWrite(Memory.real2Phys(DOS.getDTA()) + recNo * recSize, dosCopyBuf, 0, recSize);
+        if (++curRec > 127) {
+            curBlock++;
+            curRec = 0;
         }
-        fcb.setRecord(cur_block, cur_rec);
-        if (toread == rec_size)
+        fcb.setRecord(curBlock, curRec);
+        if (toread == recSize)
             return FCB_SUCCESS;
         if (toread == 0)
             return FCB_READ_NODATA;
@@ -4207,85 +4204,88 @@ public final class DOSMain {
     // private static byte doFCBWrite(short seg, short offset, short recNo)
     private static int doFCBWrite(int seg, int offset, int recNo) {
         DOSFCB fcb = new DOSFCB(seg, offset);
-        byte fhandle = 0, cur_rec = 0;
-        short cur_block = 0, rec_size = 0;
-        fhandle = fcb.getSeqDataFileHandle();
-        rec_size = fcb.getSeqDataFileSize();
-        cur_block = fcb.getBlock();
-        cur_rec = fcb.getRecord();
-        long pos = (long) (((cur_block * 128) + cur_rec) * rec_size);
-        if ((pos = seekFile(fhandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
+        int fHandle = 0;;// uint8
+        int curRec = 0;;// uint8
+        int curBlock = 0, recSize = 0;
+        fHandle = fcb.getSeqDataFileHandle();
+        recSize = fcb.getSeqDataFileSize();
+        curBlock = fcb.getBlock();
+        curRec = fcb.getRecord();
+        long pos = (long) (((curBlock * 128) + curRec) * recSize);
+        if ((pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
             return FCB_ERR_WRITE;
-        Memory.blockRead(Memory.real2Phys(DOS.getDTA()) + recNo * rec_size, dosCopyBuf, 0,
-                rec_size);
-        short towrite = rec_size;
+        Memory.blockRead(Memory.real2Phys(DOS.getDTA()) + recNo * recSize, dosCopyBuf, 0, recSize);
+        int towrite = recSize;
         BufRef refBuf = new BufRef(dosCopyBuf, 0, towrite);
-        if (!writeFile(fhandle, refBuf))
+        if (!writeFile(fHandle, refBuf))
             return FCB_ERR_WRITE;
-        towrite = (short) refBuf.Len;
+        towrite = refBuf.Len;
         long size = 0;
-        short date = 0, time = 0;
+        int date = 0;
+        int time = 0;
         size = fcb.getSize();
         date = fcb.getDate();
         time = fcb.getTime();
         if (pos + towrite > size)
             size = pos + towrite;
         // time doesn't keep track of endofday
-        date = packDate((short) DOS.Date.Year, (short) DOS.Date.Month, (short) DOS.Date.Day);
+        date = packDate(DOS.Date.Year, DOS.Date.Month, DOS.Date.Day);
         int ticks = Memory.readD(BIOS.BIOS_TIMER);
         int seconds = (ticks * 10) / 182;
-        short hour = (short) (seconds / 3600);
-        short min = (short) ((seconds % 3600) / 60);
-        short sec = (short) (seconds % 60);
+        int hour = 0xffff & (seconds / 3600);
+        int min = 0xffff & ((seconds % 3600) / 60);
+        int sec = 0xffff & (seconds % 60);
         time = packTime(hour, min, sec);
-        int temp = realHandle(fhandle);
+        int temp = realHandle(fHandle);
         Files[temp].Time = time;
         Files[temp].Date = date;
         fcb.setSizeDateTime((int) size, date, time);
-        if (++cur_rec > 127) {
-            cur_block++;
-            cur_rec = 0;
+        if (++curRec > 127) {
+            curBlock++;
+            curRec = 0;
         }
-        fcb.setRecord(cur_block, cur_rec);
+        fcb.setRecord(curBlock, curRec);
         return FCB_SUCCESS;
     }
 
     private static int doFCBIncreaseSize(int seg, int offset) {
         DOSFCB fcb = new DOSFCB(seg, offset);
-        byte fhandle = 0, cur_rec = 0;
-        short cur_block = 0, rec_size = 0;
-        fhandle = fcb.getSeqDataFileHandle();
-        rec_size = fcb.getSeqDataFileSize();
-        cur_block = fcb.getBlock();
-        cur_rec = fcb.getRecord();
-        long pos = (long) (((cur_block * 128) + cur_rec) * rec_size);
-        if ((pos = seekFile(fhandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
+        int fHandle = 0;// uint8
+        int curRec = 0;// uint8
+        int curBlock = 0, recSize = 0;
+        fHandle = fcb.getSeqDataFileHandle();
+        recSize = fcb.getSeqDataFileSize();
+        curBlock = fcb.getBlock();
+        curRec = fcb.getRecord();
+        long pos = (long) (((curBlock * 128) + curRec) * recSize);
+        if ((pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
             return FCB_ERR_WRITE;
         int towrite = 0;
         BufRef refBuf = new BufRef(dosCopyBuf, 0, towrite);
-        if (!writeFile(fhandle, refBuf))
+        if (!writeFile(fHandle, refBuf))
             return FCB_ERR_WRITE;
         towrite = refBuf.Len;
         long size = 0;
-        short date = 0, time = 0;
+        int date = 0;
+        int time = 0;
         size = fcb.getSize();
         date = fcb.getDate();
         time = fcb.getTime();
         if (pos + towrite > size)
             size = pos + towrite;
         // time doesn't keep track of endofday
-        date = packDate((short) DOS.Date.Year, (short) DOS.Date.Month, (short) DOS.Date.Day);
+        date = packDate(DOS.Date.Year, DOS.Date.Month, DOS.Date.Day);
         int ticks = Memory.readD(BIOS.BIOS_TIMER);
         int seconds = (ticks * 10) / 182;
-        short hour = (short) (seconds / 3600);
-        short min = (short) ((seconds % 3600) / 60);
-        short sec = (short) (seconds % 60);
+        int hour = 0xffff & (seconds / 3600);
+        int min = 0xffff & ((seconds % 3600) / 60);
+        int sec = 0xffff & (seconds % 60);
         time = packTime(hour, min, sec);
-        int temp = realHandle(fhandle);
+        int temp = realHandle(fHandle);
         Files[temp].Time = time;
         Files[temp].Date = date;
         fcb.setSizeDateTime((int) size, date, time);
-        fcb.setRecord(cur_block, cur_rec);
+        fcb.setRecord(curBlock, curRec);
         return FCB_SUCCESS;
     }
 
@@ -4305,33 +4305,33 @@ public final class DOSMain {
 
         DOSFCB fcb = new DOSFCB(seg, offset);
         int random = 0;
-        short old_block = 0;
-        byte old_rec = 0;
+        int oldBlock = 0;// uint16
+        int oldRec = 0;// uint8
         int error = 0;
 
         /* Set the correct record from the random data */
         random = fcb.getRandom();
-        fcb.setRecord((short) (random / 128), (byte) (random & 127));
+        fcb.setRecord(0xffff & (short) (random / 128), random & 127);
         if (restore) {
             // store this for after the read.
-            old_block = fcb.getBlock();
-            old_rec = fcb.getRecord();
+            oldBlock = fcb.getBlock();
+            oldRec = fcb.getRecord();
         }
         // Read records
         for (int i = 0; i < numRec; i++) {
-            error = doFCBRead(seg, offset, (short) i);
+            error = doFCBRead(seg, offset, i);
             if (error != 0x00)
                 break;
         }
-        short new_block = 0;
-        byte new_rec = 0;
-        new_block = fcb.getBlock();
-        new_rec = fcb.getRecord();
+        int newBlock = 0;// uint16
+        int newRec = 0;// uint8
+        newBlock = fcb.getBlock();
+        newRec = fcb.getRecord();
         if (restore)
-            fcb.setRecord(old_block, old_rec);
+            fcb.setRecord(oldBlock, oldRec);
         /* Update the random record pointer with new position only when restore is false */
         if (!restore)
-            fcb.setRandom((int) new_block * 128 + new_rec);
+            fcb.setRandom(newBlock * 128 + newRec);
         return error;
     }
 
@@ -4339,16 +4339,16 @@ public final class DOSMain {
         /* see FCB_RandomRead */
         DOSFCB fcb = new DOSFCB(seg, offset);
         int random = 0;
-        short old_block = 0;
-        byte old_rec = 0;
+        int oldBlock = 0;// uint16
+        int oldRec = 0;// uint8
         int error = 0;
 
         /* Set the correct record from the random data */
         random = fcb.getRandom();
-        fcb.setRecord((short) (random / 128), (byte) (random & 127));
+        fcb.setRecord(0xffff & (short) (random / 128), random & 127);
         if (restore) {
-            old_block = fcb.getBlock();
-            old_rec = fcb.getRecord();
+            oldBlock = fcb.getBlock();
+            oldRec = fcb.getRecord();
         }
         if (numRec > 0) {
             /* Write records */
@@ -4362,37 +4362,36 @@ public final class DOSMain {
         } else {
             doFCBIncreaseSize(seg, offset);
         }
-        short new_block = 0;
-        byte new_rec = 0;
-        new_block = fcb.getBlock();
-        new_rec = fcb.getRecord();
+        int newBlock = 0;// uint16
+        int newRec = 0;// uint8
+        newBlock = fcb.getBlock();
+        newRec = fcb.getRecord();
         if (restore)
-            fcb.setRecord(old_block, old_rec);
+            fcb.setRecord(oldBlock, oldRec);
         /* Update the random record pointer with new position only when restore is false */
         if (!restore)
-            fcb.setRandom((int) new_block * 128 + new_rec);
+            fcb.setRandom(newBlock * 128 + newRec);
         return error;
     }
 
     private static boolean doFCBGetFileSize(int seg, int offset) {
         CStringPt shortname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
-        short entry = 0;
+        int entry = 0;
         int handle;
-        short rec_size = 0;
+        int recSize = 0;
         DOSFCB fcb = new DOSFCB(seg, offset);
         fcb.getName(shortname);
-        RefU16Ret refEntry = new RefU16Ret(entry);
-        if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READ, refEntry))
+        if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READ))
             return false;
-        entry = (short) refEntry.U16;
+        entry = 0xffff & FileEntry;
         handle = realHandle(entry);
         long size = 0;
         size = Files[handle].seek(size, DOSSystem.DOS_SEEK_END);
         closeFile(entry);
         handle = fcb.getSeqDataFileHandle();
-        rec_size = fcb.getSeqDataFileSize();
-        int random = (int) (size / rec_size);
-        if ((size % rec_size) != 0)
+        recSize = fcb.getSeqDataFileSize();
+        int random = (int) (size / recSize);
+        if ((size % recSize) != 0)
             random++;
         fcb.setRandom(random);
         return true;
@@ -4437,16 +4436,16 @@ public final class DOSMain {
 
     private static void doFCBSetRandomRecord(int seg, int offset) {
         DOSFCB fcb = new DOSFCB(seg, offset);
-        short block = 0;
-        byte rec = 0;
+        int block = 0;// uint16
+        int rec = 0;// uint8
         block = fcb.getBlock();
         rec = fcb.getRecord();
-        fcb.setRandom((int) block * 128 + rec);
+        fcb.setRandom(block * 128 + rec);
     }
 
 
     public static boolean fileExists(String name) {
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
         if (!makeName(name, fullname, refDrive))
@@ -4807,15 +4806,14 @@ public final class DOSMain {
         }
         /* Check for EXE or COM File */
         boolean isCom = false;
-        RefU16Ret refEntry = new RefU16Ret((short) fHandle);
-        if (!openFile(name, (byte) DOSSystem.OPEN_READ, refEntry)) {
+        if (!openFile(name, (byte) DOSSystem.OPEN_READ)) {
             setError(DOSERR_FILE_NOT_FOUND);
             return false;
         }
-        fHandle = refEntry.U16;
+        fHandle = FileEntry;
         len = Size_EXE_Header;
         BufRef refHead = new BufRef(head, 0, len);
-        if (!readFile((short) fHandle, refHead)) {
+        if (!readFile(fHandle, refHead)) {
             closeFile((short) fHandle);
             return false;
         }
@@ -4879,10 +4877,10 @@ public final class DOSMain {
                 if (DOSBox.Machine == DOSBox.MachineType.PCJR) {
                     /* try to load file into memory below 96k */
                     pos = 0;
-                    pos = seekFile((short) fHandle, pos, DOSSystem.DOS_SEEK_SET);
+                    pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
                     int dataread = 0x1800;
                     BufRef refLoadBuf = new BufRef(loadBuf, 0, dataread);
-                    readFile((short) fHandle, refLoadBuf);
+                    readFile(fHandle, refLoadBuf);
                     dataread = refLoadBuf.Len;
                     if (dataread < 0x1800)
                         maxsize = dataread;
@@ -4902,10 +4900,10 @@ public final class DOSMain {
                 if (isCom) {
                     /* Reduce minimum of needed memory size to filesize */
                     pos = 0;
-                    pos = seekFile((short) fHandle, pos, DOSSystem.DOS_SEEK_SET);
+                    pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
                     int dataread = 0xf800;
                     BufRef refLoadBuf = new BufRef(loadBuf, 0, dataread);
-                    readFile((short) fHandle, refLoadBuf);
+                    readFile(fHandle, refLoadBuf);
                     dataread = refLoadBuf.Len;
                     if (dataread < 0xf800)
                         minsize = (short) (((dataread + 0x10) >>> 4) + 0x20);
@@ -4993,13 +4991,13 @@ public final class DOSMain {
             else
                 relocate = loadSeg;
             pos = ByteConv.getShort(head, Off_EXE_Header_reloctable);
-            pos = seekFile((short) fHandle, pos, 0);
+            pos = seekFile(fHandle, pos, 0);
             int headRelocations = ByteConv.getShort(head, Off_EXE_Header_relocations);
             BufRef refReLocPt = new BufRef();
             for (i = 0; i < headRelocations; i++) {
                 readSize = 4;
                 refReLocPt.set(relocpt, 0, readSize);
-                readFile((short) fHandle, refReLocPt);
+                readFile(fHandle, refReLocPt);
                 readSize = refReLocPt.Len;
                 // relocpt=host_readd((HostPt)&relocpt); //Endianize
                 int uintrelocpt = ByteConv.getInt(relocpt, 0);
@@ -5009,7 +5007,7 @@ public final class DOSMain {
             }
         }
         loadBuf = null;
-        closeFile((short) fHandle);
+        closeFile(fHandle);
 
         /* Setup a psp */
         if (flags != OVERLAY) {

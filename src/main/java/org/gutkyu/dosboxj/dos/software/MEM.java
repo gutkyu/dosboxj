@@ -22,8 +22,8 @@ public final class MEM extends Program {
         byte oldMemstrat = (byte) (DOSMain.getMemAllocStrategy() & 0xff);
         if (umbStart != 0xffff) {
             if ((umbFlag & 1) == 1)
-                DOSMain.linkUMBsToMemChain( 0);
-            DOSMain.setMemAllocStrategy( 0);
+                DOSMain.linkUMBsToMemChain(0);
+            DOSMain.setMemAllocStrategy(0);
         }
 
         int seg = 0, blocks;
@@ -84,18 +84,17 @@ public final class MEM extends Program {
             Callback.runRealInt(0x2f);
             int xmsSeg = Register.segValue(Register.SEG_NAME_ES);
             int xms_off = Register.getRegBX();
-            Register.setRegAH((byte) 8);
+            Register.setRegAH(8);
             Callback.runRealFar(xmsSeg, xms_off);
             if (Register.getRegBL() == 0) {
                 writeOut(Message.get("PROGRAM_MEM_EXTEND"), Register.getRegDX());
             }
         }
         /* Test for and show free EMS */
-        short handle = 0;
+        int handle = 0;
         String emm = "EMMXXXX0";
-        RefU16Ret refEntry = new RefU16Ret(handle);
-        if (DOSMain.openFile(emm, (byte) 0, refEntry)) {
-            handle = refEntry.U16;
+        if (DOSMain.openFile(emm, 0)) {
+            handle = DOSMain.FileEntry;
             DOSMain.closeFile(handle);
             Register.setRegAH(0x42);
             Callback.runRealInt(0x67);

@@ -48,7 +48,8 @@ public final class DOSFCB extends MemStruct {
         Memory.blockWrite(pt + Off_sFCB_ext, ext, 3);
     }
 
-    public void setSizeDateTime(int size, short date, short time) {
+    // (uint32, uint16, uint16)
+    public void setSizeDateTime(int size, int date, int time) {
         saveIt(Size_sFCB_filesize, Off_sFCB_filesize, size);
         saveIt(Size_sFCB_date, Off_sFCB_date, date);
         saveIt(Size_sFCB_time, Off_sFCB_time, time);
@@ -59,12 +60,14 @@ public final class DOSFCB extends MemStruct {
         return getIt(Size_sFCB_filesize, Off_sFCB_filesize);
     }
 
-    public short getDate() {
-        return (short) getIt(Size_sFCB_date, Off_sFCB_date);
+    // uint16()
+    public int getDate() {
+        return 0xffff & getIt(Size_sFCB_date, Off_sFCB_date);
     }
 
-    public short getTime() {
-        return (short) getIt(Size_sFCB_time, Off_sFCB_time);
+    // uint16()
+    public int getTime() {
+        return 0xffff & getIt(Size_sFCB_time, Off_sFCB_time);
     }
 
     public void getName(CStringPt fileName) {
@@ -117,28 +120,33 @@ public final class DOSFCB extends MemStruct {
     }
 
     // GetRecord 함수 분리, curBlock는 GetRecord함수로 반환처리
-    public byte getRecord() {
-        return (byte) getIt(Size_sFCB_cur_rec, Off_sFCB_cur_rec);
+    // uint8()
+    public int getRecord() {
+        return 0xff & getIt(Size_sFCB_cur_rec, Off_sFCB_cur_rec);
 
     }
 
     // GetRecord 함수 분리, curBlock만 반환
-    public short getBlock() {
-        return (short) getIt(Size_sFCB_cur_block, Off_sFCB_cur_block);
+    // uint16()
+    public int getBlock() {
+        return 0xffff & getIt(Size_sFCB_cur_block, Off_sFCB_cur_block);
     }
 
-    public void setRecord(short curBlock, byte curRec) {
-        saveIt(Size_sFCB_cur_block, Off_sFCB_cur_block, curBlock);
-        saveIt(Size_sFCB_cur_rec, Off_sFCB_cur_rec, curRec);
+    // (uint16, uint8)
+    public void setRecord(int curBlock, int curRec) {
+        saveIt(Size_sFCB_cur_block, Off_sFCB_cur_block, 0xffff & curBlock);
+        saveIt(Size_sFCB_cur_rec, Off_sFCB_cur_rec, 0xff & curRec);
     }
 
     // 두개의 함수로 분할
-    public byte getSeqDataFileHandle() {
-        return (byte) getIt(Size_sFCB_file_handle, Off_sFCB_file_handle);
+    // uint8()
+    public int getSeqDataFileHandle() {
+        return 0xff & getIt(Size_sFCB_file_handle, Off_sFCB_file_handle);
     }
 
-    public short getSeqDataFileSize() {
-        return (short) getIt(Size_sFCB_rec_size, Off_sFCB_rec_size);
+    // uint16()
+    public int getSeqDataFileSize() {
+        return 0xffff & getIt(Size_sFCB_rec_size, Off_sFCB_rec_size);
     }
 
     public int getRandom() {

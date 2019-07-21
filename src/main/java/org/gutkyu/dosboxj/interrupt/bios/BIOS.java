@@ -21,7 +21,7 @@ public final class BIOS {
      * and xms can increase or decrease the other_memsystems counter using the BIOS_ZeroExtendedSize
      * call
      */
-    private static short _sizeExtended;
+    private static int _sizeExtended;// uint16
     private static int _otherMemSystems = 0;
 
     private static CallbackHandlerObject[] _tandyDACCallback = new CallbackHandlerObject[2];
@@ -163,8 +163,8 @@ public final class BIOS {
         }
         // set equipment word
         equipmentWord = Memory.readW(BIOS_CONFIGURATION);
-        equipmentWord &= (short) ~0x0E00;
-        equipmentWord |= (short) (portcount << 9);
+        equipmentWord &= 0xffff & ~0x0E00;
+        equipmentWord |= 0xffff & (portcount << 9);
         Memory.writeW(BIOS_CONFIGURATION, equipmentWord);
         CMOSModule.setRegister(0x14, (byte) (equipmentWord & 0xff)); // Should be updated on changes
     }
@@ -445,7 +445,7 @@ public final class BIOS {
             IO.write(0x70, 0x30);
             _sizeExtended = IO.read(0x71);
             IO.write(0x70, 0x31);
-            _sizeExtended |= (short) (IO.read(0x71) << 8);
+            _sizeExtended |= 0xffff & (IO.read(0x71) << 8);
         }
 
         @Override
@@ -526,21 +526,21 @@ public final class BIOS {
             /* acknowledge IRQ */
             IO.write(0x20, 0x20);
             if (_tandySb.port != 0) {
-                IO.read((int) _tandySb.port + 0xe);
+                IO.read((0xffff & _tandySb.port) + 0xe);
             }
 
             /* buffer starts at the next page */
-            byte npage = (byte) (Memory.realReadB(0x40, 0xd4) + 1);
+            int npage = 0xff & (Memory.realReadB(0x40, 0xd4) + 1);
             Memory.realWriteB(0x40, 0xd4, npage);
 
             int rb = Memory.realReadB(0x40, 0xd3);
             if ((rb & 0x10) != 0) {
                 /* start recording */
                 Memory.realWriteB(0x40, 0xd3, rb & 0xef);
-                TandySetupTransfer((int) (npage << 16), false);
+                TandySetupTransfer(npage << 16, false);
             } else {
                 /* start playback */
-                TandySetupTransfer((int) (npage << 16), true);
+                TandySetupTransfer(npage << 16, true);
             }
         } else { /* playing/recording is finished */
             byte tandyIRQ = 7;
@@ -558,8 +558,8 @@ public final class BIOS {
 
             /* turn off speaker and acknowledge soundblaster IRQ */
             if (_tandySb.port != 0) {
-                IO.write((int) _tandySb.port + 0xc, 0xd3);
-                IO.read((int) _tandySb.port + 0xe);
+                IO.write((0xffff & _tandySb.port) + 0xc, 0xd3);
+                IO.read((0xffff & _tandySb.port) + 0xe);
             }
 
             /* issue BIOS tandy sound device busy callout */
@@ -670,11 +670,11 @@ public final class BIOS {
             tandyDMA = _tandyDAC.dma;
 
         if (_tandySb.port != 0) {
-            IO.write((int) _tandySb.port + 0xc, 0xd0); /* stop DMA transfer */
+            IO.write((0xffff & _tandySb.port) + 0xc, 0xd0); /* stop DMA transfer */
             IO.write(0x21, 0xff & (IO.read(0x21) & (~(1 << tandyIRQ)))); /* unmask IRQ */
-            IO.write((int) _tandySb.port + 0xc, 0xd1); /* turn speaker on */
+            IO.write((0xffff & _tandySb.port) + 0xc, 0xd1); /* turn speaker on */
         } else {
-            IO.write((int) _tandyDAC.port,
+            IO.write((0xffff & _tandyDAC.port),
                     0xff & (IO.read(_tandyDAC.port) & 0x60)); /* disable DAC */
             IO.write(0x21, 0xff & (IO.read(0x21) & (~(1 << tandyIRQ)))); /* unmask IRQ */
         }
@@ -713,35 +713,36 @@ public final class BIOS {
         tlength--;
 
         /* set transfer size */
-        IO.write((int) tandyDMA * 2 + 1, tlength & 0xff);
-        IO.write((int) tandyDMA * 2 + 1, (tlength >>> 8) & 0xff);
+        IO.write((0xff & tandyDMA) * 2 + 1, tlength & 0xff);
+        IO.write((0xff & tandyDMA) * 2 + 1, (tlength >>> 8) & 0xff);
 
         int delay = Memory.realReadW(0x40, 0xd2) & 0xfff;
         int amplitude = (Memory.realReadW(0x40, 0xd2) >>> 13) & 0x7;
         if (_tandySb.port != 0) {
             IO.write(0x0a, tandyDMA); /* enable DMA channel */
             /* set frequency */
-            IO.write((int) _tandySb.port + 0xc, 0x40);
-            IO.write((int) _tandySb.port + 0xc, 0xff & ((byte) (256 - delay * 100 / 358)));
+            IO.write((0xffff & _tandySb.port) + 0xc, 0x40);
+            IO.write((0xffff & _tandySb.port) + 0xc, 0xff & ((byte) (256 - delay * 100 / 358)));
             /* set playback type to 8bit */
             if (isplayback)
-                IO.write((int) _tandySb.port + 0xc, 0x14);
+                IO.write((0xffff & _tandySb.port) + 0xc, 0x14);
             else
-                IO.write((int) _tandySb.port + 0xc, 0x24);
+                IO.write((0xffff & _tandySb.port) + 0xc, 0x24);
             /* set transfer size */
-            IO.write((int) _tandySb.port + 0xc, tlength & 0xff);
-            IO.write((int) _tandySb.port + 0xc, (tlength >>> 8) & 0xff);
+            IO.write((0xffff & _tandySb.port) + 0xc, tlength & 0xff);
+            IO.write((0xffff & _tandySb.port) + 0xc, (tlength >>> 8) & 0xff);
         } else {
             if (isplayback)
-                IO.write((int) _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x03));
+                IO.write(0xffff & _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x03));
             else
-                IO.write((int) _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x02));
-            IO.write((int) _tandyDAC.port + 2, delay & 0xff);
-            IO.write((int) _tandyDAC.port + 3, 0xff & (((delay >>> 8) & 0xf) | (amplitude << 5)));
+                IO.write(0xffff & _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x02));
+            IO.write(0xffff & _tandyDAC.port + 2, delay & 0xff);
+            IO.write(0xffff & _tandyDAC.port + 3,
+                    0xff & (((delay >>> 8) & 0xf) | (amplitude << 5)));
             if (isplayback)
-                IO.write((int) _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x1f));
+                IO.write(0xffff & _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x1f));
             else
-                IO.write(_tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x1e));
+                IO.write(0xffff & _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x1e));
             IO.write(0x0a, tandyDMA); /* enable DMA channel */
         }
 
@@ -793,7 +794,7 @@ public final class BIOS {
                 break;
             case 0x85: /* Tandy sound system reset */
                 if (_tandyDAC.port != 0) {
-                    IO.write(_tandyDAC.port, IO.read(_tandyDAC.port) & 0xe0);
+                    IO.write(0xffff & _tandyDAC.port, IO.read(0xffff & _tandyDAC.port) & 0xe0);
                 }
                 Register.setRegAH(0x00);
                 Callback.scf(false);
@@ -910,7 +911,7 @@ public final class BIOS {
     }
 
     // uint8(uint16, uint8, uint8)
-    private static int INT14Wait(short port, byte mask, int timeout) {
+    private static int INT14Wait(int port, int mask, int timeout) {
         double starttime = PIC.getFullIndex();
         double timeout_f = timeout * 1000.0;
         int retval;
@@ -999,10 +1000,10 @@ public final class BIOS {
                 IO.writeB((int) port + 4, 0x3);
 
                 // wait for DSR & CTS
-                Register.setRegAH(INT14Wait((short) (port + 6), (byte) 0x30, timeout));
+                Register.setRegAH(INT14Wait(port + 6, 0x30, timeout));
                 if ((Register.getRegAH() & 0x80) == 0) {
                     // wait for TX buffer empty
-                    Register.setRegAH(INT14Wait((short) (port + 5), (byte) 0x20, timeout));
+                    Register.setRegAH(INT14Wait(port + 5, 0x20, timeout));
                     if ((Register.getRegAH() & 0x80) == 0) {
                         // fianlly send the character
                         IO.writeB(port, Register.getRegAL());
@@ -1024,10 +1025,10 @@ public final class BIOS {
                 IO.writeB((int) port + 4, 0x1);
 
                 // wait for DSR
-                Register.setRegAH(INT14Wait((short) (port + 6), (byte) 0x20, timeout));
+                Register.setRegAH(INT14Wait(port + 6, 0x20, timeout));
                 if ((Register.getRegAH() & 0x80) == 0) {
                     // wait for character to arrive
-                    Register.setRegAH(INT14Wait((short) (port + 5), (byte) 0x01, timeout));
+                    Register.setRegAH(INT14Wait(port + 5, 0x01, timeout));
                     if ((Register.getRegAH() & 0x80) == 0) {
                         Register.setRegAH((byte) (Register.getRegAH() & 0x1E));
                         Register.setRegAL((byte) IO.readB((int) port));
@@ -1175,7 +1176,7 @@ public final class BIOS {
                 /* Reprogram RTC to start */
                 IO.write(0x70, 0xb);
                 IO.write(0x71, 0xff & (IO.read(0x71) | 0x40));
-                while (Memory.readD((short) BIOS_WAIT_FLAG_COUNT) != 0) {
+                while (Memory.readD(BIOS_WAIT_FLAG_COUNT) != 0) {
                     Callback.idle();
                 }
                 Callback.scf(false);

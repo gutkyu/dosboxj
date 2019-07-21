@@ -56,7 +56,7 @@ public final class DOSModule extends ModuleBase {
         DOSSystem.setupMisc(); /* Some additional dos interrupts */
         (new DOSSDA(DOSMain.DOS_SDA_SEG, DOSMain.DOS_SDA_OFS))
                 .setDrive((byte) 25); /* Else the next call gives a warning. */
-        DOSMain.setDefaultDrive((byte) 25);
+        DOSMain.setDefaultDrive(25);
 
         DOSMain.DOS.Version.major = 5;
         DOSMain.DOS.Version.minor = 0;
@@ -64,9 +64,9 @@ public final class DOSModule extends ModuleBase {
         /* Setup time and date */
         LocalDateTime localtime = LocalDateTime.now();
 
-        DOSMain.DOS.Date.Day = (byte) localtime.getDayOfMonth();
-        DOSMain.DOS.Date.Month = (byte) localtime.getMonthValue();
-        DOSMain.DOS.Date.Year = (short) localtime.getYear();
+        DOSMain.DOS.Date.Day = 0xff & localtime.getDayOfMonth();
+        DOSMain.DOS.Date.Month = 0xff & localtime.getMonthValue();
+        DOSMain.DOS.Date.Year = 0xffff & localtime.getYear();
         int ticks = (int) ((localtime.getHour() * 3600 + localtime.getMinute() * 60
                 + localtime.getSecond()) * (float) Timer.PIT_TICK_RATE / 65536.0);
         Memory.writeD(BIOS.BIOS_TIMER, ticks);

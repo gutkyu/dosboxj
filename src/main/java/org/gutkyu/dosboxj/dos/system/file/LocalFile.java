@@ -47,9 +47,9 @@ public final class LocalFile extends DOSFile {
          * hardrive motion => unmask irq 2. Only do it when it's masked as unmasking is realitively
          * heavy to emulate
          */
-        byte mask = IO.read(0x21);
+        int mask = IO.read(0x21);
         if ((mask & 0x4) != 0)
-            IO.write(0x21, (byte) (mask & 0xfb));
+            IO.write(0x21, mask & 0xfb);
         return true;
     }
 
@@ -172,7 +172,7 @@ public final class LocalFile extends DOSFile {
 
     @Override
     public int getInformation() {
-        return _readOnlyMedium ? (short) 0x40 : (short) 0;
+        return _readOnlyMedium ? 0x40 : 0;
     }
 
     @Override
@@ -185,10 +185,8 @@ public final class LocalFile extends DOSFile {
             FileTime mTime = Files.getLastModifiedTime(Paths.get(getName().toString()));
             LocalDateTime dt = LocalDateTime.ofInstant(mTime.toInstant(), ZoneOffset.UTC);
 
-            Time = DOSMain.packDate((short) dt.getYear(), (short) dt.getMonthValue(),
-                    (short) dt.getDayOfMonth());
-            Date = DOSMain.packTime((short) dt.getHour(), (short) dt.getMinute(),
-                    (short) dt.getSecond());
+            Date = DOSMain.packDate(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
+            Time = DOSMain.packTime(dt.getHour(), dt.getMinute(), dt.getSecond());
 
         } catch (Exception e) {
             Time = 1;

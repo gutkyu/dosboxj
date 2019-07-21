@@ -11,9 +11,9 @@ public final class DOSBlock {
     }
 
     public static class DOSDate {
-        public short Year;
-        public byte Month;
-        public byte Day;
+        public int Year;// uint16
+        public int Month;// uint8
+        public int Day;// uint8
     }
 
     public DOSBlock() {
@@ -52,7 +52,7 @@ public final class DOSBlock {
     public boolean BreakCheck;
     public boolean Echo; // if set to true dev_con::read will echo input
     public Tables tables = new Tables();
-    public short LoadedCodepage;
+    public int LoadedCodepage;// uint16
 
     public static class Tables {
         public int MediaId;

@@ -453,7 +453,7 @@ public final class KeyboardLayout implements Disposable {
                         "Codepage %i successfully loaded", codepageId);
 
                 // set codepage entries
-                DOSMain.DOS.LoadedCodepage = (short) (codepageId & 0xffff);
+                DOSMain.DOS.LoadedCodepage = codepageId & 0xffff;
 
                 // update font if necessary
                 if (font_changed && (INT10Mode.CurMode.Type == VGAModes.TEXT)

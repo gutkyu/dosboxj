@@ -334,13 +334,16 @@ final class VESA {
         return setCPUWindow((byte) window, (byte) address);
     }
 
-    public static short getCPUWindow(int window) {
-        short address;
-        if (window > 0)
-            return 0x1;
+    // public static byte GetCPUWindow(byte window, ref UInt16 address)
+    // uint8(uint8)
+    public static int tryCPUWindow(int window) {
+        return window > 0 ? 0x1 : 0x00;
+    }
+
+    // uint16(uint8)
+    public static int getCPUWindow() {
         IO.write(0x3d4, 0x6a);
-        address = IO.read(0x3d5);
-        return address;
+        return 0xffff & IO.read(0x3d5);// address
     }
 
 
@@ -367,7 +370,7 @@ final class VESA {
 
 
     public static byte getPalette(int data, int index, int count) {
-        byte r, g, b;
+        int r, g, b;// uint8
         if (index > 255)
             return 0x1;
         if (index + count > 256)
@@ -503,16 +506,19 @@ final class VESA {
 
     private static int setWindow() {
         if (Register.getRegBH() != 0) {
-            Register.setRegAH(0x00);
-            Register.setRegDX(getCPUWindow(Register.getRegBL()));
+            int regAH = VESA.tryCPUWindow(Register.getRegBL());
+            Register.setRegAH(regAH);
+            if (regAH == 0) {
+                Register.setRegDX(getCPUWindow());
+            }
         } else
-            Register.setRegAH(setCPUWindow(Register.getRegBL(), (byte) Register.getRegDX()));
+            Register.setRegAH(setCPUWindow(Register.getRegBL(), 0xff & Register.getRegDX()));
         Register.setRegAL(0x4f);
         return 0;
     }
 
     private static int pmSetWindow() {
-        setCPUWindow(0, (byte) Register.getRegDX());
+        setCPUWindow(0, 0xff & Register.getRegDX());
         return 0;
     }
 

@@ -182,8 +182,8 @@ public final class ParadiseSVGADriverProvider {
         IO.write(0x3ce, 0x0a);
         IO.write(0x3cf, 0x00);
         IO.write(0x3ce, 0x0b);
-        byte val = IO.read(0x3cf);
-        IO.write(0x3cf, 0xff & (val & ~0x08));
+        int val = IO.read(0x3cf);
+        IO.write(0x3cf, val & ~0x08);
         IO.write(0x3ce, 0x0c);
         IO.write(0x3cf, 0x00);
         IO.write(0x3ce, 0x0d);

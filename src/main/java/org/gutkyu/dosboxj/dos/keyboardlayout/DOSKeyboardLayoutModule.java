@@ -39,8 +39,7 @@ public final class DOSKeyboardLayoutModule extends ModuleBase {
          * if (strncmp(layoutname,"auto",4) && strncmp(layoutname,"none",4)) {
          * Log.LOG_MSG("Loading DOS keyboard layout %s ...",layoutname); }
          */
-        if (DOSMain.LoadedLayout.ReadKeyboardFile(layoutname,
-                (int) DOSMain.DOS.LoadedCodepage) != 0) {
+        if (DOSMain.LoadedLayout.ReadKeyboardFile(layoutname, DOSMain.DOS.LoadedCodepage) != 0) {
             if (layoutname.startsWith("auto")) {
                 Log.logMsg("Error loading keyboard layout %s", layoutname);
             }

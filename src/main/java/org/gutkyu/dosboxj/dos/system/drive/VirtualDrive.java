@@ -32,7 +32,7 @@ public final class VirtualDrive extends DOSDrive {
     }
 
     @Override
-    public DOSFile fileCreate(String name, short attributes) {
+    public DOSFile fileCreate(String name, int attributes) {
         return null;
     }
 
@@ -76,11 +76,11 @@ public final class VirtualDrive extends DOSDrive {
         CStringPt pattern = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
         attr = dta.getSearchParams(pattern);
         if (attr == DOSSystem.DOS_ATTR_VOLUME) {
-            dta.setResult(cstrDOSBOX, 0, (short) 0, (short) 0, DOSSystem.DOS_ATTR_VOLUME);
+            dta.setResult(cstrDOSBOX, 0, 0, 0, DOSSystem.DOS_ATTR_VOLUME);
             return true;
         } else if ((attr & DOSSystem.DOS_ATTR_VOLUME) != 0 && !fcbFindFirst) {
             if (Drives.compareWildFile("DOSBOX", pattern.toString())) {
-                dta.setResult(cstrDOSBOX, 0, (short) 0, (short) 0, DOSSystem.DOS_ATTR_VOLUME);
+                dta.setResult(cstrDOSBOX, 0, 0, 0, DOSSystem.DOS_ATTR_VOLUME);
                 return true;
             }
         }
@@ -157,8 +157,8 @@ public final class VirtualDrive extends DOSDrive {
             if (curFile.Name.equalsIgnoreCase(name)) {
                 statBlock.Attr = DOSSystem.DOS_ATTR_ARCHIVE;
                 statBlock.Size = curFile.Size;
-                statBlock.Date = DOSMain.packDate((short) 2002, (short) 10, (short) 1);
-                statBlock.Time = DOSMain.packTime((short) 12, (short) 34, (short) 56);
+                statBlock.Date = DOSMain.packDate(2002, 10, 1);
+                statBlock.Time = DOSMain.packTime(12, 34, 56);
                 return true;
             }
             curFile = curFile.Next;

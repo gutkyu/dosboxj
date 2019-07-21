@@ -12,19 +12,18 @@ class BatchFile implements Disposable {
         prev = host.BatFile;
         echo = host.Echo;
         shell = host;
-        CStringPt totalname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH + 4);
+        CStringPt totalname = CStringPt.create(DOSSystem.DOS_PATHLENGTH + 4);
         // Get fullname including drive specificiation
         DOSMain.canonicalize(resolvedName.toString(), totalname);
         cmd = new CommandLine(enteredName.toString(), cmdLine.toString());
         filename = totalname.toString();
 
-        RefU16Ret refEntry = new RefU16Ret(fileHandle);
         // Test if file is openable
-        if (!DOSMain.openFile(totalname.toString(), 128, refEntry)) {
+        if (!DOSMain.openFile(totalname.toString(), 128)) {
             // TODO Come up with something better
             Support.exceptionExit("SHELL:Can't open BatchFile %s", totalname.toString());
         }
-        fileHandle = refEntry.U16;
+        fileHandle = DOSMain.FileEntry;
         DOSMain.closeFile(fileHandle);
     }
 
@@ -40,31 +39,29 @@ class BatchFile implements Disposable {
     }
 
     public boolean readLine(CStringPt line) {
-        RefU16Ret refEntry = new RefU16Ret(fileHandle);
         // Open the batchfile and seek to stored postion
-        if (!DOSMain.openFile(filename, 128, refEntry)) {
+        if (!DOSMain.openFile(filename, 128)) {
             Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                     "ReadLine Can't open BatchFile %s", filename);
             dispose();
             return false;
         }
-        fileHandle = refEntry.U16;
+        fileHandle = DOSMain.FileEntry;
         long loc = DOSMain.seekFile(fileHandle, this.location, DOSSystem.DOS_SEEK_SET);
         if (loc >= 0)
             this.location = (int) loc;
         byte c = 0;
         int n = 0;
-        CStringPt temp = CStringPt.create((int) ShellInner.CMD_MAXLINE);
+        CStringPt temp = CStringPt.create(ShellInner.CMD_MAXLINE);
         CStringPt cmdWrite = temp;
         U8Ref refChar = new U8Ref(c, n);
         // emptyline:
         while (true) {
             do {
                 n = 1;
-                refChar.Len = n;
-                DOSMain.readFile(fileHandle, refChar);
-                c = refChar.U8;
-                n = refChar.Len;
+                DOSMain.readFile(fileHandle);
+                c = DOSMain.ReadByte;
+                n = DOSMain.ReadLength;
                 if (n > 0) {
                     /*
                      * Why are we filtering this ? Exclusion list: tab for batch files escape for
@@ -165,34 +162,30 @@ class BatchFile implements Disposable {
     }
 
     public boolean gotoLabel(CStringPt where) {
-        RefU16Ret refEntry = new RefU16Ret(fileHandle);
-
         // Open bat file and search for the where String
-        if (!DOSMain.openFile(filename, (byte) 128, refEntry)) {
+        if (!DOSMain.openFile(filename, 128)) {
             Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                     "SHELL:Goto Can't open BatchFile %s", filename);
             this.dispose();
             return false;
         }
-        fileHandle = refEntry.U16;
+        fileHandle = DOSMain.FileEntry;
 
-        CStringPt cmdBuffer = CStringPt.create((int) ShellInner.CMD_MAXLINE);
+        CStringPt cmdBuffer = CStringPt.create(ShellInner.CMD_MAXLINE);
         CStringPt cmdWrite;
 
         /* Scan till we have a match or return false */
         byte c = 0;
-        short n = 0;
+        int n = 0;
 
         // again:
         while (true) {
             cmdWrite = cmdBuffer;
-            U8Ref refChar = new U8Ref(c, n);
             do {
                 n = 1;
-                refChar.set(c, n);
-                DOSMain.readFile(fileHandle, refChar);
-                c = refChar.U8;
-                n = (short) refChar.Len;
+                DOSMain.readFile(fileHandle);
+                c = DOSMain.ReadByte;
+                n = DOSMain.ReadLength;
                 if (n > 0) {
                     if (c > 31)
                         cmdWrite.set((char) c);
@@ -242,7 +235,7 @@ class BatchFile implements Disposable {
         cmd.shift(1);
     }
 
-    public short fileHandle;
+    public int fileHandle;// uint16
     public int location;
     public boolean echo;
     public DOSShell shell;

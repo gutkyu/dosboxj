@@ -106,7 +106,7 @@ public final class VGAXGA {
         WaitCmd.Y2 = 0;
     }
 
-    private void writeMultifunc(int val, int len) {
+    private void writeMultiFunc(int val, int len) {
         int regselect = val >>> 12;
         short dataval = (short) (val & 0xfff);
         switch (regselect) {
@@ -659,13 +659,19 @@ public final class VGAXGA {
 
     private static final int BUS_WITDH_LIN8_8 = VGAModes.LIN8.toValue(); // 8 bit
     private static final int BUS_WITDH_LIN8_16 = 0x20 | VGAModes.LIN8.toValue(); // 16 bit
-    private static final int BUS_WITDH_LIN8_32 = 0x40 | (0xffff & VGAModes.LIN8.toValue()); // 32 bit
+    private static final int BUS_WITDH_LIN8_32 = 0x40 | (0xffff & VGAModes.LIN8.toValue()); // 32
+                                                                                            // bit
     private static final int BUS_WITDH_LIN32_16 = 0x20 | (0xffff & VGAModes.LIN32.toValue());
-    private static final int BUS_WITDH_LIN32_32 = 0x40 | (0xffff & VGAModes.LIN32.toValue()); // 32 bit
-    private static final int BUS_WITDH_LIN15_16 = 0x20 | (0xffff & VGAModes.LIN15.toValue()); // 16 bit
-    private static final int BUS_WITDH_LIN16_16 = 0x20 | (0xffff & VGAModes.LIN16.toValue()); // 16 bit
-    private static final int BUS_WITDH_LIN15_32 = 0x40 | (0xffff & VGAModes.LIN15.toValue()); // 32 bit
-    private static final int BUS_WITDH_LIN16_32 = 0x40 | (0xffff & VGAModes.LIN16.toValue()); // 32 bit
+    private static final int BUS_WITDH_LIN32_32 = 0x40 | (0xffff & VGAModes.LIN32.toValue()); // 32
+                                                                                              // bit
+    private static final int BUS_WITDH_LIN15_16 = 0x20 | (0xffff & VGAModes.LIN15.toValue()); // 16
+                                                                                              // bit
+    private static final int BUS_WITDH_LIN16_16 = 0x20 | (0xffff & VGAModes.LIN16.toValue()); // 16
+                                                                                              // bit
+    private static final int BUS_WITDH_LIN15_32 = 0x40 | (0xffff & VGAModes.LIN15.toValue()); // 32
+                                                                                              // bit
+    private static final int BUS_WITDH_LIN16_32 = 0x40 | (0xffff & VGAModes.LIN16.toValue()); // 32
+                                                                                              // bit
 
     private void drawWait(int val, int len) {
         XGAWaitCmd xgaWaitCmd = WaitCmd;
@@ -1276,7 +1282,7 @@ public final class VGAXGA {
                 Foremix = (short) val;
                 break;
             case 0xbee8:
-                writeMultifunc(val, len);
+                writeMultiFunc(val, len);
                 break;
             case 0xe2e8:
                 WaitCmd.NewLine = false;

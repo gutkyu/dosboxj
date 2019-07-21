@@ -42,14 +42,11 @@ public final class Intro extends Program {
         }
         /* Default action is to show all pages */
         writeOut(Message.get("PROGRAM_INTRO"));
-        byte c = 0;
-        short n = 1;
-        U8Ref refChar = new U8Ref(c, n);
-        DOSMain.readFile(DOSMain.STDIN, refChar);
+        DOSMain.readFile(DOSMain.STDIN);
         displayMount();
-        DOSMain.readFile(DOSMain.STDIN, refChar);
+        DOSMain.readFile(DOSMain.STDIN);
         writeOut(Message.get("PROGRAM_INTRO_CDROM"));
-        DOSMain.readFile(DOSMain.STDIN, refChar);
+        DOSMain.readFile(DOSMain.STDIN);
         writeOut(Message.get("PROGRAM_INTRO_SPECIAL"));
     }
 }

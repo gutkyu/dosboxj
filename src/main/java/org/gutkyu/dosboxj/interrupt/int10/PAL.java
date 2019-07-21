@@ -149,7 +149,7 @@ final class PAL {
 
     // public static void ToggleBlinkingBit(byte state) {
     public static void toggleBlinkingBit(int state) {
-        byte value;
+        int value;// uint8
         // state&=0x01;
         if ((state > 1) && (DOSBox.SVGACard == DOSBox.SVGACards.S3Trio))
             return;
@@ -159,7 +159,7 @@ final class PAL {
         value = IO.read(VGAREG_ACTL_READ_DATA);
         if (state <= 1) {
             value &= 0xf7;
-            value |= (byte) (state << 3);
+            value |= 0xff & (state << 3);
         }
 
         resetACTL();
@@ -188,8 +188,9 @@ final class PAL {
         return ret;
     }
 
-    public static byte getOverscanBorderColor() {
-        byte val = 0;
+    // uint8
+    public static int getOverscanBorderColor() {
+        int val = 0;// uint8
         resetACTL();
         IO.write(VGAREG_ACTL_ADDRESS, 0x11 + 32);
         val = IO.read(VGAREG_ACTL_READ_DATA);
@@ -212,7 +213,8 @@ final class PAL {
         resetACTL();
     }
 
-    public static void setSingleDacRegister(int index, byte red, byte green, byte blue) {
+    // (uint8,uint8,uint8,uint8)
+    public static void setSingleDacRegister(int index, int red, int green, int blue) {
         IO.write(VGAREG_DAC_WRITE_ADDRESS, index);
         IO.write(VGAREG_DAC_DATA, red);
         IO.write(VGAREG_DAC_DATA, green);
@@ -229,17 +231,20 @@ final class PAL {
     }
 
     // red 반환
-    public static byte getSingleDacRegisterRed() {
+    // uint8
+    public static int getSingleDacRegisterRed() {
         return IO.read(VGAREG_DAC_DATA);
     }
 
     // green 반환
-    public static byte getSingleDacRegisterGreen() {
+    // uint8
+    public static int getSingleDacRegisterGreen() {
         return IO.read(VGAREG_DAC_DATA);
     }
 
     // blue 반환
-    public static byte getSingleDacRegisterBlue() {
+    // uint8
+    public static int getSingleDacRegisterBlue() {
         return IO.read(VGAREG_DAC_DATA);
     }
 
@@ -265,7 +270,7 @@ final class PAL {
     public static void selectDACPage(int function, int mode) {
         resetACTL();
         IO.write(VGAREG_ACTL_ADDRESS, 0x10);
-        byte old10 = IO.read(VGAREG_ACTL_READ_DATA);
+        int old10 = IO.read(VGAREG_ACTL_READ_DATA);
         if (function == 0) { // Select paging mode
             if (mode != 0)
                 old10 |= 0x80;
@@ -285,16 +290,18 @@ final class PAL {
     }
 
     // public static void GetDACPage(ref byte mode, ref byte page)
-    public static byte getDACPageMode() {
+    // uint8()
+    public static int getDACPageMode() {
         resetACTL();
         IO.write(VGAREG_ACTL_ADDRESS, 0x10);
-        byte reg10 = IO.read(VGAREG_ACTL_READ_DATA);
+        int reg10 = IO.read(VGAREG_ACTL_READ_DATA);
         IO.write(VGAREG_ACTL_WRITE_DATA, reg10);
-        return (reg10 & 0x80) != 0 ? (byte) 0x01 : (byte) 0x00;
+        return (reg10 & 0x80) != 0 ? 0x01 : 0x00;
     }
 
     // GetDACPageMode와 같이 사용
-    public static byte getDACPage(byte mode) {
+    // uint8(uint8)
+    public static int getDACPage(int mode) {
 
         IO.write(VGAREG_ACTL_ADDRESS, 0x14);
         int page = 0xff & IO.read(VGAREG_ACTL_READ_DATA);
@@ -305,7 +312,7 @@ final class PAL {
             page &= 0xc;
             page >>>= 2;
         }
-        return (byte) page;
+        return page;
     }
 
     public static void setPelMask(int mask) {
@@ -360,16 +367,17 @@ final class PAL {
     public static void performGrayScaleSumming(int start_reg, int count) {
         if (count > 0x100)
             count = 0x100;
+        int red, green, blue;
         for (int ct = 0; ct < count; ct++) {
-            IO.write(VGAREG_DAC_READ_ADDRESS, (byte) (start_reg + ct));
-            byte red = IO.read(VGAREG_DAC_DATA);
-            byte green = IO.read(VGAREG_DAC_DATA);
-            byte blue = IO.read(VGAREG_DAC_DATA);
+            IO.write(VGAREG_DAC_READ_ADDRESS, start_reg + ct);
+            red = IO.read(VGAREG_DAC_DATA);
+            green = IO.read(VGAREG_DAC_DATA);
+            blue = IO.read(VGAREG_DAC_DATA);
 
             /* calculate clamped intensity, taken from VGABIOS */
-            int i = (int) (((77 * red + 151 * green + 28 * blue) + 0x80) >>> 8);
-            byte ic = (i > 0x3f) ? (byte) 0x3f : ((byte) (i & 0xff));
-            setSingleDacRegister((byte) (start_reg + ct), ic, ic, ic);
+            int i = ((77 * red + 151 * green + 28 * blue) + 0x80) >>> 8;
+            int ic = i > 0x3f ? 0x3f : i & 0xff;
+            setSingleDacRegister(0xff & (start_reg + ct), ic, ic, ic);
         }
     }
 }

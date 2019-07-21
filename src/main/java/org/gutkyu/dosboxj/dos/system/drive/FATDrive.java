@@ -298,7 +298,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public DOSFile fileCreate(String name, short attributes) {
+    public DOSFile fileCreate(String name, int attributes) {
         DOSFile file = null;
         byte[] fileEntry = new byte[SIZE_direntry_Total];
         int dirClust = 0, subEntry = 0;
@@ -556,7 +556,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
                 DOSMain.setError(DOSMain.DOSERR_NO_MORE_FILES);
                 return false;
             }
-            dta.setResult(getLabel(), 0, (short) 0, (short) 0, (byte) DOSSystem.DOS_ATTR_VOLUME);
+            dta.setResult(getLabel(), 0, 0, 0, DOSSystem.DOS_ATTR_VOLUME);
             return true;
         }
         if ((attr & DOSSystem.DOS_ATTR_VOLUME) != 0) // check for root dir or fcb_findfirst
@@ -694,7 +694,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
         cy = LoadedDisk.getGeometryCylinders();
         sect = LoadedDisk.getGeometrySectors();
         sectsize = LoadedDisk.getGeometrySectSize();
-        alloc.bytesSector = (short) sectsize;
+        alloc.bytesSector = 0xffff & sectsize;
         alloc.sectorsCluster = _bootbuffer[OFF_bootstrap_sectorspercluster];
         if (_countOfClusters < 65536)
             alloc.totalClusters = (short) _countOfClusters;

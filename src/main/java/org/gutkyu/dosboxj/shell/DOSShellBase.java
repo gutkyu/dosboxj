@@ -56,14 +56,12 @@ public abstract class DOSShellBase extends Program {
 
         /* Start a normal shell and check for a first command init */
         /*
-        writeOut(Message.get("SHELL_STARTUP_BEGIN"), StringHelper.padRight(DOSBox.VERSION, 8));
-
-        if (DOSBox.Machine == DOSBox.MachineType.CGA)
-            writeOut(Message.get("SHELL_STARTUP_CGA"));
-        if (DOSBox.Machine == DOSBox.MachineType.HERC)
-            writeOut(Message.get("SHELL_STARTUP_HERC"));
-        writeOut(Message.get("SHELL_STARTUP_END"));
-        */
+         * writeOut(Message.get("SHELL_STARTUP_BEGIN"), StringHelper.padRight(DOSBox.VERSION, 8));
+         * 
+         * if (DOSBox.Machine == DOSBox.MachineType.CGA) writeOut(Message.get("SHELL_STARTUP_CGA"));
+         * if (DOSBox.Machine == DOSBox.MachineType.HERC)
+         * writeOut(Message.get("SHELL_STARTUP_HERC")); writeOut(Message.get("SHELL_STARTUP_END"));
+         */
         if ((line = Cmd.findString("/INIT", true)) != null) {
             CStringPt.copy(line, inputLine);
             line = "";
@@ -134,9 +132,6 @@ public abstract class DOSShellBase extends Program {
         CStringPt outPt = CStringPt.create();
 
         // short dummy=0, dummy2=0;
-        RefU16Ret refDummy = new RefU16Ret(0);
-        RefU16Ret refDummy2 = new RefU16Ret(0);
-        RefU32Ret refBigDummy = new RefU32Ret(0);
         int num = 0; /* Number of commands in this line */
         boolean append = false;
         boolean normalstdin = false; /* wether stdin/out are open on start. */
@@ -150,13 +145,13 @@ public abstract class DOSShellBase extends Program {
             normalstdout = (PSP.getFileHandle(1) != 0xff);
         }
         if (!inPt.isEmpty()) {
-            if (DOSMain.openFile(inPt.toString(), DOSSystem.OPEN_READ, refDummy)) { // Test if file
-                                                                                    // exists
-                DOSMain.closeFile(refDummy.U16);
+            if (DOSMain.openFile(inPt.toString(), DOSSystem.OPEN_READ)) { // Test if file
+                                                                          // exists
+                DOSMain.closeFile(DOSMain.FileEntry);
                 Log.logMsg("SHELL:Redirect input from %s", inPt);
                 if (normalstdin)
                     DOSMain.closeFile(0); // Close stdin
-                DOSMain.openFile(inPt.toString(), DOSSystem.OPEN_READ, refDummy); // Open new stdin
+                DOSMain.openFile(inPt.toString(), DOSSystem.OPEN_READ); // Open new stdin
             }
 
         }
@@ -165,26 +160,26 @@ public abstract class DOSShellBase extends Program {
             if (normalstdout)
                 DOSMain.closeFile(1);
             if (!normalstdin && inPt.isEmpty())
-                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE, refDummy);
+                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE);
             boolean status = true;
             /* Create if not exist. Open if exist. Both in read/write mode */
             if (append) {
-                if ((status =
-                        DOSMain.openFile(outPt.toString(), DOSSystem.OPEN_READWRITE, refDummy))) {
+                if ((status = DOSMain.openFile(outPt.toString(), DOSSystem.OPEN_READWRITE))) {
                     DOSMain.seekFile(1, 0, DOSSystem.DOS_SEEK_END);
                 } else {
-                    status = DOSMain.createFile(outPt.toString(), DOSSystem.DOS_ATTR_ARCHIVE,
-                            refDummy); // Create if
-                                       // not exists.
+                    status = DOSMain.createFile(outPt.toString(), DOSSystem.DOS_ATTR_ARCHIVE); // Create
+                                                                                               // if
+                                                                                               // not
+                                                                                               // exists.
                 }
             } else {
                 status = DOSMain.openFileExtended(outPt.toString(), DOSSystem.OPEN_READWRITE,
-                        DOSSystem.DOS_ATTR_ARCHIVE, 0x12, refDummy, refDummy2);
+                        DOSSystem.DOS_ATTR_ARCHIVE, 0x12);
             }
 
             if (!status && normalstdout)
-                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE, refDummy); // Read only file, open
-                                                                             // con again
+                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE); // Read only file, open
+                                                                   // con again
             if (!normalstdin && inPt.isEmpty())
                 DOSMain.closeFile(0);
         }
@@ -194,15 +189,15 @@ public abstract class DOSShellBase extends Program {
         if (!inPt.isEmpty()) {
             DOSMain.closeFile(0);
             if (normalstdin)
-                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE, refDummy);
+                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE);
             inPt.empty();
         }
         if (!outPt.isEmpty()) {
             DOSMain.closeFile(1);
             if (!normalstdin)
-                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE, refDummy);
+                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE);
             if (normalstdout)
-                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE, refDummy);
+                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE);
             if (!normalstdin)
                 DOSMain.closeFile(0);
             outPt.empty();
@@ -511,15 +506,13 @@ public abstract class DOSShellBase extends Program {
          * achieve this: First open 2 files. Close the first and duplicate the second (so the
          * entries get 01)
          */
-        short dummy = 0;
-        RefU16Ret refDummy = new RefU16Ret(dummy);
-        DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE, refDummy); /* STDIN */
-        DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE, refDummy); /* STDOUT */
+        DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE); /* STDIN */
+        DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE); /* STDOUT */
         DOSMain.closeFile(0); /* Close STDIN */
         DOSMain.forceDuplicateEntry(1, 0); /* "new" STDIN */
         DOSMain.forceDuplicateEntry(1, 2); /* STDERR */
-        DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE, refDummy); /* STDAUX */
-        DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE, refDummy); /* STDPRN */
+        DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE); /* STDAUX */
+        DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE); /* STDPRN */
 
         psp.setParent(pspSeg);
         /* Set the environment */

@@ -16,7 +16,8 @@ public abstract class DOSDrive {
     public abstract DOSFile fileOpen(String name, int flags);
 
     // 실패하면 null 반환
-    public abstract DOSFile fileCreate(String name, short attributes);
+    // object ( string, uint16 )
+    public abstract DOSFile fileCreate(String name, int attributes);
 
     public abstract boolean fileUnlink(CStringPt name);
 

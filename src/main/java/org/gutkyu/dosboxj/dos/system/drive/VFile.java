@@ -9,8 +9,8 @@ public final class VFile {
         public CStringPt Name;
         public byte[] Data;
         public int Size;
-        public short Date;
-        public short Time;
+        public int Date;// uint16
+        public int Time;// uint16
         public VFileBlock Next;
     }
 
@@ -23,8 +23,8 @@ public final class VFile {
         CStringPt.copy(name, newFile.Name);
         newFile.Data = data;
         newFile.Size = (int) size;
-        newFile.Date = DOSMain.packDate((short) 2002, (short) 10, (short) 1);
-        newFile.Time = DOSMain.packTime((short) 12, (short) 34, (short) 56);
+        newFile.Date = DOSMain.packDate(2002, 10, 1);
+        newFile.Time = DOSMain.packTime(12, 34, 56);
         newFile.Next = firstFile;
         firstFile = newFile;
     }

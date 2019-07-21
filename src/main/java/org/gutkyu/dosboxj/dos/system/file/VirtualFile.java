@@ -8,8 +8,8 @@ public final class VirtualFile extends DOSFile {
         _fileSize = inSize;
         _fileData = inData;
         _filePos = 0;
-        Date = DOSMain.packDate((short) 2002, (short) 10, (short) 1);
-        Time = DOSMain.packTime((short) 12, (short) 34, (short) 56);
+        Date = DOSMain.packDate(2002, 10, 1);
+        Time = DOSMain.packTime(12, 34, 56);
         Open = true;
     }
 
@@ -39,7 +39,7 @@ public final class VirtualFile extends DOSFile {
     }
 
     @Override
-    public byte getReadByte(){
+    public byte getReadByte() {
         return tmpRd[0];
     }
 
