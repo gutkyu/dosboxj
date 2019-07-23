@@ -254,8 +254,8 @@ public final class TsengET3KSVGADriverProvider {
     }
 
     private int readP3CD(int port, int iolen) {
-        return (int) (_vga.SVGA.BankRead << 3) | _vga.SVGA.BankWrite
-                | ((_vga.SVGA.BankSize == 128 * 1024) ? 0 : 0x40);
+        return ((_vga.SVGA.BankRead & 0xff) << 3) | _vga.SVGA.BankWrite
+                | (((_vga.SVGA.BankSize & 0xff) == 128 * 1024) ? 0 : 0x40);
     }
 
     private void writeP3C0(int reg, int val, int iolen) {
@@ -350,7 +350,7 @@ public final class TsengET3KSVGADriverProvider {
             int best = 1;
             int dist = 100000000;
             for (int i = 0; i < 8; i++) {
-                int cdiff = Math.abs((int) (target - _clockFreq[i]));
+                int cdiff = Math.abs(target - _clockFreq[i]);
                 if (cdiff < dist) {
                     best = i;
                     dist = cdiff;

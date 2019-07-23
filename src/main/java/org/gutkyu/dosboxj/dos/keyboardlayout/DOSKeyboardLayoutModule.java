@@ -32,7 +32,7 @@ public final class DOSKeyboardLayoutModule extends ModuleBase {
         if (extract_codepage) {
             // try to find a good codepage for the requested layout
             int req_codepage = DOSMain.LoadedLayout.extractCodePage(layoutname);
-            DOSMain.LoadedLayout.readCodePageFile("auto", (int) req_codepage);
+            DOSMain.LoadedLayout.readCodePageFile("auto", req_codepage);
         }
 
         /*

@@ -19,7 +19,7 @@ public final class VFile {
     // (string, byte[], uint32)
     public static void register(String name, byte[] data, long size) {
         VFileBlock newFile = new VFileBlock();
-        newFile.Name = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        newFile.Name = CStringPt.create( DOSSystem.DOS_NAMELENGTH_ASCII);
         CStringPt.copy(name, newFile.Name);
         newFile.Data = data;
         newFile.Size = (int) size;

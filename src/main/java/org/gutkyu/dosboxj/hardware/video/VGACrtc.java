@@ -264,7 +264,7 @@ final class VGACrtc {
                 break;
             case 0x12: /* Vertical Display End Register */
                 if (val != this.VerticalDisplayEnd) {
-                    if (Math.abs((int) val - (int) this.VerticalDisplayEnd) < 3) {
+                    if (Math.abs(val - this.VerticalDisplayEnd) < 3) {
                         // delay small vde changes a bit to avoid screen resizing
                         // if they are reverted in a short timeframe
                         PIC.removeEvents(_vga.setupDrawingWrap);
@@ -342,7 +342,7 @@ final class VGACrtc {
                     _vga.Tandy.LineShift = 13;
                     _vga.Tandy.AddrMask = (1 << 13) - 1;
                 } else {
-                    _vga.Tandy.AddrMask = (int) ~0;
+                    _vga.Tandy.AddrMask = ~0;
                     _vga.Tandy.LineShift = 0;
                 }
                 // Should we really need to do a determinemode here?

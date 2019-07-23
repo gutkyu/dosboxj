@@ -538,25 +538,25 @@ public final class Render {
         }
         switch (_srcBpp) {
             case 8:
-                _scaleLineHandler = lineBlock[0][(int) _scaleOutMode];
-                _scaleLinePalHandler = lineBlock[4][(int) _scaleOutMode];
+                _scaleLineHandler = lineBlock[0][_scaleOutMode];
+                _scaleLinePalHandler = lineBlock[4][_scaleOutMode];
                 _scaleInMode = SCALER_MODE8;
                 _scaleCachePitch = _srcWidth * 1;
                 break;
             case 15:
-                _scaleLineHandler = lineBlock[1][(int) _scaleOutMode];
+                _scaleLineHandler = lineBlock[1][_scaleOutMode];
                 _scaleLinePalHandler = null;
                 _scaleInMode = SCALER_MODE15;
                 _scaleCachePitch = _srcWidth * 2;
                 break;
             case 16:
-                _scaleLineHandler = lineBlock[2][(int) _scaleOutMode];
+                _scaleLineHandler = lineBlock[2][_scaleOutMode];
                 _scaleLinePalHandler = null;
                 _scaleInMode = SCALER_MODE16;
                 _scaleCachePitch = _srcWidth * 2;
                 break;
             case 32:
-                _scaleLineHandler = lineBlock[3][(int) _scaleOutMode];
+                _scaleLineHandler = lineBlock[3][_scaleOutMode];
                 _scaleLinePalHandler = null;
                 _scaleInMode = SCALER_MODE32;
                 _scaleCachePitch = _srcWidth * 4;
@@ -640,7 +640,7 @@ public final class Render {
         _pal.first = 256;
         _pal.last = 0;
         aspect1 = section.getBool("aspect");
-        _frameSkipMax = (int) section.getInt("frameskip");
+        _frameSkipMax = section.getInt("frameskip");
         _frameSkipCount = 0;
         String cline = "";
         String scaler;

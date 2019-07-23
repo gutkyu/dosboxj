@@ -166,7 +166,7 @@ public final class BIOS {
         equipmentWord &= 0xffff & ~0x0E00;
         equipmentWord |= 0xffff & (portcount << 9);
         Memory.writeW(BIOS_CONFIGURATION, equipmentWord);
-        CMOSModule.setRegister(0x14, (byte) (equipmentWord & 0xff)); // Should be updated on changes
+        CMOSModule.setRegister(0x14, (byte) equipmentWord); // Should be updated on changes
     }
 
     private class BIOSModule extends ModuleBase {
@@ -440,7 +440,7 @@ public final class BIOS {
             config |= 0x1000;
             Memory.writeW(BIOS_CONFIGURATION, config);
             // Should be updated on changes
-            CMOSModule.setRegister((int) 0x14, (byte) (config & 0xff));
+            CMOSModule.setRegister(0x14, (byte) config);
             /* Setup extended memory size */
             IO.write(0x70, 0x30);
             _sizeExtended = IO.read(0x71);
@@ -485,7 +485,7 @@ public final class BIOS {
                     else
                         tandy_irq_vector += (0x70 - 8);
 
-                    Memory.realSetVec(tandy_irq_vector, (int) Memory.realReadD(0x40, 0xd6));
+                    Memory.realSetVec(tandy_irq_vector & 0xff, (int) Memory.realReadD(0x40, 0xd6));
                     Memory.realWriteD(0x40, 0xd6, 0x00000000);
                 }
                 _tandyDACCallback[0].dispose();
@@ -554,7 +554,7 @@ public final class BIOS {
             else
                 tandyIRQVector += (0x70 - 8);
 
-            Memory.realSetVec(tandyIRQVector, (int) Memory.realReadD(0x40, 0xd6));
+            Memory.realSetVec(tandyIRQVector & 0xff, (int) Memory.realReadD(0x40, 0xd6));
 
             /* turn off speaker and acknowledge soundblaster IRQ */
             if (_tandySb.port != 0) {
@@ -624,8 +624,8 @@ public final class BIOS {
             tandyDMA = _tandyDAC.dma;
 
         IO.write(0x0c, 0x00);
-        short dataLen = (byte) (IO.readB((int) tandyDMA * 2 + 1) & 0xff);
-        dataLen |= (short) (IO.readB((int) tandyDMA * 2 + 1) << 8);
+        int dataLen = IO.readB((0xff & tandyDMA) * 2 + 1);
+        dataLen |= 0xffff & (IO.readB((0xff & tandyDMA) * 2 + 1) << 8);
         if (dataLen == 0xffff)
             return false; /* no DMA transfer */
         else if ((dataLen < 0x10) && (Memory.realReadB(0x40, 0xd4) == 0x0f)
@@ -686,9 +686,9 @@ public final class BIOS {
         else
             IO.write(0x0b, 0xff & (0x44 | tandyDMA));
         /* set physical address of buffer */
-        byte bufpage = (byte) ((bufpt >>> 16) & 0xff);
-        IO.write((int) tandyDMA * 2, bufpt & 0xff);
-        IO.write((int) tandyDMA * 2, (bufpt >>> 8) & 0xff);
+        int bufpage = (bufpt >>> 16) & 0xff;
+        IO.write((0xff & tandyDMA) * 2, bufpt & 0xff);
+        IO.write((0xff & tandyDMA) * 2, (bufpt >>> 8) & 0xff);
         switch (tandyDMA) {
             case 0:
                 IO.write(0x87, bufpage);
@@ -828,7 +828,7 @@ public final class BIOS {
                 break;
             }
             case 0x01: /* Set System time */
-                Memory.writeD(BIOS_TIMER, ((int) Register.getRegCX() << 16) | Register.getRegDX());
+                Memory.writeD(BIOS_TIMER, (Register.getRegCX() << 16) | Register.getRegDX());
                 break;
             case 0x02: /* GET REAL-TIME CLOCK TIME (AT,XT286,PS) */
                 IO.write(0x70, 0x04); // Hours
@@ -949,8 +949,8 @@ public final class BIOS {
 
                 // set baud rate
                 int baudrate = 9600;
-                short baudresult;
-                int rawbaud = (int) Register.getRegAL() >>> 5;
+                int baudresult;
+                int rawbaud = Register.getRegAL() >>> 5;
 
                 if (rawbaud == 0) {
                     baudrate = 110;
@@ -970,7 +970,7 @@ public final class BIOS {
                     baudrate = 9600;
                 }
 
-                baudresult = (short) (115200 / baudrate);
+                baudresult = 115200 / baudrate;
 
                 IO.writeB(port + 3, 0x80); // enable divider access
                 IO.writeB(port, baudresult & 0xff);
@@ -997,7 +997,7 @@ public final class BIOS {
                          // [undoc] (0x80 | modem status) in case of dsr/cts timeout
 
                 // set DTR & RTS on
-                IO.writeB((int) port + 4, 0x3);
+                IO.writeB(port + 4, 0x3);
 
                 // wait for DSR & CTS
                 Register.setRegAH(INT14Wait(port + 6, 0x30, timeout));
@@ -1022,7 +1022,7 @@ public final class BIOS {
                 // [undoc] (0x80 | modem status) in case of dsr timeout
 
                 // set DTR on
-                IO.writeB((int) port + 4, 0x1);
+                IO.writeB(port + 4, 0x1);
 
                 // wait for DSR
                 Register.setRegAH(INT14Wait(port + 6, 0x20, timeout));
@@ -1030,15 +1030,15 @@ public final class BIOS {
                     // wait for character to arrive
                     Register.setRegAH(INT14Wait(port + 5, 0x01, timeout));
                     if ((Register.getRegAH() & 0x80) == 0) {
-                        Register.setRegAH((byte) (Register.getRegAH() & 0x1E));
-                        Register.setRegAL((byte) IO.readB((int) port));
+                        Register.setRegAH(Register.getRegAH() & 0x1E);
+                        Register.setRegAL(IO.readB(port));
                     }
                 }
                 Callback.scf(false);
                 break;
             case 0x03: // get status
-                Register.setRegAH((byte) ((byte) IO.readB((int) port + 5) & 0xff));
-                Register.setRegAL((byte) ((byte) IO.readB((int) port + 6) & 0xff));
+                Register.setRegAH(IO.readB(port + 5) & 0xff);
+                Register.setRegAL(IO.readB(port + 6) & 0xff);
                 Callback.scf(false);
                 break;
 
@@ -1108,7 +1108,7 @@ public final class BIOS {
                     Callback.scf(true);
                     break;
                 }
-                int count = (int) (Register.getRegCX() << 16) | Register.getRegDX();
+                int count = (Register.getRegCX() << 16) | Register.getRegDX();
                 Memory.writeD(BIOS_WAIT_FLAG_POINTER, Memory
                         .realMake(Register.segValue(Register.SEG_NAME_ES), Register.getRegBX()));
                 Memory.writeD(BIOS_WAIT_FLAG_COUNT, count);
@@ -1123,7 +1123,7 @@ public final class BIOS {
                 if (Register.getRegDX() == 0x0000) {
                     // Get Joystick button status
                     if (JoysticModule.isEnabled(0) || JoysticModule.isEnabled(1)) {
-                        Register.setRegAL((byte) (IO.readB((int) 0x201) & 0xf0));
+                        Register.setRegAL(IO.readB(0x201) & 0xf0);
                         Callback.scf(false);
                     } else {
                         // dos values
@@ -1169,7 +1169,7 @@ public final class BIOS {
                     Callback.scf(true);
                     break;
                 }
-                int count = ((int) Register.getRegCX() << 16) | Register.getRegDX();
+                int count = (Register.getRegCX() << 16) | Register.getRegDX();
                 Memory.writeD(BIOS_WAIT_FLAG_POINTER, Memory.realMake(0, BIOS_WAIT_FLAG_TEMP));
                 Memory.writeD(BIOS_WAIT_FLAG_COUNT, count);
                 Memory.writeB(BIOS_WAIT_FLAG_ACTIVE, 1);
@@ -1187,12 +1187,12 @@ public final class BIOS {
             {
                 boolean enabled = Memory.A20Enabled();
                 Memory.A20Enable(true);
-                int bytes = (int) Register.getRegCX() * 2;
+                int bytes = Register.getRegCX() * 2;
                 int data = Register.segPhys(Register.SEG_NAME_ES) + Register.getRegSI();
                 int source = (Memory.readD(data + 0x12) & 0x00FFFFFF)
-                        + (int) (Memory.readB(data + 0x16) << 24);
+                        + (Memory.readB(data + 0x16) << 24);
                 int dest = (Memory.readD(data + 0x1A) & 0x00FFFFFF)
-                        + (int) (Memory.readB(data + 0x1E) << 24);
+                        + (Memory.readB(data + 0x1E) << 24);
                 Memory.blockCopy(dest, source, bytes);
                 Register.setRegAX(0x00);
                 Memory.A20Enable(enabled);

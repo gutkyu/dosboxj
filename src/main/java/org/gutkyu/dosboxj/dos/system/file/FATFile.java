@@ -187,13 +187,13 @@ public final class FATFile extends DOSFile {
     }
 
     private void finalizeWrite(byte[] entry) {
-        myDrive.directoryBrowse(DirCluster, entry, (int) DirIndex);
+        myDrive.directoryBrowse(DirCluster, entry, DirIndex);
 
         ArrayHelper.copy(fileLength, entry, FATDrive.OFF_direntry_entrysize,
                 FATDrive.SIZE_direntry_entrysize);
         ArrayHelper.copy(FirstCluster, entry, FATDrive.OFF_direntry_loFirstClust,
                 FATDrive.SIZE_direntry_loFirstClust);
-        myDrive.directoryChange(DirCluster, entry, (int) DirIndex);
+        myDrive.directoryChange(DirCluster, entry, DirIndex);
 
     }
 

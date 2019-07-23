@@ -724,7 +724,7 @@ public final class Flags {
 
     private static void doFlagAF() {
         Register.Flags = (Register.Flags & ~Register.FlagAF)
-                | (int) (((Flags.getLzFVar1b() ^ Flags.getLzFVar2b()) ^ Flags.getLzFResb()) & 0x10);
+                | (((Flags.getLzFVar1b() ^ Flags.getLzFVar2b()) ^ Flags.getLzFResb()) & 0x10);
     }
 
     private static void doFlagZFb() {
@@ -740,13 +740,12 @@ public final class Flags {
     }
 
     private static void doFlagSFb() {
-        Register.Flags =
-                (Register.Flags & ~Register.FlagSF) | (int) ((Flags.getLzFResb() & 0x80) >>> 0);
+        Register.Flags = (Register.Flags & ~Register.FlagSF) | ((Flags.getLzFResb() & 0x80) >>> 0);
     }
 
     private static void doFlagSFw() {
         Register.Flags =
-                (Register.Flags & ~Register.FlagSF) | (int) ((Flags.getLzFresw() & 0x8000) >>> 8);
+                (Register.Flags & ~Register.FlagSF) | ((Flags.getLzFresw() & 0x8000) >>> 8);
     }
 
     private static void doFlagSFd() {
@@ -779,7 +778,7 @@ public final class Flags {
                 doFlagAF();
                 doFlagZFb();
                 doFlagSFb();
-                setFlag(Register.FlagOF, (int) ((Flags.getLzFVar1b() ^ Flags.getLzFVar2b() ^ 0x80)
+                setFlag(Register.FlagOF, ((Flags.getLzFVar1b() ^ Flags.getLzFVar2b() ^ 0x80)
                         & (Flags.getLzFResb() ^ Flags.getLzFVar1b())) & 0x80);
                 doFlagPF();
                 break;
@@ -788,7 +787,7 @@ public final class Flags {
                 doFlagAF();
                 doFlagZFw();
                 doFlagSFw();
-                setFlag(Register.FlagOF, (int) ((Flags.getLzFVar1w() ^ Flags.getLzFvar2w() ^ 0x8000)
+                setFlag(Register.FlagOF, ((Flags.getLzFVar1w() ^ Flags.getLzFvar2w() ^ 0x8000)
                         & (Flags.getLzFresw() ^ Flags.getLzFVar1w())) & 0x8000);
                 doFlagPF();
                 break;
@@ -807,7 +806,7 @@ public final class Flags {
                 doFlagAF();
                 doFlagZFb();
                 doFlagSFb();
-                setFlag(Register.FlagOF, (int) ((Flags.getLzFVar1b() ^ Flags.getLzFVar2b() ^ 0x80)
+                setFlag(Register.FlagOF, ((Flags.getLzFVar1b() ^ Flags.getLzFVar2b() ^ 0x80)
                         & (Flags.getLzFResb() ^ Flags.getLzFVar1b())) & 0x80);
                 doFlagPF();
                 break;
@@ -817,7 +816,7 @@ public final class Flags {
                 doFlagAF();
                 doFlagZFw();
                 doFlagSFw();
-                setFlag(Register.FlagOF, (int) ((Flags.getLzFVar1w() ^ Flags.getLzFvar2w() ^ 0x8000)
+                setFlag(Register.FlagOF, ((Flags.getLzFVar1w() ^ Flags.getLzFvar2w() ^ 0x8000)
                         & (Flags.getLzFresw() ^ Flags.getLzFVar1w())) & 0x8000);
                 doFlagPF();
                 break;
@@ -839,7 +838,7 @@ public final class Flags {
                 doFlagAF();
                 doFlagZFb();
                 doFlagSFb();
-                setFlag(Register.FlagOF, (int) ((Flags.getLzFVar1b() ^ Flags.getLzFVar2b())
+                setFlag(Register.FlagOF, ((Flags.getLzFVar1b() ^ Flags.getLzFVar2b())
                         & (Flags.getLzFVar1b() ^ Flags.getLzFResb()) & 0x80));
                 doFlagPF();
                 break;
@@ -849,7 +848,7 @@ public final class Flags {
                 doFlagAF();
                 doFlagZFw();
                 doFlagSFw();
-                setFlag(Register.FlagOF, (int) ((Flags.getLzFVar1w() ^ Flags.getLzFvar2w())
+                setFlag(Register.FlagOF, ((Flags.getLzFVar1w() ^ Flags.getLzFvar2w())
                         & (Flags.getLzFVar1w() ^ Flags.getLzFresw()) & 0x8000));
                 doFlagPF();
                 break;
@@ -871,8 +870,8 @@ public final class Flags {
                 doFlagAF();
                 doFlagZFb();
                 doFlagSFb();
-                setFlag(Register.FlagOF, (int) ((Flags.getLzFVar1b() ^ Flags.getLzFVar2b())
-                        & (Flags.getLzFVar1b() ^ Flags.getLzFResb()) & 0x80));
+                setFlag(Register.FlagOF, (Flags.getLzFVar1b() ^ Flags.getLzFVar2b())
+                        & (Flags.getLzFVar1b() ^ Flags.getLzFResb()) & 0x80);
                 doFlagPF();
                 break;
             case SUBw:
@@ -881,7 +880,7 @@ public final class Flags {
                 doFlagAF();
                 doFlagZFw();
                 doFlagSFw();
-                setFlag(Register.FlagOF, (int) ((Flags.getLzFVar1w() ^ Flags.getLzFvar2w())
+                setFlag(Register.FlagOF, ((Flags.getLzFVar1w() ^ Flags.getLzFvar2w())
                         & (Flags.getLzFVar1w() ^ Flags.getLzFresw()) & 0x8000));
                 doFlagPF();
                 break;
@@ -983,24 +982,24 @@ public final class Flags {
                     setFlag(Register.FlagCF, false);
                 else
                     setFlag(Register.FlagCF,
-                            (int) (Flags.getLzFVar1b() >>> (8 - Flags.getLzFVar2b())) & 1);
+                            (Flags.getLzFVar1b() >>> (8 - Flags.getLzFVar2b())) & 1);
                 doFlagZFb();
                 doFlagSFb();
-                setFlag(Register.FlagOF, (int) (Flags.getLzFResb() ^ Flags.getLzFVar1b()) & 0x80);
+                setFlag(Register.FlagOF, (Flags.getLzFResb() ^ Flags.getLzFVar1b()) & 0x80);
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFVar2b() & 0x1f));
+                setFlag(Register.FlagAF, (Flags.getLzFVar2b() & 0x1f));
                 break;
             case SHLw:
                 if (Flags.getLzFVar2b() > 16)
                     setFlag(Register.FlagCF, false);
                 else
                     setFlag(Register.FlagCF,
-                            (int) (Flags.getLzFVar1w() >>> (16 - Flags.getLzFVar2b())) & 1);
+                            (Flags.getLzFVar1w() >>> (16 - Flags.getLzFVar2b())) & 1);
                 doFlagZFw();
                 doFlagSFw();
-                setFlag(Register.FlagOF, (int) (Flags.getLzFresw() ^ Flags.getLzFVar1w()) & 0x8000);
+                setFlag(Register.FlagOF, (Flags.getLzFresw() ^ Flags.getLzFVar1w()) & 0x8000);
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFvar2w() & 0x1f));
+                setFlag(Register.FlagAF, (Flags.getLzFvar2w() & 0x1f));
                 break;
             case SHLd:
                 setFlag(Register.FlagCF, (Flags.getLzFVar1d() >>> (32 - Flags.getLzFVar2b())) & 1);
@@ -1016,7 +1015,7 @@ public final class Flags {
                 setFlag(Register.FlagCF, (Flags.getLzFVar1d() >>> (32 - Flags.getLzFVar2b())) & 1);
                 doFlagZFw();
                 doFlagSFw();
-                setFlag(Register.FlagOF, (int) (Flags.getLzFresw() ^ Flags.getLzFVar1w()) & 0x8000);
+                setFlag(Register.FlagOF, (Flags.getLzFresw() ^ Flags.getLzFVar1w()) & 0x8000);
                 doFlagPF();
                 break;
             case DSHLd:
@@ -1029,8 +1028,7 @@ public final class Flags {
 
 
             case SHRb:
-                setFlag(Register.FlagCF,
-                        (int) (Flags.getLzFVar1b() >>> (Flags.getLzFVar2b() - 1)) & 1);
+                setFlag(Register.FlagCF, (Flags.getLzFVar1b() >>> (Flags.getLzFVar2b() - 1)) & 1);
                 doFlagZFb();
                 doFlagSFb();
                 if ((Flags.getLzFVar2b() & 0x1f) == 1)
@@ -1038,11 +1036,10 @@ public final class Flags {
                 else
                     setFlag(Register.FlagOF, false);
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFVar2b() & 0x1f));
+                setFlag(Register.FlagAF, (Flags.getLzFVar2b() & 0x1f));
                 break;
             case SHRw:
-                setFlag(Register.FlagCF,
-                        (int) (Flags.getLzFVar1w() >>> (Flags.getLzFVar2b() - 1)) & 1);
+                setFlag(Register.FlagCF, (Flags.getLzFVar1w() >>> (Flags.getLzFVar2b() - 1)) & 1);
                 doFlagZFw();
                 doFlagSFw();
                 if ((Flags.getLzFvar2w() & 0x1f) == 1)
@@ -1050,7 +1047,7 @@ public final class Flags {
                 else
                     setFlag(Register.FlagOF, false);
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFvar2w() & 0x1f));
+                setFlag(Register.FlagAF, Flags.getLzFvar2w() & 0x1f);
                 break;
             case SHRd:
                 setFlag(Register.FlagCF, (Flags.getLzFVar1d() >>> (Flags.getLzFVar2b() - 1)) & 1);
@@ -1069,7 +1066,7 @@ public final class Flags {
                 setFlag(Register.FlagCF, (Flags.getLzFVar1d() >>> (Flags.getLzFVar2b() - 1)) & 1);
                 doFlagZFw();
                 doFlagSFw();
-                setFlag(Register.FlagOF, (int) (Flags.getLzFresw() ^ Flags.getLzFVar1w()) & 0x8000);
+                setFlag(Register.FlagOF, (Flags.getLzFresw() ^ Flags.getLzFVar1w()) & 0x8000);
                 doFlagPF();
                 break;
             case DSHRd:
@@ -1082,26 +1079,23 @@ public final class Flags {
 
 
             case SARb:
-                setFlag(Register.FlagCF,
-                        (int) (Flags.getLzFVar1b() >>> (Flags.getLzFVar2b() - 1)) & 1);
+                setFlag(Register.FlagCF, (Flags.getLzFVar1b() >>> (Flags.getLzFVar2b() - 1)) & 1);
                 doFlagZFb();
                 doFlagSFb();
                 setFlag(Register.FlagOF, false);
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFVar2b() & 0x1f));
+                setFlag(Register.FlagAF, Flags.getLzFVar2b() & 0x1f);
                 break;
             case SARw:
-                setFlag(Register.FlagCF,
-                        (int) (Flags.getLzFVar1w() >>> (Flags.getLzFVar2b() - 1)) & 1);
+                setFlag(Register.FlagCF, (Flags.getLzFVar1w() >>> (Flags.getLzFVar2b() - 1)) & 1);
                 doFlagZFw();
                 doFlagSFw();
                 setFlag(Register.FlagOF, false);
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFvar2w() & 0x1f));
+                setFlag(Register.FlagAF, Flags.getLzFvar2w() & 0x1f);
                 break;
             case SARd:
-                setFlag(Register.FlagCF,
-                        (int) (Flags.getLzFVar1d() >>> (Flags.getLzFVar2b() - 1)) & 1);
+                setFlag(Register.FlagCF, (Flags.getLzFVar1d() >>> (Flags.getLzFVar2b() - 1)) & 1);
                 doFlagZFd();
                 doFlagSFd();
                 setFlag(Register.FlagOF, false);
@@ -1344,13 +1338,13 @@ public final class Flags {
                 doFlagZFb();
                 doFlagSFb();
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFVar2b() & 0x1f));
+                setFlag(Register.FlagAF, (Flags.getLzFVar2b() & 0x1f));
                 break;
             case SHLw:
                 doFlagZFw();
                 doFlagSFw();
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFvar2w() & 0x1f));
+                setFlag(Register.FlagAF, (Flags.getLzFvar2w() & 0x1f));
                 break;
             case SHLd:
                 doFlagZFd();
@@ -1376,13 +1370,13 @@ public final class Flags {
                 doFlagZFb();
                 doFlagSFb();
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFVar2b() & 0x1f));
+                setFlag(Register.FlagAF, Flags.getLzFVar2b() & 0x1f);
                 break;
             case SHRw:
                 doFlagZFw();
                 doFlagSFw();
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFvar2w() & 0x1f));
+                setFlag(Register.FlagAF, Flags.getLzFvar2w() & 0x1f);
                 break;
             case SHRd:
                 doFlagZFd();
@@ -1408,13 +1402,13 @@ public final class Flags {
                 doFlagZFb();
                 doFlagSFb();
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFVar2b() & 0x1f));
+                setFlag(Register.FlagAF, Flags.getLzFVar2b() & 0x1f);
                 break;
             case SARw:
                 doFlagZFw();
                 doFlagSFw();
                 doFlagPF();
-                setFlag(Register.FlagAF, (int) (Flags.getLzFvar2w() & 0x1f));
+                setFlag(Register.FlagAF, Flags.getLzFvar2w() & 0x1f);
                 break;
             case SARd:
                 doFlagZFd();

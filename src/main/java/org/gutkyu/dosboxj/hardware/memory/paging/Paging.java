@@ -554,7 +554,7 @@ public final class Paging {
         paging.CR3 = cr3;
 
         paging.Base.Page = cr3 >>> 12;
-        paging.Base.Addr = (int) (cr3 & ~4095);
+        paging.Base.Addr = cr3 & ~4095;
         // Log.Logging(Log.LOG_TYPES.LOG_PAGING,Log.LOG_SEVERITIES.LOG_NORMAL,"CR3:%X Base
         // %X",cr3,paging.super.page);
         if (paging.Enabled) {

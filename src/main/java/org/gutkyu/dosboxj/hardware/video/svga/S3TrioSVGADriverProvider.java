@@ -135,16 +135,16 @@ public final class S3TrioSVGADriverProvider {
                 _vga.activateHardwareCursor();
                 break;
             case 0x46:
-                _vga.S3.HGC.OriginX = (short) ((_vga.S3.HGC.OriginX & 0x00ff) | (val << 8));
+                _vga.S3.HGC.OriginX = 0xffff & ((_vga.S3.HGC.OriginX & 0x00ff) | (val << 8));
                 break;
             case 0x47: /* HGC orgX */
-                _vga.S3.HGC.OriginX = (short) ((_vga.S3.HGC.OriginX & 0xff00) | val);
+                _vga.S3.HGC.OriginX = 0xffff & ((_vga.S3.HGC.OriginX & 0xff00) | val);
                 break;
             case 0x48:
-                _vga.S3.HGC.OriginY = (short) ((_vga.S3.HGC.OriginY & 0x00ff) | (val << 8));
+                _vga.S3.HGC.OriginY = 0xffff & ((_vga.S3.HGC.OriginY & 0x00ff) | (val << 8));
                 break;
             case 0x49: /* HGC orgY */
-                _vga.S3.HGC.OriginY = (short) ((_vga.S3.HGC.OriginY & 0xff00) | val);
+                _vga.S3.HGC.OriginY = 0xffff & ((_vga.S3.HGC.OriginY & 0xff00) | val);
                 break;
             case 0x4A: /* HGC foreground stack */
                 if (_vga.S3.HGC.ForeStackPos > 2)
@@ -160,8 +160,9 @@ public final class S3TrioSVGADriverProvider {
                 break;
             case 0x4c: /* HGC start address high byte */
                 _vga.S3.HGC.StartAddr &= 0xff;
-                _vga.S3.HGC.StartAddr |=  (val & 0xf) << 8;
-                if ((((int) _vga.S3.HGC.StartAddr) << 10) + ((64 * 64 * 2) / 8) > _vga.VMemSize) {
+                _vga.S3.HGC.StartAddr |= (val & 0xf) << 8;
+                if (((0xffff & _vga.S3.HGC.StartAddr) << 10)
+                        + ((64 * 64 * 2) / 8) > _vga.VMemSize) {
                     _vga.S3.HGC.StartAddr &= 0xff; // put it back to some sane area;
                     // if read back of this address is ever implemented this needs to change
                     Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
@@ -388,73 +389,72 @@ public final class S3TrioSVGADriverProvider {
                 return 0xe1; // Trio+ dual byte
             case 0x31: /* CR31 Memory Configuration */
                 // TODO mix in bits from baseaddress;
-                return _vga.S3.Reg31;
+                return _vga.S3.Reg31 & 0xff;
             case 0x35: /* CR35 CRT Register Lock */
-                return (int) (_vga.S3.Reg35 | (_vga.SVGA.BankRead & 0xf));
+                return (_vga.S3.Reg35 & 0xff) | (_vga.SVGA.BankRead & 0xf);
             case 0x36: /* CR36 Reset State Read 1 */
-                return _vga.S3.Reg36;
+                return _vga.S3.Reg36 & 0xff;
             case 0x37: /* Reset state read 2 */
                 return 0x2b;
             case 0x38: /* CR38 Register Lock 1 */
-                return _vga.S3.RegLock1;
+                return _vga.S3.RegLock1 & 0xff;
             case 0x39: /* CR39 Register Lock 2 */
-                return _vga.S3.RegLock2;
+                return _vga.S3.RegLock2 & 0xff;
             case 0x3a:
-                return _vga.S3.Reg3A;
+                return _vga.S3.Reg3A & 0xff;
             case 0x40: /* CR40 system config */
-                return _vga.S3.Reg40;
+                return _vga.S3.Reg40 & 0xff;
             case 0x41: /* CR40 system config */
-                return _vga.S3.Reg41;
+                return _vga.S3.Reg41 & 0xff;
             case 0x42: // not interlaced
                 return 0x0d;
             case 0x43: /* CR43 Extended Mode */
-                return _vga.S3.Reg43 | ((_vga.Config.ScanLen >>> 6) & 0x4);
+                return (_vga.S3.Reg43 & 0xff) | ((_vga.Config.ScanLen >>> 6) & 0x4);
             case 0x45: /* Hardware cursor mode */
                 _vga.S3.HGC.BackStackPos = 0;
                 _vga.S3.HGC.ForeStackPos = 0;
                 return _vga.S3.HGC.CurMode | 0xa0;
             case 0x46:
-                return (int) _vga.S3.HGC.OriginX >>> 8;
+                return _vga.S3.HGC.OriginX >>> 8;
             case 0x47: /* HGC orgX */
                 return _vga.S3.HGC.OriginX & 0xff;
             case 0x48:
-                return (int) _vga.S3.HGC.OriginY >>> 8;
+                return _vga.S3.HGC.OriginY >>> 8;
             case 0x49: /* HGC orgY */
                 return _vga.S3.HGC.OriginY & 0xff;
             case 0x4A: /* HGC foreground stack */
-                return _vga.S3.HGC.ForeStack[_vga.S3.HGC.ForeStackPos];
+                return _vga.S3.HGC.ForeStack[_vga.S3.HGC.ForeStackPos & 0xff];
             case 0x4B: /* HGC background stack */
-                return _vga.S3.HGC.BackStack[_vga.S3.HGC.BackStackPos];
+                return _vga.S3.HGC.BackStack[_vga.S3.HGC.BackStackPos & 0xff];
             case 0x50: // CR50 Extended System Control 1
-                return _vga.S3.Reg50;
+                return _vga.S3.Reg50 & 0xff;
             case 0x51: /* Extended System Control 2 */
-                return (int) ((_vga.Config.DisplayStart >>> 16) & 3)
-                        | (int) ((_vga.SVGA.BankRead & 0x30) >>> 2)
-                        | ((_vga.Config.ScanLen & 0x300) >>> 4) | _vga.S3.Reg51;
+                return ((_vga.Config.DisplayStart >>> 16) & 3) | ((_vga.SVGA.BankRead & 0x30) >>> 2)
+                        | ((_vga.Config.ScanLen & 0x300) >>> 4) | (_vga.S3.Reg51 & 0xff);
             case 0x52: // CR52 Extended BIOS flags 1
-                return _vga.S3.Reg52;
+                return _vga.S3.Reg52 & 0xff;
             case 0x53:
-                return _vga.S3.ExtMemCtrl;
+                return _vga.S3.ExtMemCtrl & 0xff;
             case 0x55: /* Extended Video DAC Control */
-                return _vga.S3.Reg55;
+                return _vga.S3.Reg55 & 0xff;
             case 0x58: /* Linear Address Window Control */
-                return _vga.S3.Reg58;
+                return _vga.S3.Reg58 & 0xff;
             case 0x59: /* Linear Address Window Position High */
                 return _vga.S3.LaWindow >>> 8;
             case 0x5a: /* Linear Address Window Position Low */
                 return _vga.S3.LaWindow & 0xff;
             case 0x5D: /* Extended Horizontal Overflow */
-                return _vga.S3.ExHorOverflow;
+                return _vga.S3.ExHorOverflow & 0xff;
             case 0x5e: /* Extended Vertical Overflow */
-                return _vga.S3.ExVerOverflow;
+                return _vga.S3.ExVerOverflow & 0xff;
             case 0x67: /* Extended Miscellaneous Control 2 */
-                return _vga.S3.MiscControl2;
+                return _vga.S3.MiscControl2 & 0xff;
             case 0x69: /* Extended System Control 3 */
-                return (byte) ((_vga.Config.DisplayStart & 0x1f0000) >>> 16);
+                return 0xff & ((_vga.Config.DisplayStart & 0x1f0000) >>> 16);
             case 0x6a: /* Extended System Control 4 */
-                return (byte) (_vga.SVGA.BankRead & 0x7f);
+                return _vga.SVGA.BankRead & 0x7f;
             case 0x6b: // BIOS scatchpad: LFB address
-                return _vga.S3.Reg6B;
+                return _vga.S3.Reg6B & 0xff;
             default:
                 return 0x00;
         }
@@ -531,8 +531,8 @@ public final class S3TrioSVGADriverProvider {
             clock = 28322000;
         else
             // clock=1000*S3_CLOCK(vga.s3.clk[clock].m,vga.s3.clk[clock].n,vga.s3.clk[clock].r);
-            clock = (int) (1000 * ((VGA.S3_CLOCK_REF * ((_vga.S3.CLK[clock].m) + 2))
-                    / (((_vga.S3.CLK[clock].n) + 2) * (1 << (_vga.S3.CLK[clock].r)))));
+            clock = 1000 * ((VGA.S3_CLOCK_REF * ((_vga.S3.CLK[clock].m) + 2))
+                    / (((_vga.S3.CLK[clock].n) + 2) * (1 << (_vga.S3.CLK[clock].r))));
         /* Check for dual transfer, master clock/2 */
         if ((_vga.S3.PLL.Cmd & 0x10) != 0)
             clock /= 2;

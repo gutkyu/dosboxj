@@ -99,18 +99,23 @@ public final class XMS {
         return (handle == 0 || (handle >= XMS_HANDLES) || _xmsHandles[handle].Free);
     }
 
-    private static int queryFreeMemory(RefU16Ret refLargestFree, RefU16Ret refTotalFree) {
+    private static int totalFreeMemory = 0;
+    private static int largestFreeMemory = 0;
+
+    private static int queryFreeMemory() {
         /* Scan the tree for free memory and find largest free block */
-        refTotalFree.U16 = (short) (Memory.freeTotal() * 4);
-        refLargestFree.U16 = (short) (Memory.freeLargest() * 4);
-        if (refTotalFree.U16 == 0)
+        totalFreeMemory = Memory.freeTotal() * 4;
+        largestFreeMemory = Memory.freeLargest() * 4;
+        if (totalFreeMemory == 0)
             return XMS_OUT_OF_SPACE;
         return 0;
     }
 
-    private static int allocateMemory(int size, RefU16Ret refHandle) { // size = kb
+    private static int allocatedMemoryHandle = 0;
+
+    private static int allocateMemory(int size) { // size = kb
         /* Find free handle */
-        short index = 1;
+        int index = 1;
         while (!_xmsHandles[index].Free) {
             if (++index >= XMS_HANDLES)
                 return XMS_OUT_OF_HANDLES;
@@ -131,7 +136,7 @@ public final class XMS {
         _xmsHandles[index].Mem = mem;
         _xmsHandles[index].Locked = 0;
         _xmsHandles[index].Size = size;
-        refHandle.U16 = index;
+        allocatedMemoryHandle = index;
         return 0;
     }
 
@@ -169,7 +174,7 @@ public final class XMS {
             if (length > _xmsHandles[srcHandle].Size * 1024 - src.Offset) {
                 return XMS_INVALID_LENGTH;
             }
-            srcPt = (int) (_xmsHandles[srcHandle].Mem * 4096) + src.Offset;
+            srcPt = (_xmsHandles[srcHandle].Mem * 4096) + src.Offset;
         } else {
             srcPt = Memory.real2Phys(src.RealPt);
         }
@@ -183,7 +188,7 @@ public final class XMS {
             if (length > _xmsHandles[destHandle].Size * 1024 - dest.Offset) {
                 return XMS_INVALID_LENGTH;
             }
-            destPt = (int) (_xmsHandles[destHandle].Mem * 4096) + dest.Offset;
+            destPt = (_xmsHandles[destHandle].Mem * 4096) + dest.Offset;
         } else {
             destPt = Memory.real2Phys(dest.RealPt);
         }
@@ -197,7 +202,7 @@ public final class XMS {
             return XMS_INVALID_HANDLE;
         if (_xmsHandles[handle].Locked < 255)
             _xmsHandles[handle].Locked++;
-        refAddr.U32 = (int) _xmsHandles[handle].Mem * 4096;
+        refAddr.U32 = _xmsHandles[handle].Mem * 4096;
         return 0;
     }
 
@@ -309,11 +314,9 @@ public final class XMS {
                 break;
             case XMS_QUERY_FREE_EXTENDED_MEMORY: /* 08 */
             {
-                RefU16Ret refReg0 = new RefU16Ret(0);
-                RefU16Ret refReg1 = new RefU16Ret(0);
-                Register.setRegBL(queryFreeMemory(refReg0, refReg1));
-                Register.setRegAX(refReg0.U16);
-                Register.setRegDX(refReg1.U16);
+                Register.setRegBL(queryFreeMemory());
+                Register.setRegAX(largestFreeMemory);
+                Register.setRegDX(totalFreeMemory);
             }
                 break;
             case XMS_ALLOCATE_ANY_MEMORY: /* 89 */
@@ -323,9 +326,8 @@ public final class XMS {
             case XMS_ALLOCATE_EXTENDED_MEMORY: /* 09 */
             // GotoXMS_ALLOCATE_EXTENDED_MEMORY:
             {
-                RefU16Ret refHandle = new RefU16Ret(0);
-                setResult(allocateMemory(Register.getRegDX(), refHandle));
-                Register.setRegDX(refHandle.U16);
+                setResult(allocateMemory(Register.getRegDX()));
+                Register.setRegDX(allocatedMemoryHandle);
             }
                 break;
             case XMS_FREE_EXTENDED_MEMORY: /* 0a */
@@ -443,11 +445,9 @@ public final class XMS {
                 break;
             case XMS_QUERY_ANY_FREE_MEMORY: /* 88 */
             {
-                RefU16Ret refReg0 = new RefU16Ret(0);
-                RefU16Ret refReg1 = new RefU16Ret(0);
-                Register.setRegBL(queryFreeMemory(refReg0, refReg1));
-                Register.setRegAX(refReg0.U16);
-                Register.setRegDX(refReg1.U16);
+                Register.setRegBL(queryFreeMemory());
+                Register.setRegAX(largestFreeMemory);
+                Register.setRegDX(totalFreeMemory);
                 Register.setRegEAX(Register.getRegEAX() & 0xffff);
                 Register.setRegEDX(Register.getRegEDX() & 0xffff);
                 // highest known physical memory address

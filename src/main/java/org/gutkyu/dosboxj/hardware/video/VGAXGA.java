@@ -13,14 +13,14 @@ public final class VGAXGA {
     // private ContextBoundObject XGA_SHOW_COMMAND_TRACE = null;
 
     public final class ScissorReg {
-        public short x1, y1, x2, y2;
+        public int x1, y1, x2, y2;// uint16
     }
     public final class XGAWaitCmd {
         public boolean NewLine;
         public boolean Wait;
         public short Cmd;
-        public short CurX, CurY;
-        public short X1, Y1, X2, Y2, SizeX, SizeY;
+        public int CurX, CurY;// uint16
+        public int X1, Y1, X2, Y2, SizeX, SizeY;// uint16
         public int Data; /* transient data passed by multiple calls */
         public int DataSize;
         public int BusWidth;
@@ -37,20 +37,20 @@ public final class VGAXGA {
 
     public int CurCommand;
 
-    public short Foremix;
-    public short Backmix;
+    public int Foremix;// uint16
+    public int Backmix;// uint16
 
-    public short CurX, CurY;
-    public short DestX, DestY;
+    public int CurX, CurY;// uint16
+    public int DestX, DestY;// uint16
 
-    public short ErrTerm;
-    public short MIPcount;
-    public short MAPcount;
+    public int ErrTerm;// uint16
+    public int MIPcount;// uint16
+    public int MAPcount;// uint16
 
-    public short PixCntl;
-    public short Control1;
-    public short Control2;
-    public short ReadSel;
+    public int PixCntl;// uint16
+    public int Control1;// uint16
+    public int Control2;// uint16
+    public int ReadSel;// uint16
 
     public XGAWaitCmd WaitCmd = null;
     // -- #endregion
@@ -108,7 +108,7 @@ public final class VGAXGA {
 
     private void writeMultiFunc(int val, int len) {
         int regselect = val >>> 12;
-        short dataval = (short) (val & 0xfff);
+        int dataval = val & 0xfff;
         switch (regselect) {
             case 0: // minor axis pixel count
                 MIPcount = dataval;
@@ -369,7 +369,7 @@ public final class VGAXGA {
         }
 
         for (i = 0; i <= dx; i++) {
-            int mixMode = (int) (PixCntl >>> 6) & 0x3;
+            int mixMode = (PixCntl >>> 6) & 0x3;
             switch (mixMode) {
                 case 0x00: /* FOREMIX always used */
                     mixMode = Foremix;
@@ -392,11 +392,11 @@ public final class VGAXGA {
                             Log.logMsg("XGA: DrawRect: Shouldn't be able to get here!");
                             break;
                     }
-                    dstData = getPoint((int) xat, (int) yat);
+                    dstData = getPoint(xat, yat);
 
                     destVal = getMixResult(mixMode, srcVal, dstData);
 
-                    drawPoint((int) xat, (int) yat, (int) destVal);
+                    drawPoint(xat, yat, destVal);
                     break;
                 default:
                     Log.logMsg("XGA: DrawLine: Needs mixmode %x", mixMode);
@@ -406,8 +406,8 @@ public final class VGAXGA {
             yat += sy;
         }
 
-        CurX = (short) (xat - 1);
-        CurY = (short) yat;
+        CurX = 0xffff & (xat - 1);
+        CurY = 0xffff & yat;
     }
 
     private void drawLineBresenham(int val) {
@@ -424,14 +424,14 @@ public final class VGAXGA {
 
         // Probably a lot easier way to do this, but this works.
 
-        dminor = (int) ((short) DestY);
+        dminor = DestY;
         if ((DestY & 0x2000) != 0)
-            dminor |= (int) 0xffffe000;
+            dminor |= 0xffffe000;
         dminor >>>= 1;
 
-        destxtmp = (int) ((short) DestX);
+        destxtmp = DestX;
         if ((DestX & 0x2000) != 0)
-            destxtmp |= (int) 0xffffe000;
+            destxtmp |= 0xffffe000;
 
 
         dmajor = -(destxtmp - (dminor << 1)) >>> 1;
@@ -448,9 +448,9 @@ public final class VGAXGA {
         } else {
             sy = -1;
         }
-        e = (int) ((short) ErrTerm);
+        e = 0xffff & ErrTerm;
         if ((ErrTerm & 0x2000) != 0)
-            e |= (int) 0xffffe000;
+            e |= 0xffffe000;
         xat = CurX;
         yat = CurY;
 
@@ -473,7 +473,7 @@ public final class VGAXGA {
         // dmajor, dminor,xat,yat);
 
         for (i = 0; i <= MAPcount; i++) {
-            int mixMode = (int) (PixCntl >>> 6) & 0x3;
+            int mixMode = (PixCntl >>> 6) & 0x3;
             switch (mixMode) {
                 case 0x00: /* FOREMIX always used */
                     mixMode = Foremix;
@@ -498,17 +498,17 @@ public final class VGAXGA {
                     }
 
                     if (steep) {
-                        dstData = getPoint((int) xat, (int) yat);
+                        dstData = getPoint(xat, yat);
                     } else {
-                        dstData = getPoint((int) yat, (int) xat);
+                        dstData = getPoint(yat, xat);
                     }
 
                     destVal = getMixResult(mixMode, srcVal, dstData);
 
                     if (steep) {
-                        drawPoint((int) xat, (int) yat, (int) destVal);
+                        drawPoint(xat, yat, destVal);
                     } else {
-                        drawPoint((int) yat, (int) xat, (int) destVal);
+                        drawPoint(yat, xat, destVal);
                     }
 
                     break;
@@ -525,11 +525,11 @@ public final class VGAXGA {
         }
 
         if (steep) {
-            CurX = (short) xat;
-            CurY = (short) yat;
+            CurX = 0xffff & xat;
+            CurY = 0xffff & yat;
         } else {
-            CurX = (short) yat;
-            CurY = (short) xat;
+            CurX = 0xffff & yat;
+            CurY = 0xffff & xat;
         }
         // }
         // }
@@ -557,7 +557,7 @@ public final class VGAXGA {
         for (yat = 0; yat <= MIPcount; yat++) {
             srcX = CurX;
             for (xat = 0; xat <= MAPcount; xat++) {
-                int mixmode = (int) (PixCntl >>> 6) & 0x3;
+                int mixmode = (PixCntl >>> 6) & 0x3;
                 switch (mixmode) {
                     case 0x00: /* FOREMIX always used */
                         mixmode = Foremix;
@@ -580,11 +580,11 @@ public final class VGAXGA {
                                 Log.logMsg("XGA: DrawRect: Shouldn't be able to get here!");
                                 break;
                         }
-                        dstData = getPoint((int) srcX, (int) srcY);
+                        dstData = getPoint(srcX, srcY);
 
                         destVal = getMixResult(mixmode, srcVal, dstData);
 
-                        drawPoint((int) srcX, (int) srcY, (int) destVal);
+                        drawPoint(srcX, srcY, destVal);
                         break;
                     default:
                         Log.logMsg("XGA: DrawRect: Needs mixmode %x", mixmode);
@@ -594,8 +594,8 @@ public final class VGAXGA {
             }
             srcY += dy;
         }
-        CurX = (short) srcX;
-        CurY = (short) srcY;
+        CurX = 0xffff & srcX;
+        CurY = 0xffff & srcY;
 
         // Log.LOG_MSG("XGA: Draw rect (%d, %d)-(%d, %d), %d", x1, y1, x2, y2, xga.forecolor);
     }
@@ -614,9 +614,9 @@ public final class VGAXGA {
                 if ((xgaWaitCmd.CurY < 2048) && (xgaWaitCmd.CurY > xgaWaitCmd.Y2))
                     xgaWaitCmd.Wait = false;
             } else if (xgaWaitCmd.CurX >= 2048) {
-                short realX = (short) (4096 - xgaWaitCmd.CurX);
+                int realX = 4096 - xgaWaitCmd.CurX;
                 if (xgaWaitCmd.X2 > 2047) { // x end is negative too
-                    short realxend = (short) (4096 - xgaWaitCmd.X2);
+                    int realxend = 4096 - xgaWaitCmd.X2;
                     if (realX == realxend) {
                         xgaWaitCmd.CurX = xgaWaitCmd.X1;
                         xgaWaitCmd.CurY++;
@@ -677,7 +677,7 @@ public final class VGAXGA {
         XGAWaitCmd xgaWaitCmd = WaitCmd;
         if (!xgaWaitCmd.Wait)
             return;
-        int mixmode = (int) (PixCntl >>> 6) & 0x3;
+        int mixmode = (PixCntl >>> 6) & 0x3;
         int srcval;
         switch (xgaWaitCmd.Cmd) {
             case 2: /* Rectangle */
@@ -704,7 +704,7 @@ public final class VGAXGA {
                             // case 0x20 | (short)VGAModes.LIN8: // 16 bit
                             case 0x20 | 5: // 16 bit
                                 for (int i = 0; i < len; i++) {
-                                    drawWaitSub(mixmode, (val >>> (int) (8 * i)) & 0xff);
+                                    drawWaitSub(mixmode, (val >>> (8 * i)) & 0xff);
                                     if (xgaWaitCmd.NewLine)
                                         break;
                                 }
@@ -792,8 +792,8 @@ public final class VGAXGA {
                                 int mixmode1 = 0;
 
                                 // This formula can rule the world ;)
-                                int mask = (int) (1 << (int) ((((n & 0xF8) + (8 - (n & 0x7))) - 1)
-                                        + chunkSize * k));
+                                int mask =
+                                        1 << ((((n & 0xF8) + (8 - (n & 0x7))) - 1) + chunkSize * k);
                                 if ((val & mask) != 0)
                                     mixmode1 = Foremix;
                                 else
@@ -861,7 +861,7 @@ public final class VGAXGA {
         tarX = DestX;
         tarY = DestY;
 
-        int mixselect = (int) (PixCntl >>> 6) & 0x3;
+        int mixselect = (PixCntl >>> 6) & 0x3;
         int mixmode = 0x67; /* Source is bitmap data, mix mode is src */
         switch (mixselect) {
             case 0x00: /* Foreground mix is always used */
@@ -886,8 +886,8 @@ public final class VGAXGA {
             tarX = DestX;
 
             for (xat = 0; xat <= MAPcount; xat++) {
-                srcData = getPoint((int) srcX, (int) srcY);
-                dstData = getPoint((int) tarX, (int) tarY);
+                srcData = getPoint(srcX, srcY);
+                dstData = getPoint(tarX, tarY);
 
                 if (mixselect == 0x3) {
                     if (srcData == Forecolor) {
@@ -924,7 +924,7 @@ public final class VGAXGA {
                 destVal = getMixResult(mixmode, srcVal, dstData);
                 // Log.LOG_MSG("XGA: DrawPattern: Mixmode: %x Mixselect: %x", mixmode, mixselect);
 
-                drawPoint((int) tarX, (int) tarY, (int) destVal);
+                drawPoint(tarX, tarY, destVal);
 
                 srcX += dx;
                 tarX += dx;
@@ -956,7 +956,7 @@ public final class VGAXGA {
 
         tary = DestY;
 
-        int mixselect = (int) (PixCntl >>> 6) & 0x3;
+        int mixselect = (PixCntl >>> 6) & 0x3;
         int mixmode = 0x67; /* Source is bitmap data, mix mode is src */
         switch (mixselect) {
             case 0x00: /* Foreground mix is always used */
@@ -979,10 +979,10 @@ public final class VGAXGA {
             tarx = DestX;
             for (xat = 0; xat <= MAPcount; xat++) {
 
-                srcData = getPoint((int) (srcx + (tarx & 0x7)), (int) (srcy + (tary & 0x7)));
+                srcData = getPoint(srcx + (tarx & 0x7), srcy + (tary & 0x7));
                 // Log.LOG_MSG("patternpoint (%3d/%3d)v%x",srcx + (tarx & 0x7), srcy + (tary &
                 // 0x7),srcdata);
-                dstData = getPoint((int) tarx, (int) tary);
+                dstData = getPoint(tarx, tary);
 
 
                 if (mixselect == 0x3) {
@@ -1015,7 +1015,7 @@ public final class VGAXGA {
 
                 destVal = getMixResult(mixmode, srcVal, dstData);
 
-                drawPoint((int) tarx, (int) tary, (int) destVal);
+                drawPoint(tarx, tary, destVal);
 
                 tarx += dx;
             }
@@ -1024,8 +1024,8 @@ public final class VGAXGA {
     }
 
     private void drawCmd(int val, int len) {
-        short cmd;
-        cmd = (short) (val >>> 13);
+        int cmd;
+        cmd = 0xffff & (val >>> 13);
         /*
          * #if XGA_SHOW_COMMAND_TRACE //Log.LOG_MSG("XGA: Draw command %x", cmd); #endif
          */
@@ -1069,10 +1069,10 @@ public final class VGAXGA {
                     xgaWaitCmd.CurY = CurY;
                     xgaWaitCmd.X1 = CurX;
                     xgaWaitCmd.Y1 = CurY;
-                    xgaWaitCmd.X2 = (short) ((CurX + MAPcount) & 0x0fff);
-                    xgaWaitCmd.Y2 = (short) ((CurY + MIPcount + 1) & 0x0fff);
+                    xgaWaitCmd.X2 = (CurX + MAPcount) & 0x0fff;
+                    xgaWaitCmd.Y2 = (CurY + MIPcount + 1) & 0x0fff;
                     xgaWaitCmd.SizeX = MAPcount;
-                    xgaWaitCmd.SizeY = (short) (MIPcount + 1);
+                    xgaWaitCmd.SizeY = 0xffff & (MIPcount + 1);
                     xgaWaitCmd.Cmd = 2;
                     xgaWaitCmd.BusWidth = _vga.Mode.toValue() | ((val & 0x600) >>> 4);
                     xgaWaitCmd.Data = 0;
@@ -1110,11 +1110,11 @@ public final class VGAXGA {
     private int setDualReg(int reg, int val) {
         switch (_vga.S3.XGAColorMode) {
             case LIN8:
-                reg = (byte) (val & 0xff);
+                reg = val & 0xff;
                 break;
             case LIN15:
             case LIN16:
-                reg = (short) (val & 0xffff);
+                reg = val & 0xffff;
                 break;
             case LIN32:
                 if ((Control1 & 0x200) != 0)
@@ -1123,7 +1123,7 @@ public final class VGAXGA {
                     reg = (reg & 0x0000ffff) | (val << 16);
                 else
                     reg = (reg & 0xffff0000) | (val & 0x0000ffff);
-                Control1 ^= 0x10;
+                Control1 = 0xffff & (Control1 ^ 0x10);
                 break;
         }
         return reg;
@@ -1132,14 +1132,14 @@ public final class VGAXGA {
     private int getDualReg(int reg) {
         switch (_vga.S3.XGAColorMode) {
             case LIN8:
-                return (byte) (reg & 0xff);
+                return reg & 0xff;
             case LIN15:
             case LIN16:
-                return (short) (reg & 0xffff);
+                return reg & 0xffff;
             case LIN32:
                 if ((Control1 & 0x200) != 0)
                     return reg;
-                Control1 ^= 0x10;
+                Control1 = 0xffff & (Control1 ^ 0x10);
                 if ((Control1 & 0x10) != 0)
                     return reg & 0x0000ffff;
                 else
@@ -1155,26 +1155,26 @@ public final class VGAXGA {
         switch (port) {
             case 0x8100:// drawing control: row (low word), column (high word)
                 // "CUR_X" and "CUR_Y" (see PORT 82E8h,PORT 86E8h)
-                CurY = (short) (val & 0x0fff);
+                CurY = val & 0x0fff;
                 if (len == 4)
-                    CurX = (short) ((val >>> 16) & 0x0fff);
+                    CurX = (val >>> 16) & 0x0fff;
                 break;
             case 0x8102:
-                CurX = (short) (val & 0x0fff);
+                CurX = val & 0x0fff;
                 break;
 
             case 0x8108:// DWORD drawing control: destination Y and axial step
                 // constant (low word), destination X and axial step
                 // constant (high word) (see PORT 8AE8h,PORT 8EE8h)
-                DestY = (short) (val & 0x3FFF);
+                DestY = val & 0x3FFF;
                 if (len == 4)
-                    DestX = (short) ((val >>> 16) & 0x3fff);
+                    DestX = (val >>> 16) & 0x3fff;
                 break;
             case 0x810a:
-                DestX = (short) (val & 0x3fff);
+                DestX = val & 0x3fff;
                 break;
             case 0x8110: // WORD error term (see PORT 92E8h)
-                ErrTerm = (short) (val & 0x3FFF);
+                ErrTerm = val & 0x3FFF;
                 break;
 
             case 0x8120: // packed MMIO: DWORD background color (see PORT A2E8h)
@@ -1191,58 +1191,58 @@ public final class VGAXGA {
                 break;
             case 0x8134: // packed MMIO: DWORD background mix (low word) and
                 // foreground mix (high word) (see PORT B6E8h,PORT BAE8h)
-                Backmix = (short) (val & 0xFFFF);
+                Backmix = val & 0xFFFF;
                 if (len == 4)
-                    Foremix = (short) (val >>> 16);
+                    Foremix = 0xffff & (val >>> 16);
                 break;
             case 0x8136:
-                Foremix = (short) val;
+                Foremix = 0xffff & val;
                 break;
             case 0x8138:// DWORD top scissors (low word) and left scissors (high
                 // word) (see PORT BEE8h,#P1047)
-                Scissors.y1 = (short) (val & 0x0fff);
+                Scissors.y1 = val & 0x0fff;
                 if (len == 4)
-                    Scissors.x1 = (short) ((val >>> 16) & 0x0fff);
+                    Scissors.x1 = (val >>> 16) & 0x0fff;
                 break;
             case 0x813a:
-                Scissors.x1 = (short) (val & 0x0fff);
+                Scissors.x1 = val & 0x0fff;
                 break;
             case 0x813C:// DWORD bottom scissors (low word) and right scissors
                 // (high word) (see PORT BEE8h,#P1047)
-                Scissors.y2 = (short) (val & 0x0fff);
+                Scissors.y2 = val & 0x0fff;
                 if (len == 4)
-                    Scissors.x2 = (short) ((val >>> 16) & 0x0fff);
+                    Scissors.x2 = (val >>> 16) & 0x0fff;
                 break;
             case 0x813e:
-                Scissors.x2 = (short) (val & 0x0fff);
+                Scissors.x2 = val & 0x0fff;
                 break;
 
             case 0x8140:// DWORD data manipulation control (low word) and
                 // miscellaneous 2 (high word) (see PORT BEE8h,#P1047)
-                PixCntl = (short) (val & 0xFFFF);
+                PixCntl = val & 0xFFFF;
                 if (len == 4)
-                    Control2 = (short) ((val >>> 16) & 0x0fff);
+                    Control2 = (val >>> 16) & 0x0fff;
                 break;
             case 0x8144:// DWORD miscellaneous (low word) and read register select
                 // (high word)(see PORT BEE8h,#P1047)
-                Control1 = (short) (val & 0xffff);
+                Control1 = val & 0xffff;
                 if (len == 4)
-                    ReadSel = (short) ((val >>> 16) & 0x7);
+                    ReadSel = (val >>> 16) & 0x7;
                 break;
             case 0x8148:// DWORD minor axis pixel count (low word) and major axis
                 // pixel count (high word) (see PORT BEE8h,#P1047,PORT 96E8h)
-                MIPcount = (short) (val & 0x0fff);
+                MIPcount = val & 0x0fff;
                 if (len == 4)
-                    MAPcount = (short) ((val >>> 16) & 0x0fff);
+                    MAPcount = (val >>> 16) & 0x0fff;
                 break;
             case 0x814a:
-                MAPcount = (short) (val & 0x0fff);
+                MAPcount = val & 0x0fff;
                 break;
             case 0x92e8:
-                ErrTerm = (short) (val & 0x3FFF);
+                ErrTerm = val & 0x3FFF;
                 break;
             case 0x96e8:
-                MAPcount = (short) (val & 0x0fff);
+                MAPcount = val & 0x0fff;
                 break;
             case 0x9ae8:
             case 0x8118: // Trio64V+ packed MMIO
@@ -1261,25 +1261,25 @@ public final class VGAXGA {
                 ReadMask = setDualReg(ReadMask, val);
                 break;
             case 0x82e8:
-                CurY = (short) (val & 0x0fff);
+                CurY = val & 0x0fff;
                 break;
             case 0x86e8:
-                CurX = (short) (val & 0x0fff);
+                CurX = val & 0x0fff;
                 break;
             case 0x8ae8:
-                DestY = (short) (val & 0x3fff);
+                DestY = val & 0x3fff;
                 break;
             case 0x8ee8:
-                DestX = (short) (val & 0x3fff);
+                DestX = val & 0x3fff;
                 break;
             case 0xb2e8:
                 Log.logMsg("COLOR_CMP not implemented");
                 break;
             case 0xb6e8:
-                Backmix = (short) val;
+                Backmix = 0xffff & val;
                 break;
             case 0xbae8:
-                Foremix = (short) val;
+                Foremix = 0xffff & val;
                 break;
             case 0xbee8:
                 writeMultiFunc(val, len);

@@ -92,9 +92,9 @@ public final class DOSFCB extends MemStruct {
     public void getName(byte[] fillName, int fillNameIdx) {
         fillName[fillNameIdx + 0] = (byte) (getDrive() + 0x41);// 'A'
         fillName[fillNameIdx + 1] = 0x3a;// ':'
-        Memory.blockRead(pt + Off_sFCB_filename, fillName, (int) (fillNameIdx + 2), 8);
+        Memory.blockRead(pt + Off_sFCB_filename, fillName, fillNameIdx + 2, 8);
         fillName[fillNameIdx + 10] = 0x2e;// '.'
-        Memory.blockRead(pt + Off_sFCB_ext, fillName, (int) (fillNameIdx + 11), 3);
+        Memory.blockRead(pt + Off_sFCB_ext, fillName, fillNameIdx + 11, 3);
         fillName[fillNameIdx + 14] = 0;
     }
 

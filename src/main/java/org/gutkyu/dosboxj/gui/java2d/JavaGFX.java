@@ -121,7 +121,7 @@ public final class JavaGFX extends Mapper implements IGFX, MouseAutoLockable {
     }
 
     private int getStride(BufferedImage image, int width) {
-        return (int) (width * image.getColorModel().getPixelSize() + 7) / 8;
+        return (width * image.getColorModel().getPixelSize() + 7) / 8;
     }
 
     // TODO have to implement
@@ -174,8 +174,8 @@ public final class JavaGFX extends Mapper implements IGFX, MouseAutoLockable {
         if (updating)
             endUpdate(null);
 
-        _drawWidth = (int) width;
-        _drawHeight = (int) height;
+        _drawWidth = width;
+        _drawHeight = height;
         _drawCallback = callback;
         _drawScaleX = scalex;
         _drawScaleY = scaley;
@@ -190,8 +190,8 @@ public final class JavaGFX extends Mapper implements IGFX, MouseAutoLockable {
         // if ((flags & GFXFlag.CAN32) != 0) bpp = PixelFormats.Bgra32;
         if ((flags & GFXFlag.CAN32) != 0)
             bpp = BufferedImage.TYPE_INT_ARGB;
-        _clip.width = (int) width;
-        _clip.height = (int) height;
+        _clip.width = width;
+        _clip.height = height;
 
         // _main.Topmost = dev_fullscreen;
         if (_devFullScreen) {
@@ -200,8 +200,8 @@ public final class JavaGFX extends Mapper implements IGFX, MouseAutoLockable {
             // setWindowWithNoTitleStyle();//_main.WindowStyle = WindowStyle.None;
             onFullScreen();
             if (_devFullFixed) {
-                _clip.x = (int) (_devFullWidth - width) / 2;
-                _clip.y = (int) (_devFullHeight - height) / 2;
+                _clip.x = (_devFullWidth - width) / 2;
+                _clip.y = (_devFullHeight - height) / 2;
                 surface.newImage(_devFullWidth, _devFullHeight, bpp);
                 _pixels = surface.getIntPixels();
                 _pitch = getPitch(_devFullWidth);
@@ -219,7 +219,7 @@ public final class JavaGFX extends Mapper implements IGFX, MouseAutoLockable {
             _main.setResizable(true);
             _clip.x = 0;
             _clip.y = 0;
-            surface.newImage((int) width, (int) height, bpp);
+            surface.newImage(width, height, bpp);
             _pixels = surface.getIntPixels();
             _pitch = getPitch(width);
 
@@ -364,7 +364,7 @@ public final class JavaGFX extends Mapper implements IGFX, MouseAutoLockable {
 
     public long getCurrentPixelIndex() {
         long pxIndex = 0;
-        pxIndex += (int) _clip.y * _pitch;
+        pxIndex += _clip.y * _pitch;
         return pxIndex += _clip.x * surface.getPixelSize();
     }
 

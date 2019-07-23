@@ -153,11 +153,12 @@ public final class EMS {
         public int DestPageSeg;// uint16
     }
 
-    private static short EMMGetFreePages() {
+    // uint16
+    private static int EMMGetFreePages() {
         int count = Memory.freeTotal() / 4;
         if (count > 0x7fff)
             count = 0x7fff;
-        return (short) count;
+        return count;
     }
 
     // short
@@ -169,10 +170,11 @@ public final class EMS {
         return true;
     }
 
+    private static int EMMAllocatedMemoryHandle = 0;
+
     // private static byte EMMAllocateMemory(short pages, RefU16Ret refDhandle,boolean
     // canAllocateZPages)
-    private static byte EMMAllocateMemory(int pages, RefU16Ret refDhandle,
-            boolean canAllocateZPages) {
+    private static byte EMMAllocateMemory(int pages, boolean canAllocateZPages) {
         /* Check for 0 page allocation */
         if (pages == 0) {
             if (!canAllocateZPages)
@@ -198,7 +200,7 @@ public final class EMS {
         EMMHandles[handle].Pages = pages;
         EMMHandles[handle].Mem = mem;
         /* Change handle only if there is no error. */
-        refDhandle.U16 = handle;
+        EMMAllocatedMemoryHandle = handle;
         return (byte) EMM_NO_ERROR;
     }
 
@@ -225,12 +227,12 @@ public final class EMS {
     private static int EMMReallocatePages(int handle, int pages) {
         /* Check for valid handle */
         if (!validHandle(handle))
-            return (byte) EMM_INVALID_HANDLE;
+            return EMM_INVALID_HANDLE;
         if (EMMHandles[handle].Pages != 0) {
             /* Check for enough pages */
             RefU32Ret refHandle = new RefU32Ret(EMMHandles[handle].Mem);
             if (!Memory.reallocatePages(refHandle, pages * 4, false))
-                return (byte) EMM_OUT_OF_LOG;
+                return EMM_OUT_OF_LOG;
             EMMHandles[handle].Mem = refHandle.U32;
         } else {
             int mem = Memory.allocatePages(pages * 4, false);
@@ -254,8 +256,8 @@ public final class EMS {
         /* unmapping doesn't need valid handle (as handle isn't used) */
         if (log_page == NULL_PAGE) {
             /* Unmapping */
-            EMMmappings[phys_page].handle = (byte) NULL_HANDLE;
-            EMMmappings[phys_page].page = (byte) NULL_PAGE;
+            EMMmappings[phys_page].handle = NULL_HANDLE;
+            EMMmappings[phys_page].page = NULL_PAGE;
             for (int i = 0; i < 4; i++)
                 Paging.mapPage(EMM_PAGEFRAME4K + phys_page * 4 + i,
                         EMM_PAGEFRAME4K + phys_page * 4 + i);
@@ -273,7 +275,7 @@ public final class EMS {
 
             int memh = Memory.nextHandleAt(EMMHandles[handle].Mem, log_page * 4);;
             for (int i = 0; i < 4; i++) {
-                Paging.mapPage(EMM_PAGEFRAME4K + phys_page * 4 + i, (int) memh);
+                Paging.mapPage(EMM_PAGEFRAME4K + phys_page * 4 + i, memh);
                 memh = Memory.nextHandle(memh);
             }
             Paging.clearTLB();
@@ -291,17 +293,17 @@ public final class EMS {
 
         if (((segment >= 0xa000) && (segment < 0xb000))
                 || ((segment >= EMM_PAGEFRAME - 0x1000) && (segment < EMM_PAGEFRAME + 0x1000))) {
-            int tphysPage = ((int) segment - EMM_PAGEFRAME) / (0x1000 / EMM_MAX_PHYS);
+            int tphysPage = (segment - EMM_PAGEFRAME) / (0x1000 / EMM_MAX_PHYS);
 
             /* unmapping doesn't need valid handle (as handle isn't used) */
             if (log_page == NULL_PAGE) {
                 /* Unmapping */
                 if ((tphysPage >= 0) && (tphysPage < EMM_MAX_PHYS)) {
-                    EMMmappings[tphysPage].handle = (byte) NULL_HANDLE;
-                    EMMmappings[tphysPage].page = (byte) NULL_PAGE;
+                    EMMmappings[tphysPage].handle = NULL_HANDLE;
+                    EMMmappings[tphysPage].page = NULL_PAGE;
                 } else {
-                    EMMSegmentMappings[segment >>> 10].handle = (byte) NULL_HANDLE;
-                    EMMSegmentMappings[segment >>> 10].page = (byte) NULL_PAGE;
+                    EMMSegmentMappings[segment >>> 10].handle = NULL_HANDLE;
+                    EMMSegmentMappings[segment >>> 10].page = NULL_PAGE;
                 }
                 for (int i = 0; i < 4; i++)
                     Paging.mapPage(segment * 16 / 4096 + i, segment * 16 / 4096 + i);
@@ -324,7 +326,7 @@ public final class EMS {
 
                 int memh = Memory.nextHandleAt(EMMHandles[handle].Mem, log_page * 4);;
                 for (int i = 0; i < 4; i++) {
-                    Paging.mapPage(segment * 16 / 4096 + i, (int) memh);
+                    Paging.mapPage(segment * 16 / 4096 + i, memh);
                     memh = Memory.nextHandle(memh);
                 }
                 Paging.clearTLB();
@@ -356,7 +358,7 @@ public final class EMS {
         if (handle == 0) {
             EMMHandles[handle].Pages = 0; // OS handle is NEVER deallocated
         } else {
-            EMMHandles[handle].Pages = (short) NULL_HANDLE;
+            EMMHandles[handle].Pages = NULL_HANDLE;
         }
         EMMHandles[handle].SavedPageMap = false;
         CStringPt.clear(EMMHandles[handle].Name, 0, 8);
@@ -417,9 +419,11 @@ public final class EMS {
         return EMMRestoreMappingTable();
     }
 
-    private static byte getPagesForAllHandles(int table, RefU16Ret refHandles) {
-        short handles = 0;
-        for (short i = 0; i < EMM_MAX_HANDLES; i++) {
+    private static int returnedPagesForAllHandles = 0;
+
+    private static byte tryPagesForAllHandles(int table) {
+        int handles = 0;
+        for (int i = 0; i < EMM_MAX_HANDLES; i++) {
             if (EMMHandles[i].Pages != NULL_HANDLE) {
                 handles++;
                 Memory.writeW(table, i);
@@ -427,7 +431,7 @@ public final class EMS {
                 table += 4;
             }
         }
-        refHandles.U16 = handles;
+        returnedPagesForAllHandles = handles;
         return EMM_NO_ERROR;
     }
 
@@ -446,17 +450,17 @@ public final class EMS {
                     int segment = Memory.readW(list);
                     list += 2;
                     if ((segment >= EMM_PAGEFRAME) && (segment < EMM_PAGEFRAME + 0x1000)) {
-                        short page = (short) ((segment - EMM_PAGEFRAME) / (EMM_PAGE_SIZE >>> 4));
+                        int page = 0xffff & ((segment - EMM_PAGEFRAME) / (EMM_PAGE_SIZE >>> 4));
                         Memory.writeW(data, segment);
                         data += 2;
                         Memory.blockWrite(data, EMMmappings[page]);
-                        data += (byte) EMMMapping.Size;
+                        data += EMMMapping.Size;
                     } else if (((segment >= EMM_PAGEFRAME - 0x1000) && (segment < EMM_PAGEFRAME))
                             || ((segment >= 0xa000) && (segment < 0xb000))) {
                         Memory.writeW(data, segment);
                         data += 2;
                         Memory.blockWrite(data, EMMSegmentMappings[segment >>> 10]);
-                        data += (byte) EMMMapping.Size;
+                        data += EMMMapping.Size;
                     } else {
                         return (byte) EMM_ILL_PHYS;
                     }
@@ -470,7 +474,7 @@ public final class EMS {
                     int segment = Memory.readW(data);
                     data += 2;
                     if ((segment >= EMM_PAGEFRAME) && (segment < EMM_PAGEFRAME + 0x1000)) {
-                        short page = (short) ((segment - EMM_PAGEFRAME) / (EMM_PAGE_SIZE >>> 4));
+                        int page = 0xffff & ((segment - EMM_PAGEFRAME) / (EMM_PAGE_SIZE >>> 4));
                         Memory.blockRead(data, EMMmappings, page, 1);
                     } else if (((segment >= EMM_PAGEFRAME - 0x1000) && (segment < EMM_PAGEFRAME))
                             || ((segment >= 0xa000) && (segment < 0xb000))) {
@@ -598,14 +602,14 @@ public final class EMS {
             if (!validHandle(region.SrcHandle))
                 return (byte) EMM_INVALID_HANDLE;
             if ((EMMHandles[region.SrcHandle].Pages
-                    * EMM_PAGE_SIZE) < ((region.SrcPageSeg * (byte) EMM_PAGE_SIZE)
-                            + region.SrcOffset + region.bytes))
+                    * EMM_PAGE_SIZE) < ((region.SrcPageSeg * EMM_PAGE_SIZE) + region.SrcOffset
+                            + region.bytes))
                 return (byte) EMM_LOG_OUT_RANGE;
             srcHandle = EMMHandles[region.SrcHandle].Mem;
-            int pages = (int) (region.SrcPageSeg * 4 + (region.SrcOffset / Paging.MEM_PAGE_SIZE));
+            int pages = region.SrcPageSeg * 4 + (region.SrcOffset / Paging.MEM_PAGE_SIZE);
             for (; pages > 0; pages--)
                 srcHandle = Memory.nextHandle(srcHandle);
-            srcOff = (int) (region.SrcOffset & (Paging.MEM_PAGE_SIZE - 1));
+            srcOff = region.SrcOffset & (Paging.MEM_PAGE_SIZE - 1);
             srcRemain = Paging.MEM_PAGE_SIZE - srcOff;
         }
         if (region.DestType == 0) {
@@ -618,10 +622,10 @@ public final class EMS {
                             + region.bytes)
                 return (byte) EMM_LOG_OUT_RANGE;
             destHandle = EMMHandles[region.DestHandle].Mem;
-            int pages = (int) (region.DestPageSeg * 4 + (region.DestOffset / Paging.MEM_PAGE_SIZE));
+            int pages = region.DestPageSeg * 4 + (region.DestOffset / Paging.MEM_PAGE_SIZE);
             for (; pages > 0; pages--)
                 destHandle = Memory.nextHandle(destHandle);
-            destOff = (int) (region.DestOffset & (Paging.MEM_PAGE_SIZE - 1));
+            destOff = region.DestOffset & (Paging.MEM_PAGE_SIZE - 1);
             destRemain = Paging.MEM_PAGE_SIZE - destOff;
         }
         int toRead;
@@ -635,13 +639,13 @@ public final class EMS {
                 Memory.blockRead(srcMem, bufSrc, 0, toRead);
             } else {
                 if (toRead < srcRemain) {
-                    Memory.blockRead((int) (srcHandle * Paging.MEM_PAGE_SIZE) + srcOff, bufSrc, 0,
+                    Memory.blockRead((srcHandle * Paging.MEM_PAGE_SIZE) + srcOff, bufSrc, 0,
                             toRead);
                 } else {
-                    Memory.blockRead((int) (srcHandle * Paging.MEM_PAGE_SIZE) + srcOff, bufSrc, 0,
+                    Memory.blockRead((srcHandle * Paging.MEM_PAGE_SIZE) + srcOff, bufSrc, 0,
                             srcRemain);
-                    Memory.blockRead((int) (Memory.nextHandle(srcHandle) * Paging.MEM_PAGE_SIZE),
-                            bufSrc, srcRemain, toRead - srcRemain);
+                    Memory.blockRead((Memory.nextHandle(srcHandle) * Paging.MEM_PAGE_SIZE), bufSrc,
+                            srcRemain, toRead - srcRemain);
                 }
             }
             /* Check for a move */
@@ -651,13 +655,12 @@ public final class EMS {
                     Memory.blockRead(destMem, BufDest, 0, toRead);
                 } else {
                     if (toRead < destRemain) {
-                        Memory.blockRead((int) (destHandle * Paging.MEM_PAGE_SIZE) + destOff,
-                                BufDest, 0, toRead);
+                        Memory.blockRead((destHandle * Paging.MEM_PAGE_SIZE) + destOff, BufDest, 0,
+                                toRead);
                     } else {
-                        Memory.blockRead((int) (destHandle * Paging.MEM_PAGE_SIZE) + destOff,
-                                BufDest, 0, destRemain);
-                        Memory.blockRead(
-                                (int) (Memory.nextHandle(destHandle) * Paging.MEM_PAGE_SIZE),
+                        Memory.blockRead((destHandle * Paging.MEM_PAGE_SIZE) + destOff, BufDest, 0,
+                                destRemain);
+                        Memory.blockRead((Memory.nextHandle(destHandle) * Paging.MEM_PAGE_SIZE),
                                 BufDest, destRemain, toRead - destRemain);
                     }
                 }
@@ -666,13 +669,12 @@ public final class EMS {
                     Memory.blockWrite(srcMem, BufDest, 0, toRead);
                 } else {
                     if (toRead < srcRemain) {
-                        Memory.blockWrite((int) (srcHandle * Paging.MEM_PAGE_SIZE) + srcOff,
-                                BufDest, 0, toRead);
+                        Memory.blockWrite((srcHandle * Paging.MEM_PAGE_SIZE) + srcOff, BufDest, 0,
+                                toRead);
                     } else {
-                        Memory.blockWrite((int) (srcHandle * Paging.MEM_PAGE_SIZE) + srcOff,
-                                BufDest, 0, srcRemain);
-                        Memory.blockWrite(
-                                (int) (Memory.nextHandle(srcHandle) * Paging.MEM_PAGE_SIZE),
+                        Memory.blockWrite((srcHandle * Paging.MEM_PAGE_SIZE) + srcOff, BufDest, 0,
+                                srcRemain);
+                        Memory.blockWrite((Memory.nextHandle(srcHandle) * Paging.MEM_PAGE_SIZE),
                                 BufDest, srcRemain, toRead - srcRemain);
                     }
                 }
@@ -682,12 +684,12 @@ public final class EMS {
                 Memory.blockWrite(destMem, bufSrc, 0, toRead);
             } else {
                 if (toRead < destRemain) {
-                    Memory.blockWrite((int) (destHandle * Paging.MEM_PAGE_SIZE) + destOff, bufSrc,
-                            0, toRead);
+                    Memory.blockWrite((destHandle * Paging.MEM_PAGE_SIZE) + destOff, bufSrc, 0,
+                            toRead);
                 } else {
-                    Memory.blockWrite((int) (destHandle * Paging.MEM_PAGE_SIZE) + destOff, bufSrc,
-                            0, destRemain);
-                    Memory.blockWrite((int) (Memory.nextHandle(destHandle) * Paging.MEM_PAGE_SIZE),
+                    Memory.blockWrite((destHandle * Paging.MEM_PAGE_SIZE) + destOff, bufSrc, 0,
+                            destRemain);
+                    Memory.blockWrite((Memory.nextHandle(destHandle) * Paging.MEM_PAGE_SIZE),
                             bufSrc, destRemain, toRead - destRemain);
                 }
             }
@@ -709,23 +711,22 @@ public final class EMS {
         int i;
         switch (Register.getRegAH()) {
             case 0x40: /* Get Status */
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 break;
             case 0x41: /* Get PageFrame Segment */
                 Register.setRegBX(EMM_PAGEFRAME);
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 break;
             case 0x42: /* Get number of pages */
                 // Not entirely correct but okay
-                Register.setRegDX(0xffff & (short) (Memory.totalPages() / 4));
+                Register.setRegDX(0xffff & (Memory.totalPages() / 4));
                 Register.setRegBX(EMMGetFreePages());
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 break;
             case 0x43: /* Get Handle and Allocate Pages */
             {
-                RefU16Ret refRegdx = new RefU16Ret(Register.getRegDX());
-                Register.setRegAH(EMMAllocateMemory(Register.getRegBX(), refRegdx, false));
-                Register.setRegDX(refRegdx.U16);
+                Register.setRegAH(EMMAllocateMemory(Register.getRegBX(), false));
+                Register.setRegDX(EMMAllocatedMemoryHandle);
             }
                 break;
             case 0x44: /* Map Expanded Memory Page */
@@ -736,7 +737,7 @@ public final class EMS {
                 Register.setRegAH(EMMReleaseMemory(Register.getRegDX()));
                 break;
             case 0x46: /* Get EMM Version */
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 Register.setRegAL(EMM_VERSION);
                 break;
             case 0x47: /* Save Page Map */
@@ -750,22 +751,21 @@ public final class EMS {
                 for (i = 0; i < EMM_MAX_HANDLES; i++)
                     if (EMMHandles[i].Pages != NULL_HANDLE)
                         Register.setRegBX(Register.getRegBX() + 1);
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 break;
             case 0x4c: /* Get Pages for one Handle */
                 if (!validHandle(Register.getRegDX())) {
-                    Register.setRegAH((byte) EMM_INVALID_HANDLE);
+                    Register.setRegAH(EMM_INVALID_HANDLE);
                     break;
                 }
                 Register.setRegBX(EMMHandles[Register.getRegDX()].Pages);
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 break;
             case 0x4d: /* Get Pages for all Handles */
             {
-                RefU16Ret refRegbx = new RefU16Ret(Register.getRegBX());
-                Register.setRegAH(getPagesForAllHandles(
-                        Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDI(), refRegbx));
-                Register.setRegBX(refRegbx.U16);
+                Register.setRegAH(tryPagesForAllHandles(
+                        Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDI()));
+                Register.setRegBX(returnedPagesForAllHandles);
             }
                 break;
             case 0x4e: /* Save/Restore Page Map */
@@ -775,7 +775,7 @@ public final class EMS {
                         Memory.blockWrite(
                                 Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDI(),
                                 EMMmappings);
-                        Register.setRegAH((byte) EMM_NO_ERROR);
+                        Register.setRegAH(EMM_NO_ERROR);
                     }
                         break;
                     case 0x01: /* Restore Page Map */
@@ -794,14 +794,14 @@ public final class EMS {
                         Register.setRegAH(EMMRestoreMappingTable());
                         break;
                     case 0x03: /* Get Page Map Array Size */
-                        Register.setRegAL((byte) ByteSizeOfemm_mappings);
-                        Register.setRegAH((byte) EMM_NO_ERROR);
+                        Register.setRegAL(ByteSizeOfemm_mappings);
+                        Register.setRegAH(EMM_NO_ERROR);
                         break;
                     default:
                         Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                                 "EMS:Call %2X Subfunction %2X not supported", Register.getRegAH(),
                                 Register.getRegAL());
-                        Register.setRegAH((byte) EMM_INVALID_SUB);
+                        Register.setRegAH(EMM_INVALID_SUB);
                         break;
                 }
                 break;
@@ -809,7 +809,7 @@ public final class EMS {
                 Register.setRegAH(EMMPartialPageMapping());
                 break;
             case 0x50: /* Map/Unmap multiple handle pages */
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 switch (Register.getRegAL()) {
                     case 0x00: // use physical page numbers
                     {
@@ -845,7 +845,7 @@ public final class EMS {
                         Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                                 "EMS:Call %2X Subfunction %2X not supported", Register.getRegAH(),
                                 Register.getRegAL());
-                        Register.setRegAH((byte) EMM_INVALID_SUB);
+                        Register.setRegAH(EMM_INVALID_SUB);
                         break;
                 }
                 break;
@@ -881,26 +881,24 @@ public final class EMS {
                 }
                 // Set number of pages
                 Register.setRegCX(EMM_MAX_PHYS);
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 break;
             case 0x5A: /* Allocate standard/raw Pages */
                 if (Register.getRegAL() <= 0x01) {
-                    int regdx = Register.getRegDX();
-                    RefU16Ret refRegdx = new RefU16Ret(Register.getRegDX());
                     // can allocate 0 pages
-                    Register.setRegAH(EMMAllocateMemory(Register.getRegBX(), refRegdx, true));
-                    Register.setRegDX(refRegdx.U16);
+                    Register.setRegAH(EMMAllocateMemory(Register.getRegBX(), true));
+                    Register.setRegDX(EMMAllocatedMemoryHandle);
                 } else {
                     Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                             "EMS:Call 5A subfct %2X not supported", Register.getRegAL());
-                    Register.setRegAH((byte) EMM_INVALID_SUB);
+                    Register.setRegAH(EMM_INVALID_SUB);
                 }
                 break;
             case (byte) 0xDE: /* VCPI Functions */
                 if (!vcpi.Enabled) {
                     Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                             "EMS:VCPI Call %2X not supported", Register.getRegAL());
-                    Register.setRegAH((byte) EMM_FUNC_NOSUP);
+                    Register.setRegAH(EMM_FUNC_NOSUP);
                 } else {
                     switch (Register.getRegAL()) {
                         case 0x00: /* VCPI Installation Check */
@@ -908,10 +906,10 @@ public final class EMS {
                                     || (CPU.Block.PMode
                                             && (Register.Flags & Register.FlagVM) != 0)) {
                                 /* JEMM detected or already in v86 mode */
-                                Register.setRegAH((byte) EMM_NO_ERROR);
+                                Register.setRegAH(EMM_NO_ERROR);
                                 Register.setRegBX(0x100);
                             } else {
-                                Register.setRegAH((byte) EMM_FUNC_NOSUP);
+                                Register.setRegAH(EMM_FUNC_NOSUP);
                             }
                             break;
                         case 0x01: { /* VCPI Get Protected Mode Interface */
@@ -953,57 +951,57 @@ public final class EMS {
                                             entry_addr + 0x08 + 0x01, (memh + 2) * 0x10);
                                     // mapping of 4/4 of page
                                     Memory.realWriteW(Register.segValue(Register.SEG_NAME_ES),
-                                            (short) (entry_addr + 0x0c + 0x01),
-                                            (short) ((memh + 3) * 0x10));
+                                            0xffff & (entry_addr + 0x0c + 0x01),
+                                            0xffff & ((memh + 3) * 0x10));
                                 }
                             }
                             // advance pointer by 0x100*4
-                            Register.setRegDI((short) (Register.getRegDI() + 0x400));
+                            Register.setRegDI(Register.getRegDI() + 0x400);
 
                             /* Set up three descriptor table entries */
                             int cbseg_low = (Callback.getBase() & 0xffff) << 16;
                             int cbseg_high = (Callback.getBase() & 0x1f0000) >>> 16;
                             /* Descriptor 1 (code segment, callback segment) */
                             Memory.realWriteD(Register.segValue(Register.SEG_NAME_DS),
-                                    (short) (Register.getRegSI() + 0x00), 0x0000ffff | cbseg_low);
+                                    0xffff & (Register.getRegSI() + 0x00), 0x0000ffff | cbseg_low);
                             Memory.realWriteD(Register.segValue(Register.SEG_NAME_DS),
-                                    (short) (Register.getRegSI() + 0x04), 0x00009a00 | cbseg_high);
+                                    0xffff & (Register.getRegSI() + 0x04), 0x00009a00 | cbseg_high);
                             /* Descriptor 2 (data segment, full access) */
                             Memory.realWriteD(Register.segValue(Register.SEG_NAME_DS),
-                                    (short) (Register.getRegSI() + 0x08), 0x0000ffff);
+                                    0xffff & (Register.getRegSI() + 0x08), 0x0000ffff);
                             Memory.realWriteD(Register.segValue(Register.SEG_NAME_DS),
-                                    (short) (Register.getRegSI() + 0x0c), 0x00009200);
+                                    0xffff & (Register.getRegSI() + 0x0c), 0x00009200);
                             /* Descriptor 3 (full access) */
                             Memory.realWriteD(Register.segValue(Register.SEG_NAME_DS),
-                                    (short) (Register.getRegSI() + 0x10), 0x0000ffff);
+                                    0xffff & (Register.getRegSI() + 0x10), 0x0000ffff);
                             Memory.realWriteD(Register.segValue(Register.SEG_NAME_DS),
-                                    (short) (Register.getRegSI() + 0x14), 0x00009200);
+                                    0xffff & (Register.getRegSI() + 0x14), 0x00009200);
 
                             Register.setRegEBX((vcpi.PMInterface & 0xffff));
-                            Register.setRegAH((byte) EMM_NO_ERROR);
+                            Register.setRegAH(EMM_NO_ERROR);
                             break;
                         }
                         case 0x02: /* VCPI Maximum Physical Address */
                             Register.setRegEDX(
                                     ((Memory.totalPages() * Memory.MEM_PAGESIZE) - 1) & 0xfffff000);
-                            Register.setRegAH((byte) EMM_NO_ERROR);
+                            Register.setRegAH(EMM_NO_ERROR);
                             break;
                         case 0x03: /* VCPI Get Number of Free Pages */
                             Register.setRegEDX(Memory.freeTotal());
-                            Register.setRegAH((byte) EMM_NO_ERROR);
+                            Register.setRegAH(EMM_NO_ERROR);
                             break;
                         case 0x04: { /* VCPI Allocate one Page */
                             int mem = Memory.allocatePages(1, false);
                             if (mem != 0) {
-                                Register.setRegEDX((int) (mem << 12));
-                                Register.setRegAH((byte) EMM_NO_ERROR);
+                                Register.setRegEDX(mem << 12);
+                                Register.setRegAH(EMM_NO_ERROR);
                             } else {
-                                Register.setRegAH((byte) EMM_OUT_OF_LOG);
+                                Register.setRegAH(EMM_OUT_OF_LOG);
                             }
                             break;
                         }
                         case 0x05: /* VCPI Free Page */
-                            Memory.releasePages((int) (Register.getRegEDX() >>> 12));
+                            Memory.releasePages(Register.getRegEDX() >>> 12);
                             Register.setRegAH(EMM_NO_ERROR);
                             break;
                         case 0x06: { /* VCPI Get Physical Address of Page in 1st MB */
@@ -1025,32 +1023,31 @@ public final class EMS {
                                     physPage = 3;
                                 int handle = EMMmappings[physPage].handle;
                                 if (handle == 0xffff) {
-                                    Register.setRegAH((byte) EMM_ILL_PHYS);
+                                    Register.setRegAH(EMM_ILL_PHYS);
                                     break;
                                 } else {
                                     int memh = Memory.nextHandleAt(EMMHandles[handle].Mem,
                                             EMMmappings[physPage].page * 4);
-                                    Register.setRegEDX(
-                                            (int) ((memh + (Register.getRegCX() & 3)) << 12));
+                                    Register.setRegEDX((memh + (Register.getRegCX() & 3)) << 12);
                                 }
                             } else {
                                 /* Page not in Pageframe, so just translate into physical address */
-                                Register.setRegEDX((int) (Register.getRegCX() << 12));
+                                Register.setRegEDX(Register.getRegCX() << 12);
                             }
 
-                            Register.setRegAH((byte) EMM_NO_ERROR);
+                            Register.setRegAH(EMM_NO_ERROR);
                         }
                             break;
                         case 0x0a: /* VCPI Get PIC Vector Mappings */
                             Register.setRegBX(vcpi.pic1Remapping); // master PIC
                             Register.setRegCX(vcpi.pic2Remapping); // slave PIC
-                            Register.setRegAH((byte) EMM_NO_ERROR);
+                            Register.setRegAH(EMM_NO_ERROR);
                             break;
                         case 0x0b: /* VCPI Set PIC Vector Mappings */
                             Register.Flags &= (~Register.FlagIF);
                             vcpi.pic1Remapping = (byte) (Register.getRegBX() & 0xff);
                             vcpi.pic2Remapping = (byte) (Register.getRegCX() & 0xff);
-                            Register.setRegAH((byte) EMM_NO_ERROR);
+                            Register.setRegAH(EMM_NO_ERROR);
                             break;
                         case 0x0c: { /* VCPI Switch from V86 to Protected Mode */
                             Register.Flags &= (~Register.FlagIF);
@@ -1078,7 +1075,7 @@ public final class EMS {
                             CPU.setCRX(0, newCR0);
                             CPU.setCRX(3, newCR3);
 
-                            int tbaddr = (int) (newGDTBase + (newTr & 0xfff8) + 5);
+                            int tbaddr = newGDTBase + (newTr & 0xfff8) + 5;
                             int tb = Memory.readB(tbaddr);
                             Memory.writeB(tbaddr, tb & 0xfd);
 
@@ -1106,7 +1103,7 @@ public final class EMS {
                         default:
                             Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                                     "EMS:VCPI Call %x not supported", Register.getRegAX());
-                            Register.setRegAH((byte) EMM_FUNC_NOSUP);
+                            Register.setRegAH(EMM_FUNC_NOSUP);
                             break;
                     }
                 }
@@ -1114,7 +1111,7 @@ public final class EMS {
             default:
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                         "EMS:Call %2X not supported", Register.getRegAH());
-                Register.setRegAH((byte) EMM_FUNC_NOSUP);
+                Register.setRegAH(EMM_FUNC_NOSUP);
                 break;
         }
         return Callback.ReturnTypeNone;
@@ -1125,21 +1122,21 @@ public final class EMS {
         switch (Register.getRegAX()) {
             case 0xDE03: /* VCPI Get Number of Free Pages */
                 Register.setRegEDX(Memory.freeTotal());
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Register.setRegAH(EMM_NO_ERROR);
                 break;
             case 0xDE04: { /* VCPI Allocate one Page */
                 int mem = Memory.allocatePages(1, false);
                 if (mem != 0) {
-                    Register.setRegEDX((int) (mem << 12));
-                    Register.setRegAH((byte) EMM_NO_ERROR);
+                    Register.setRegEDX(mem << 12);
+                    Register.setRegAH(EMM_NO_ERROR);
                 } else {
-                    Register.setRegAH((byte) EMM_OUT_OF_LOG);
+                    Register.setRegAH(EMM_OUT_OF_LOG);
                 }
                 break;
             }
             case 0xDE05: /* VCPI Free Page */
-                Memory.releasePages((int) (Register.getRegEDX() >>> 12));
-                Register.setRegAH((byte) EMM_NO_ERROR);
+                Memory.releasePages(Register.getRegEDX() >>> 12);
+                Register.setRegAH(EMM_NO_ERROR);
                 break;
             case 0xDE0C: { /* VCPI Switch from Protected Mode to V86 */
                 Register.Flags &= (~Register.FlagIF);
@@ -1152,13 +1149,13 @@ public final class EMS {
                 CPU.setCRX(0, CPU.getCRX(0) & 0x7ffffff7);
                 CPU.setCRX(3, 0);
 
-                int tbaddr = (int) (vcpi.PrivateAREA + 0x0000 + (0x10 & 0xfff8) + 5);
+                int tbaddr = vcpi.PrivateAREA + 0x0000 + (0x10 & 0xfff8) + 5;
                 int tb = Memory.readB(tbaddr);
                 Memory.writeB(tbaddr, tb & 0xfd);
 
                 /* Load descriptor table registers */
-                CPU.lgdt(0xff, (int) vcpi.PrivateAREA + 0x0000);
-                CPU.lidt(0x7ff, (int) vcpi.PrivateAREA + 0x2000);
+                CPU.lgdt(0xff, vcpi.PrivateAREA + 0x0000);
+                CPU.lidt(0x7ff, vcpi.PrivateAREA + 0x2000);
                 if (CPU.lldt(0x08))
                     Log.logMsg("VCPI:Could not load LDT");
                 if (CPU.ltr(0x10))
@@ -1182,8 +1179,8 @@ public final class EMS {
 
     public static int V86Monitor() {
         /* Calculate which interrupt did occur */
-        int intNum = (int) (Memory.readW(Register.segPhys(Register.SEG_NAME_SS)
-                + (Register.getRegESP() & CPU.Block.Stack.Mask)) - 0x2803);
+        int intNum = Memory.readW(Register.segPhys(Register.SEG_NAME_SS)
+                + (Register.getRegESP() & CPU.Block.Stack.Mask)) - 0x2803;
 
         /* See if Exception 0x0d and not Interrupt 0x0d */
         if ((intNum == (0x0d * 4)) && ((Register.getRegSP() & 0xffff) != 0x1fda)) {
@@ -1205,10 +1202,10 @@ public final class EMS {
             // opcode=%x",v86_cs,v86_ip,v86_opcode);
             switch (v86Opcode) {
                 case 0x0f: // double byte opcode
-                    v86Opcode = Memory.readB((int) (v86CS << 4) + v86IP + 1);
+                    v86Opcode = Memory.readB((v86CS << 4) + v86IP + 1);
                     switch (v86Opcode) {
                         case 0x20: { // mov reg,CRx
-                            int rmVal = Memory.readB((int) (v86CS << 4) + v86IP + 2);
+                            int rmVal = Memory.readB((v86CS << 4) + v86IP + 2);
                             int which = (rmVal >>> 3) & 7;
                             if ((rmVal < 0xc0) || (rmVal >= 0xe8))
                                 Support.exceptionExit(
@@ -1244,11 +1241,11 @@ public final class EMS {
                             Memory.writeW(
                                     Register.segPhys(Register.SEG_NAME_SS)
                                             + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
-                                    (short) (v86IP + 3));
+                                    v86IP + 3);
                         }
                             break;
                         case 0x22: { // mov CRx,reg
-                            int rmVal = Memory.readB((int) (v86CS << 4) + v86IP + 2);
+                            int rmVal = Memory.readB((v86CS << 4) + v86IP + 2);
                             int which = (rmVal >>> 3) & 7;
                             if ((rmVal < 0xc0) || (rmVal >= 0xe8))
                                 Support.exceptionExit(
@@ -1287,7 +1284,7 @@ public final class EMS {
                             Memory.writeW(
                                     Register.segPhys(Register.SEG_NAME_SS)
                                             + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
-                                    (short) (v86IP + 3));
+                                    v86IP + 3);
                         }
                             break;
                         default:
@@ -1298,30 +1295,28 @@ public final class EMS {
                     }
                     break;
                 case (byte) 0xe4: // IN AL,Ib
-                    Register.setRegAL(
-                            IO.readB(Memory.readB((int) (v86CS << 4) + v86IP + 1)) & 0xff);
+                    Register.setRegAL(IO.readB(Memory.readB((v86CS << 4) + v86IP + 1)) & 0xff);
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 2);
                     break;
                 case (byte) 0xe5: // IN AX,Ib
-                    Register.setRegAX(
-                            IO.readW(Memory.readB((int) (v86CS << 4) + v86IP + 1)) & 0xffff);
+                    Register.setRegAX(IO.readW(Memory.readB((v86CS << 4) + v86IP + 1)) & 0xffff);
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 2);
                     break;
                 case (byte) 0xe6: // OUT Ib,AL
-                    IO.writeB(Memory.readB((int) (v86CS << 4) + v86IP + 1), Register.getRegAL());
+                    IO.writeB(Memory.readB((v86CS << 4) + v86IP + 1), Register.getRegAL());
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 2);
                     break;
                 case (byte) 0xe7: // OUT Ib,AX
-                    IO.writeW(Memory.readB((int) (v86CS << 4) + v86IP + 1), Register.getRegAX());
+                    IO.writeW(Memory.readB((v86CS << 4) + v86IP + 1), Register.getRegAX());
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
@@ -1413,9 +1408,9 @@ public final class EMS {
                 + ((Register.getRegESP() + 0x0c) & CPU.Block.Stack.Mask), v86SP);
 
         /* Return to original code after v86-interrupt handler */
-        Memory.writeW((int) (v86SS << 4) + v86SP + 0, returnIP);
-        Memory.writeW((int) (v86SS << 4) + v86SP + 2, returnCS);
-        Memory.writeW((int) (v86SS << 4) + v86SP + 4, returnEFlags & 0xffff);
+        Memory.writeW((v86SS << 4) + v86SP + 0, returnIP);
+        Memory.writeW((v86SS << 4) + v86SP + 2, returnCS);
+        Memory.writeW((v86SS << 4) + v86SP + 4, returnEFlags & 0xffff);
         return Callback.ReturnTypeNone;
     }
 
@@ -1432,35 +1427,35 @@ public final class EMS {
         vcpi.PrivateAREA = EMMHandles[vcpi.EMSHandle].Mem << 12;
 
         /* GDT */
-        Memory.writeD((int) vcpi.PrivateAREA + 0x0000, 0x00000000); // descriptor 0
-        Memory.writeD((int) vcpi.PrivateAREA + 0x0004, 0x00000000); // descriptor 0
+        Memory.writeD(vcpi.PrivateAREA + 0x0000, 0x00000000); // descriptor 0
+        Memory.writeD(vcpi.PrivateAREA + 0x0004, 0x00000000); // descriptor 0
 
-        int ldtAddress = ((int) vcpi.PrivateAREA + 0x1000);
+        int ldtAddress = (vcpi.PrivateAREA + 0x1000);
         short ldtLimit = 0xff;
         int ldtDescPart = ((ldtAddress & 0xffff) << 16) | ldtLimit;
-        Memory.writeD((int) vcpi.PrivateAREA + 0x0008, ldtDescPart); // descriptor 1 (LDT)
+        Memory.writeD(vcpi.PrivateAREA + 0x0008, ldtDescPart); // descriptor 1 (LDT)
         ldtDescPart = ((ldtAddress & 0xff0000) >>> 16) | (ldtAddress & 0xff000000) | 0x8200;
-        Memory.writeD((int) vcpi.PrivateAREA + 0x000c, ldtDescPart); // descriptor 1
+        Memory.writeD(vcpi.PrivateAREA + 0x000c, ldtDescPart); // descriptor 1
 
-        int tssAddress = ((int) vcpi.PrivateAREA + 0x3000);
+        int tssAddress = (vcpi.PrivateAREA + 0x3000);
         int tssDescPart = ((tssAddress & 0xffff) << 16) | (0x0068 + 0x200);
-        Memory.writeD((int) vcpi.PrivateAREA + 0x0010, tssDescPart); // descriptor 2 (TSS)
+        Memory.writeD(vcpi.PrivateAREA + 0x0010, tssDescPart); // descriptor 2 (TSS)
         tssDescPart = ((tssAddress & 0xff0000) >>> 16) | (tssAddress & 0xff000000) | 0x8900;
-        Memory.writeD((int) vcpi.PrivateAREA + 0x0014, tssDescPart); // descriptor 2
+        Memory.writeD(vcpi.PrivateAREA + 0x0014, tssDescPart); // descriptor 2
 
         /* LDT */
-        Memory.writeD((int) vcpi.PrivateAREA + 0x1000, 0x00000000); // descriptor 0
-        Memory.writeD((int) vcpi.PrivateAREA + 0x1004, 0x00000000); // descriptor 0
-        int csDescPart = (int) (((vcpi.PrivateAREA & 0xffff) << 16) | 0xffff);
-        Memory.writeD((int) vcpi.PrivateAREA + 0x1008, csDescPart); // descriptor 1 (code)
-        csDescPart = (int) ((vcpi.PrivateAREA & 0xff0000) >>> 16)
-                | (int) (vcpi.PrivateAREA & 0xff000000) | 0x9a00;
-        Memory.writeD((int) vcpi.PrivateAREA + 0x100c, csDescPart); // descriptor 1
-        int dsDescPart = (int) ((vcpi.PrivateAREA & 0xffff) << 16) | 0xffff;
-        Memory.writeD((int) vcpi.PrivateAREA + 0x1010, dsDescPart); // descriptor 2 (data)
-        dsDescPart = (int) ((vcpi.PrivateAREA & 0xff0000) >>> 16)
-                | (int) (vcpi.PrivateAREA & 0xff000000) | 0x9200;
-        Memory.writeD((int) vcpi.PrivateAREA + 0x1014, dsDescPart); // descriptor 2
+        Memory.writeD(vcpi.PrivateAREA + 0x1000, 0x00000000); // descriptor 0
+        Memory.writeD(vcpi.PrivateAREA + 0x1004, 0x00000000); // descriptor 0
+        int csDescPart = ((vcpi.PrivateAREA & 0xffff) << 16) | 0xffff;
+        Memory.writeD(vcpi.PrivateAREA + 0x1008, csDescPart); // descriptor 1 (code)
+        csDescPart =
+                ((vcpi.PrivateAREA & 0xff0000) >>> 16) | (vcpi.PrivateAREA & 0xff000000) | 0x9a00;
+        Memory.writeD(vcpi.PrivateAREA + 0x100c, csDescPart); // descriptor 1
+        int dsDescPart = ((vcpi.PrivateAREA & 0xffff) << 16) | 0xffff;
+        Memory.writeD(vcpi.PrivateAREA + 0x1010, dsDescPart); // descriptor 2 (data)
+        dsDescPart =
+                ((vcpi.PrivateAREA & 0xff0000) >>> 16) | (vcpi.PrivateAREA & 0xff000000) | 0x9200;
+        Memory.writeD(vcpi.PrivateAREA + 0x1014, dsDescPart); // descriptor 2
 
         /* IDT setup */
         for (short intCT = 0; intCT < 0x100; intCT++) {
@@ -1468,26 +1463,26 @@ public final class EMS {
              * build a CALL NEAR V86MON, the value of IP pushed by the CALL is used to identify the
              * interrupt number
              */
-            Memory.writeB((int) vcpi.PrivateAREA + 0x2800 + intCT * 4 + 0, 0xe8); // call
-            Memory.writeW((int) vcpi.PrivateAREA + 0x2800 + intCT * 4 + 1, 0x05fd - (intCT * 4));
-            Memory.writeB((int) vcpi.PrivateAREA + 0x2800 + intCT * 4 + 3, 0xcf); // iret(dummy)
+            Memory.writeB(vcpi.PrivateAREA + 0x2800 + intCT * 4 + 0, 0xe8); // call
+            Memory.writeW(vcpi.PrivateAREA + 0x2800 + intCT * 4 + 1, 0x05fd - (intCT * 4));
+            Memory.writeB(vcpi.PrivateAREA + 0x2800 + intCT * 4 + 3, 0xcf); // iret(dummy)
 
             /* put a Gate-Descriptor into the IDT */
-            Memory.writeD((int) (vcpi.PrivateAREA + 0x2000 + intCT * 8 + 0),
-                    0x000c0000 | (int) (0x2800 + intCT * 4));
-            Memory.writeD((int) (vcpi.PrivateAREA + 0x2000 + intCT * 8 + 4), 0x0000ee00);
+            Memory.writeD((vcpi.PrivateAREA + 0x2000 + intCT * 8 + 0),
+                    0x000c0000 | (0x2800 + intCT * 4));
+            Memory.writeD(vcpi.PrivateAREA + 0x2000 + intCT * 8 + 4, 0x0000ee00);
         }
 
         /* TSS */
         for (int tseCT = 0; tseCT < 0x68 + 0x200; tseCT++) {
             /* clear the TSS as most entries are not used here */
-            Memory.writeB((int) vcpi.PrivateAREA + 0x3000, 0);
+            Memory.writeB(vcpi.PrivateAREA + 0x3000, 0);
         }
         /* Set up the ring0-stack */
-        Memory.writeD((int) vcpi.PrivateAREA + 0x3004, 0x00002000); // esp
-        Memory.writeD((int) vcpi.PrivateAREA + 0x3008, 0x00000014); // ss
+        Memory.writeD(vcpi.PrivateAREA + 0x3004, 0x00002000); // esp
+        Memory.writeD(vcpi.PrivateAREA + 0x3008, 0x00000014); // ss
         // io-map base(map follows, all zero)
-        Memory.writeD((int) vcpi.PrivateAREA + 0x3066, 0x0068);
+        Memory.writeD(vcpi.PrivateAREA + 0x3066, 0x0068);
 
     }
 
@@ -1594,7 +1589,7 @@ public final class EMS {
 
             /* Install a callback that handles VCPI-requests in protected mode requests */
             _callVCPI.install(EMS::VCPIPageModeHandler, Callback.Symbol.IRETD, "VCPI PM");
-            vcpi.PMInterface = (_callVCPI.getCallback()) * (int) Callback.Symbol.IPXESR.toValue();
+            vcpi.PMInterface = (_callVCPI.getCallback()) * Callback.Symbol.IPXESR.toValue();
 
             /* Initialize private data area and set up descriptor tables */
             setupVCPI();
@@ -1608,19 +1603,19 @@ public final class EMS {
              */
             _callV86Mon.install(EMS::V86Monitor, Callback.Symbol.IRET, "V86 Monitor");
 
-            Memory.writeB((int) vcpi.PrivateAREA + 0x2e00, 0xFE); // GRP 4
-            Memory.writeB((int) vcpi.PrivateAREA + 0x2e01, 0x38); // Extra Callback instruction
+            Memory.writeB(vcpi.PrivateAREA + 0x2e00, 0xFE); // GRP 4
+            Memory.writeB(vcpi.PrivateAREA + 0x2e01, 0x38); // Extra Callback instruction
             // The immediate word
-            Memory.writeW((int) vcpi.PrivateAREA + 0x2e02, _callV86Mon.getCallback());
-            Memory.writeB((int) vcpi.PrivateAREA + 0x2e04, 0x66);
-            Memory.writeB((int) vcpi.PrivateAREA + 0x2e05, 0xCF); // A IRETD Instruction
+            Memory.writeW(vcpi.PrivateAREA + 0x2e02, _callV86Mon.getCallback());
+            Memory.writeB(vcpi.PrivateAREA + 0x2e04, 0x66);
+            Memory.writeB(vcpi.PrivateAREA + 0x2e05, 0xCF); // A IRETD Instruction
 
             /* Testcode only, starts up dosbox in v86-mode */
             if (ENABLE_V86_STARTUP != 0) {
                 /* Prepare V86-task */
                 CPU.setCRX(0, 1);
-                CPU.lgdt(0xff, (int) vcpi.PrivateAREA + 0x0000);
-                CPU.lidt(0x7ff, (int) vcpi.PrivateAREA + 0x2000);
+                CPU.lgdt(0xff, vcpi.PrivateAREA + 0x0000);
+                CPU.lidt(0x7ff, vcpi.PrivateAREA + 0x2000);
                 if (CPU.lldt(0x08))
                     Log.logMsg("VCPI:Could not load LDT");
                 if (CPU.ltr(0x10))

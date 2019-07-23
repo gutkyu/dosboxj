@@ -181,9 +181,9 @@ public final class BIOSDisk {
                 segAt = Register.segValue(Register.SEG_NAME_ES);
                 bufPtr = Register.getRegBX();
                 for (i = 0; i < Register.getRegAL(); i++) {
-                    _lastStatus = ImageDiskList[driveNum].readSector((int) Register.getRegDH(),
-                            (int) (Register.getRegCH() | ((Register.getRegCL() & 0xc0) << 2)),
-                            (int) ((Register.getRegCL() & 63) + i), sectBuf);
+                    _lastStatus = ImageDiskList[driveNum].readSector(Register.getRegDH(),
+                            Register.getRegCH() | ((Register.getRegCL() & 0xc0) << 2),
+                            (Register.getRegCL() & 63) + i, sectBuf);
                     if ((_lastStatus != 0x00) || (_killRead)) {
                         Log.logMsg("Error in disk read");
                         _killRead = false;
@@ -216,9 +216,9 @@ public final class BIOSDisk {
                         bufPtr++;
                     }
 
-                    _lastStatus = ImageDiskList[driveNum].writeSector((int) Register.getRegDH(),
-                            (int) (Register.getRegCH() | ((Register.getRegCL() & 0xc0) << 2)),
-                            (int) ((Register.getRegCL() & 63) + i), sectBuf);
+                    _lastStatus = ImageDiskList[driveNum].writeSector(Register.getRegDH(),
+                            Register.getRegCH() | ((Register.getRegCL() & 0xc0) << 2),
+                            (Register.getRegCL() & 63) + i, sectBuf);
                     if (_lastStatus != 0x00) {
                         Callback.scf(true);
                         return Callback.ReturnTypeNone;
@@ -342,8 +342,8 @@ public final class BIOSDisk {
         int dp0physaddr = Callback.physPointer(_diskParm0);
         int dp1physaddr = Callback.physPointer(_diskParm1);
         for (i = 0; i < 16; i++) {
-            Memory.physWriteB((int) (dp0physaddr + i), 0);
-            Memory.physWriteB((int) (dp1physaddr + i), 0);
+            Memory.physWriteB(dp0physaddr + i, 0);
+            Memory.physWriteB(dp1physaddr + i, 0);
         }
 
         ImgDTASeg = 0;

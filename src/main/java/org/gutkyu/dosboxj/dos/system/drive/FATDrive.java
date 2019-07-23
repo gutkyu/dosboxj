@@ -154,7 +154,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
             // diskfile = fopen(sysFilename, "rb+");
             diskfile = Files.newByteChannel(Paths.get(sysFilename), StandardOpenOption.READ,
                     StandardOpenOption.WRITE);
-            filesize = (int) (diskfile.size() / 1024L);
+            filesize = (int) (diskfile.size() / 1024);
         } catch (Exception e) {
             createdSuccessfully = false;
             return;
@@ -222,30 +222,30 @@ public final class FATDrive extends DOSDrive implements Disposable {
         int rootdirentries = ByteConv.getShort(_bootbuffer, OFF_bootstrap_rootdirentries);
         int bytespersector = ByteConv.getShort(_bootbuffer, OFF_bootstrap_bytespersector);
 
-        int RootDirSectors = (int) ((rootdirentries * 32) + (bytespersector - 1)) / bytespersector;
+        int RootDirSectors = ((rootdirentries * 32) + (bytespersector - 1)) / bytespersector;
         int DataSectors;
 
         int totalsectorcount = ByteConv.getShort(_bootbuffer, OFF_bootstrap_totalsectorcount);
         int reservedsectors = ByteConv.getShort(_bootbuffer, OFF_bootstrap_reservedsectors);
-        byte fatcopies = _bootbuffer[OFF_bootstrap_fatcopies];
+        int fatcopies = 0xff & _bootbuffer[OFF_bootstrap_fatcopies];
         int totalsecdword = ByteConv.getShort(_bootbuffer, OFF_bootstrap_totalsecdword);
 
         if (totalsectorcount != 0) {
-            DataSectors = (int) (totalsectorcount
-                    - (reservedsectors + (fatcopies * sectorsperfat) + RootDirSectors));
+            DataSectors = totalsectorcount
+                    - (reservedsectors + (fatcopies * sectorsperfat) + RootDirSectors);
         } else {
-            DataSectors = (int) (totalsecdword
-                    - (reservedsectors + (fatcopies * sectorsperfat) + RootDirSectors));
+            DataSectors = totalsecdword
+                    - (reservedsectors + (fatcopies * sectorsperfat) + RootDirSectors);
 
         }
 
-        byte sectorspercluster = _bootbuffer[OFF_bootstrap_sectorspercluster];
+        int sectorspercluster = 0xff & _bootbuffer[OFF_bootstrap_sectorspercluster];
 
         _countOfClusters = DataSectors / sectorspercluster;
 
-        _firstDataSector = (int) (reservedsectors + (fatcopies * sectorsperfat) + RootDirSectors)
-                + _partSectOff;
-        _firstRootDirSect = (int) (reservedsectors + (fatcopies * sectorsperfat) + _partSectOff);
+        _firstDataSector =
+                (reservedsectors + (fatcopies * sectorsperfat) + RootDirSectors) + _partSectOff;
+        _firstRootDirSect = (reservedsectors + (fatcopies * sectorsperfat) + _partSectOff);
 
         if (_countOfClusters < 4085) {
             /* Volume is FAT12 */
@@ -302,7 +302,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
         DOSFile file = null;
         byte[] fileEntry = new byte[SIZE_direntry_Total];
         int dirClust = 0, subEntry = 0;
-        CStringPt dirName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt dirName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         CStringPt pathName = CStringPt.create(11);
 
         int save_errorcode = DOSMain.DOS.ErrorCode;
@@ -320,7 +320,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
             fileEntry[OFF_direntry_entrysize + 2] = 0;
             fileEntry[OFF_direntry_entrysize + 3] = 0;
 
-            directoryChange(dirClust, fileEntry, (int) subEntry);
+            directoryChange(dirClust, fileEntry, subEntry);
         } else {
             /* Can we even get the name of the file itself? */
             if (!getEntryName(name, dirName))
@@ -376,7 +376,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
         // fileEntry.entryname[0] = 0xe5;
         fileEntry[OFF_direntry_entryname] = (byte) 0xe5;
 
-        directoryChange(dirClust, fileEntry, (int) subEntry);
+        directoryChange(dirClust, fileEntry, subEntry);
         int loFirstClust = ByteConv.getShort(fileEntry, OFF_direntry_loFirstClust);
         if (loFirstClust != 0)
             deleteClustChain(loFirstClust);
@@ -388,7 +388,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     public boolean removeDir(CStringPt dir) {
         int dummyClust = 0, dirClust = 0;
         byte[] tmpentry = new byte[SIZE_direntry_Total];
-        CStringPt dirName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt dirName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         CStringPt pathName = CStringPt.create(11);
 
         /* Can we even get the name of the directory itself? */
@@ -460,7 +460,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     public boolean makeDir(CStringPt dir) {
         int dummyClust = 0, dirClust = 0;
         byte[] tmpentry = new byte[SIZE_direntry_Total];
-        CStringPt dirName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt dirName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         CStringPt pathName = CStringPt.create(11);
 
 
@@ -585,14 +585,16 @@ public final class FATDrive extends DOSDrive implements Disposable {
         return findNextInternal(dta.getDirIDCluster(), dta, dummyClust);
     }
 
+    public int returnedFileAttr = 0;
+
     @Override
-    public boolean getFileAttr(String name, RefU16Ret refAttr) {
+    public boolean tryFileAttr(String name) {
         byte[] fileEntry = new byte[SIZE_direntry_Total];
         int dirClust = 0, subEntry = 0;
         RefU32Ret refDirClust = new RefU32Ret(dirClust);
         RefU32Ret refSubEntry = new RefU32Ret(subEntry);
         if (!getFileDirEntry(name, fileEntry, refDirClust, refSubEntry)) {
-            CStringPt dirName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+            CStringPt dirName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
             CStringPt pathName = CStringPt.create(11);
 
             /* Can we even get the name of the directory itself? */
@@ -616,15 +618,20 @@ public final class FATDrive extends DOSDrive implements Disposable {
                         break;
                 }
                 if (cmp) {
-                    refAttr.U16 = fileEntry[OFF_direntry_attrib];
+                    returnedFileAttr = 0xff & fileEntry[OFF_direntry_attrib];
                     return true;
                 }
                 fileidx++;
             }
             return false;
         } else
-            refAttr.U16 = fileEntry[OFF_direntry_attrib];
+            returnedFileAttr = 0xff & fileEntry[OFF_direntry_attrib];
         return true;
+    }
+
+    @Override
+    public int returnFileAttr() {
+        return returnedFileAttr;
     }
 
     @Override
@@ -648,7 +655,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
         if (!getFileDirEntry(newName, fileEntry2, refDirClust2, refSubEntry2)) {
             /* Target doesn't exist, can rename */
 
-            CStringPt dirName2 = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+            CStringPt dirName2 = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
             CStringPt pathName2 = CStringPt.create(11);
 
             /* Can we even get the name of the file itself? */
@@ -676,7 +683,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
             subEntry2 = refSubEntry2.U32;
             /* Remove old entry */
             fileEntry1[OFF_direntry_entryname] = (byte) 0xe5;
-            directoryChange(dirClust1, fileEntry1, (int) subEntry1);
+            directoryChange(dirClust1, fileEntry1, subEntry1);
 
             return true;
         }
@@ -761,8 +768,8 @@ public final class FATDrive extends DOSDrive implements Disposable {
     }
 
     public int getAbsoluteSectFromChain(int startClustNum, int logicalSector) {
-        int skipClust = (int) logicalSector / _bootbuffer[OFF_bootstrap_sectorspercluster];
-        int sectClust = logicalSector % _bootbuffer[OFF_bootstrap_sectorspercluster];
+        int skipClust = logicalSector / (_bootbuffer[OFF_bootstrap_sectorspercluster] & 0xff);
+        int sectClust = logicalSector % (_bootbuffer[OFF_bootstrap_sectorspercluster] & 0xff);
 
         int currentClust = startClustNum;
         int testvalue;
@@ -1030,7 +1037,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
 
         switch (_fatType) {
             case FAT12:
-                clustValue = ByteConv.getShort(_fatSectBuffer, (int) fatentoff);
+                clustValue = ByteConv.getShort(_fatSectBuffer, fatentoff);
                 if ((clustNum & 0x1) != 0) {
                     clustValue >>>= 4;
                 } else {
@@ -1038,10 +1045,10 @@ public final class FATDrive extends DOSDrive implements Disposable {
                 }
                 break;
             case FAT16:
-                clustValue = ByteConv.getShort(_fatSectBuffer, (int) fatentoff);
+                clustValue = ByteConv.getShort(_fatSectBuffer, fatentoff);
                 break;
             case FAT32:
-                clustValue = ByteConv.getInt(_fatSectBuffer, (int) fatentoff);
+                clustValue = ByteConv.getInt(_fatSectBuffer, fatentoff);
                 break;
         }
 
@@ -1079,17 +1086,17 @@ public final class FATDrive extends DOSDrive implements Disposable {
 
         switch (_fatType) {
             case FAT12: {
-                int tmpValue = ByteConv.getShort(_fatSectBuffer, (int) fatEntOff);
+                int tmpValue = ByteConv.getShort(_fatSectBuffer, fatEntOff);
                 if ((clustNum & 0x1) != 0) {
                     clustValue &= 0xfff;
                     clustValue <<= 4;
                     tmpValue &= 0xf;
-                    tmpValue |= (short) clustValue;
+                    tmpValue |= 0xffff & clustValue;
 
                 } else {
                     clustValue &= 0xfff;
                     tmpValue &= 0xf000;
-                    tmpValue |= (short) clustValue;
+                    tmpValue |= 0xffff & clustValue;
                 }
                 ArrayHelper.copy(tmpValue, _fatSectBuffer, fatEntOff, SIZE_USHORT);
                 break;
@@ -1104,11 +1111,10 @@ public final class FATDrive extends DOSDrive implements Disposable {
         byte fatCopies = _bootbuffer[OFF_bootstrap_fatcopies];
         int sectorPerFat = ByteConv.getShort(_bootbuffer, OFF_bootstrap_sectorsperfat);
         for (int fc = 0; fc < fatCopies; fc++) {
-            LoadedDisk.writeAbsoluteSector(fatSectNum + (int) (fc * sectorPerFat), _fatSectBuffer,
-                    0);
+            LoadedDisk.writeAbsoluteSector(fatSectNum + (fc * sectorPerFat), _fatSectBuffer, 0);
             if (_fatType == FAT12) {
                 if (fatEntOff >= 511)
-                    LoadedDisk.writeAbsoluteSector(fatSectNum + 1 + (int) (fc * sectorPerFat),
+                    LoadedDisk.writeAbsoluteSector(fatSectNum + 1 + (fc * sectorPerFat),
                             _fatSectBuffer, 512);
             }
         }
@@ -1160,7 +1166,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
                 DOSMain.setError(DOSMain.DOSERR_NO_MORE_FILES);
                 return false;
             }
-            CStringPt.clear(findName, 0, (int) DOSSystem.DOS_NAMELENGTH_ASCII);
+            CStringPt.clear(findName, 0, DOSSystem.DOS_NAMELENGTH_ASCII);
             CStringPt.clear(extension, 0, 4);
             long sectbufOff = entryOffset * SIZE_direntry_Total + OFF_direntry_entryname;
             for (int i = 0; i < 8; i++) {
@@ -1412,14 +1418,14 @@ public final class FATDrive extends DOSDrive implements Disposable {
         }
     }
 
-    private CStringPt basedir = CStringPt.create((int) Cross.LEN);
+    private CStringPt basedir = CStringPt.create(Cross.LEN);
 
     // private friend void DOS_Shell::CMD_SUBST(char* args);
     private class SrchInfo {
         public CStringPt srchDir;
 
         public SrchInfo() {
-            this.srchDir = CStringPt.create((int) Cross.LEN);
+            this.srchDir = CStringPt.create(Cross.LEN);
         }
     }
 

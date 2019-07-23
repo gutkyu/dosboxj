@@ -94,7 +94,7 @@ public final class MEM extends Program {
         int handle = 0;
         String emm = "EMMXXXX0";
         if (DOSMain.openFile(emm, 0)) {
-            handle = DOSMain.FileEntry;
+            handle = DOSMain.CreatedOrOpenedFileEntry;
             DOSMain.closeFile(handle);
             Register.setRegAH(0x42);
             Callback.runRealInt(0x67);

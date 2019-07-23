@@ -1643,14 +1643,13 @@ public abstract class CPUCore {
                     // break;
                     case CASE_W_0x66:
                     case CASE_D_0x66: /* Operand Size Prefix */
-                        Core.OPCodeIndex =
-                                (int) ((Convert.toByte(CPU.Block.Code.Big) ^ 0x1) * 0x200);
+                        Core.OPCodeIndex = (Convert.toByte(CPU.Block.Code.Big) ^ 0x1) * 0x200;
                         continue restart_opcode; // goto restart_opcode;
                     case CASE_W_0x67:
                     case CASE_D_0x67: /* Address Size Prefix */
                         // DO_PREFIX_ADDR();
-                        Core.Prefixes = (int) ((Core.Prefixes & ~PrefixAddr)
-                                | (int) (Convert.toByte(CPU.Block.Code.Big) ^ PrefixAddr));
+                        Core.Prefixes = (Core.Prefixes & ~PrefixAddr)
+                                | (Convert.toByte(CPU.Block.Code.Big) ^ PrefixAddr);
                         Core.EATable = EATable[Core.Prefixes & 1];
                         continue restart_opcode; // goto restart_opcode;
                     case CASE_W_0x68: /* PUSH Iw */
@@ -1669,7 +1668,7 @@ public abstract class CPUCore {
                     }
                         break;
                     case CASE_W_0x6a: /* PUSH Ib */
-                        CPU.push16((int) fetchBS());
+                        CPU.push16(fetchBS());
                         break;
                     case CASE_W_0x6b: /* IMUL Gw,Ew,Ib */
                     // RMGwEwOp3(DIMULW, Fetchbs());
@@ -1880,7 +1879,7 @@ public abstract class CPUCore {
                     case CASE_D_0x82: /* Grpl Eb,Ib Mirror instruction */
                     {
                         int rm = fetchB();
-                        int which = (int) (rm >>> 3) & 7;
+                        int which = (rm >>> 3) & 7;
                         if (rm >= 0xc0) {
                             int regId = lookupRMEAregbl[rm];
                             int ib = fetchB();
@@ -1975,7 +1974,7 @@ public abstract class CPUCore {
                     case CASE_W_0x81: /* Grpl Ew,Iw */
                     {
                         int rm = fetchB();
-                        int which = (int) (rm >>> 3) & 7;
+                        int which = (rm >>> 3) & 7;
                         if (rm >= 0xc0) {
                             int regId = lookupRMEAregw[rm];
                             int iw = fetchW();
@@ -2040,7 +2039,7 @@ public abstract class CPUCore {
                     case CASE_W_0x83: /* Grpl Ew,Ix */
                     {
                         int rm = fetchB();
-                        int which = (int) (rm >>> 3) & 7;
+                        int which = (rm >>> 3) & 7;
                         if (rm >= 0xc0) {
                             int regId = lookupRMEAregw[rm];
                             short iw = (short) fetchBS();
@@ -2198,7 +2197,7 @@ public abstract class CPUCore {
                                     if ((desc.type() == CPU.DESC_CODE_R_NC_A)
                                             || (desc.type() == CPU.DESC_CODE_R_NC_NA)) {
                                         CPU.exception(CPU.ExceptionGP,
-                                                (int) (Register.segValue(Core.BaseValDS) & 0xfffc));
+                                                Register.segValue(Core.BaseValDS) & 0xfffc);
                                         continue main_loop;// org_continue;
                                     }
                                 }
@@ -2316,7 +2315,7 @@ public abstract class CPUCore {
                     {
                         int rm = fetchB();
                         int val;
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm >= 0xc0) {
                             val = Register.Regs[lookupRMEAregw[rm]].getWord();
                         } else {
@@ -2431,7 +2430,7 @@ public abstract class CPUCore {
                         // -- #region CPU_TRAP_CHECK
                         if (Register.getFlag(Register.FlagTF) != 0) {
                             CPU.CpuDecoder = CpuTrapDecoder;
-                            return (int) Callback.ReturnTypeNone;
+                            return Callback.ReturnTypeNone;
                         }
                         // -- #endregion
                         continue main_loop;// org_continue;
@@ -2755,12 +2754,12 @@ public abstract class CPUCore {
                         // -- #region CPU_TRAP_CHECK
                         if (Register.getFlag(Register.FlagTF) != 0) {
                             CPU.CpuDecoder = CpuTrapDecoder;
-                            return (int) Callback.ReturnTypeNone;
+                            return Callback.ReturnTypeNone;
                         }
                         // -- #endregion
                         // -- #region CPU_PIC_CHECK
                         if (Register.getFlag(Register.FlagIF) != 0 && PIC.IRQCheck != 0)
-                            return (int) Callback.ReturnTypeNone;
+                            return Callback.ReturnTypeNone;
                         // -- #endregion
                         continue main_loop;// org_continue;
                     }
@@ -2793,8 +2792,8 @@ public abstract class CPUCore {
                     case CASE_W_0xd7:
                     case CASE_D_0xd7: /* XLAT */
                         if ((Core.Prefixes & PrefixAddr) != 0) {
-                            Register.setRegAL(Memory.readB(Core.BaseDS
-                                    + (int) (Register.getRegEBX() + Register.getRegAL())));
+                            Register.setRegAL(Memory.readB(
+                                    Core.BaseDS + (Register.getRegEBX() + Register.getRegAL())));
                         } else {
                             Register.setRegAL(Memory.readB(Core.BaseDS + 0xffff
                                     & (Register.getRegBX() + Register.getRegAL())));
@@ -2972,7 +2971,7 @@ public abstract class CPUCore {
                         // -- #region CPU_TRAP_CHECK
                         if (Register.getFlag(Register.FlagTF) != 0) {
                             CPU.CpuDecoder = CpuTrapDecoder;
-                            return (int) Callback.ReturnTypeNone;
+                            return Callback.ReturnTypeNone;
                         }
                         // -- #endregion
                         continue main_loop;// org_continue;
@@ -3048,7 +3047,7 @@ public abstract class CPUCore {
                         }
                         Flags.fillFlags();
                         CPU.hlt(getIP());
-                        return (int) Callback.ReturnTypeNone; // Needs to return for hlt cpu core
+                        return Callback.ReturnTypeNone; // Needs to return for hlt cpu core
                     case CASE_W_0xf5:
                     case CASE_D_0xf5: /* CMC */
                         Flags.fillFlags();
@@ -3059,7 +3058,7 @@ public abstract class CPUCore {
                     case CASE_D_0xf6: /* GRP3 Eb(,Ib) */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         switch (which) {
                             case 0x00: /* TEST Eb,Ib */
                             case 0x01: /* TEST Eb,Ib Undocumented */
@@ -3170,7 +3169,7 @@ public abstract class CPUCore {
                     case CASE_W_0xf7: /* GRP3 Ew(,Iw) */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         switch (which) {
                             case 0x00: /* TEST Ew,Iw */
                             case 0x01: /* TEST Ew,Iw Undocumented */
@@ -3341,7 +3340,7 @@ public abstract class CPUCore {
                     case CASE_W_0xff: /* GRP5 Ew */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         switch (which) {
                             case 0x00: /* INC Ew */
                             // RMEw(INCW);
@@ -3385,7 +3384,7 @@ public abstract class CPUCore {
                                 // -- #region CPU_TRAP_CHECK
                                 if (Register.getFlag(Register.FlagTF) != 0) {
                                     CPU.CpuDecoder = CpuTrapDecoder;
-                                    return (int) Callback.ReturnTypeNone;
+                                    return Callback.ReturnTypeNone;
                                 }
                                 // -- #endregion
                                 continue main_loop;// org_continue;
@@ -3412,7 +3411,7 @@ public abstract class CPUCore {
                                 // -- #region CPU_TRAP_CHECK
                                 if (Register.getFlag(Register.FlagTF) != 0) {
                                     CPU.CpuDecoder = CpuTrapDecoder;
-                                    return (int) Callback.ReturnTypeNone;
+                                    return Callback.ReturnTypeNone;
                                 }
                                 // -- #endregion
                                 continue main_loop;// org_continue;
@@ -3446,7 +3445,7 @@ public abstract class CPUCore {
                             continue main_loop;
                         }
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         switch (which) {
                             case 0x00: /* SLDT */
                             case 0x01: /* STR */
@@ -3515,7 +3514,7 @@ public abstract class CPUCore {
                     case CASE_0F_W_0x01: /* Group 7 Ew */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm < 0xc0) { // First ones all use EA
                             int eaa = Core.EATable[rm].get();
                             int limit;
@@ -3661,7 +3660,7 @@ public abstract class CPUCore {
                     case CASE_0F_W_0x20: /* MOV Rd.CRx */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm < 0xc0) {
                             rm |= 0xc0;
                             Log.logging(Log.LogTypes.CPU, Log.LogServerities.Error,
@@ -3680,7 +3679,7 @@ public abstract class CPUCore {
                     case CASE_0F_W_0x21: /* MOV Rd,DRx */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm < 0xc0) {
                             rm |= 0xc0;
                             Log.logging(Log.LogTypes.CPU, Log.LogServerities.Error,
@@ -3699,7 +3698,7 @@ public abstract class CPUCore {
                     case CASE_0F_W_0x22: /* MOV CRx,Rd */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm < 0xc0) {
                             rm |= 0xc0;
                             Log.logging(Log.LogTypes.CPU, Log.LogServerities.Error,
@@ -3716,7 +3715,7 @@ public abstract class CPUCore {
                     case CASE_0F_W_0x23: /* MOV DRx,Rd */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm < 0xc0) {
                             rm |= 0xc0;
                             Log.logging(Log.LogTypes.CPU, Log.LogServerities.Error,
@@ -3733,7 +3732,7 @@ public abstract class CPUCore {
                     case CASE_0F_W_0x24: /* MOV Rd,TRx */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm < 0xc0) {
                             rm |= 0xc0;
                             Log.logging(Log.LogTypes.CPU, Log.LogServerities.Error,
@@ -3752,7 +3751,7 @@ public abstract class CPUCore {
                     case CASE_0F_W_0x26: /* MOV TRx,Rd */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm < 0xc0) {
                             rm |= 0xc0;
                             Log.logging(Log.LogTypes.CPU, Log.LogServerities.Error,
@@ -4844,9 +4843,9 @@ public abstract class CPUCore {
                         int rm = fetchB();
                         int rmrd = Register.Regs[lookupRMregd[rm]].getDWord();
                         int eaa = Core.EATable[rm].get();
-                        boundMin = (int) Memory.readD(eaa);
-                        boundMax = (int) Memory.readD(eaa + 4);
-                        if ((((int) rmrd) < boundMin) || (((int) rmrd) > boundMax)) {
+                        boundMin = Memory.readD(eaa);
+                        boundMax = Memory.readD(eaa + 4);
+                        if ((rmrd < boundMin) || (rmrd > boundMax)) {
                             {
                                 CPU.exception(5);
                                 continue main_loop;// org_continue;
@@ -4867,12 +4866,12 @@ public abstract class CPUCore {
                             int eardId = lookupRMEAregd[rm];
                             int newSel = 0xffff & Register.Regs[eardId].getDWord();
                             newSel = CPU.arpl(newSel, rmrw);
-                            Register.Regs[eardId].setDWord((int) newSel);
+                            Register.Regs[eardId].setDWord(newSel);
                         } else {
                             int eaa = Core.EATable[rm].get();
                             int newSel = Memory.readW(eaa);
                             newSel = CPU.arpl(newSel, rmrw);
-                            Memory.writeD(eaa, (int) newSel);
+                            Memory.writeD(eaa, newSel);
                         }
                     }
                         break;
@@ -4893,7 +4892,7 @@ public abstract class CPUCore {
                     }
                         break;
                     case CASE_D_0x6a: /* PUSH Ib */
-                        CPU.push32((int) fetchBS());
+                        CPU.push32(fetchBS());
                         break;
                     case CASE_D_0x6b: /* IMUL Gd,Ed,Ib */
                     // RMGdEdOp3(DIMULD, Fetchbs());
@@ -4927,7 +4926,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgO())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -4937,7 +4936,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNO())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -4947,7 +4946,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgB())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -4957,7 +4956,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNB())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -4967,7 +4966,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgZ())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -4977,7 +4976,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNZ())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -4987,7 +4986,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgBE())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -4997,7 +4996,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNBE())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5007,7 +5006,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgS())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5017,7 +5016,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNS())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5027,7 +5026,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgP())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5037,7 +5036,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNP())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5047,7 +5046,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgL())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5057,7 +5056,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNL())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5067,7 +5066,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgLE())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5077,7 +5076,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNLE())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5085,7 +5084,7 @@ public abstract class CPUCore {
                     case CASE_D_0x81: /* Grpl Ed,Id */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm >= 0xc0) {
                             int eardId = lookupRMEAregd[rm];
                             int id = fetchD();
@@ -5150,10 +5149,10 @@ public abstract class CPUCore {
                     case CASE_D_0x83: /* Grpl Ed,Ix */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm >= 0xc0) {
                             int eardId = lookupRMEAregd[rm];
-                            int id = (int) ((int) fetchBS());
+                            int id = fetchBS();
                             switch (which) {
                                 case 0x00:
                                     ADDD(eardId, id);
@@ -5182,7 +5181,7 @@ public abstract class CPUCore {
                             }
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            int id = (int) ((int) fetchBS());
+                            int id = fetchBS();
                             switch (which) {
                                 case 0x00:
                                     ADDD_M(eaa, id);
@@ -5261,7 +5260,7 @@ public abstract class CPUCore {
                     {
                         int rm = fetchB();
                         int val;
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         switch (which) {
                             case 0x00: /* MOV Ew,ES */
                                 val = Register.segValue(Register.SEG_NAME_ES);
@@ -5304,9 +5303,9 @@ public abstract class CPUCore {
                         int rwrdId = lookupRMregd[rm];
                         Core.BaseDS = Core.BaseSS = 0;
                         if ((Core.Prefixes & PrefixAddr) != 0) {
-                            Register.Regs[rwrdId].setDWord((int) (EATable[1][rm]).get());
+                            Register.Regs[rwrdId].setDWord((EATable[1][rm]).get());
                         } else {
-                            Register.Regs[rwrdId].setDWord((int) (EATable[0][rm]).get());
+                            Register.Regs[rwrdId].setDWord((EATable[0][rm]).get());
                         }
                         break;
                     }
@@ -5396,7 +5395,7 @@ public abstract class CPUCore {
                         // -- #region CPU_TRAP_CHECK
                         if (Register.getFlag(Register.FlagTF) != 0) {
                             CPU.CpuDecoder = CpuTrapDecoder;
-                            return (int) Callback.ReturnTypeNone;
+                            return Callback.ReturnTypeNone;
                         }
                         // -- #endregion
                         continue main_loop;// org_continue;
@@ -5578,12 +5577,12 @@ public abstract class CPUCore {
                         // -- #region CPU_TRAP_CHECK
                         if (Register.getFlag(Register.FlagTF) != 0) {
                             CPU.CpuDecoder = CpuTrapDecoder;
-                            return (int) Callback.ReturnTypeNone;
+                            return Callback.ReturnTypeNone;
                         }
                         // -- #endregion
                         // -- #region CPU_PIC_CHECK
                         if (Register.getFlag(Register.FlagIF) != 0 && PIC.IRQCheck != 0)
-                            return (int) Callback.ReturnTypeNone;
+                            return Callback.ReturnTypeNone;
                         // -- #endregion
                         continue main_loop;// org_continue;
                     }
@@ -5600,7 +5599,7 @@ public abstract class CPUCore {
                                 saveIP();
                                 Register.setRegECX(Register.getRegECX() - 1);
                                 if (Register.getRegECX() != 0 && !Flags.getZF())
-                                    Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                                    Register.setRegEIP(Register.getRegEIP() + fetchBS());
                                 Register.setRegEIP(Register.getRegEIP() + 1);
                                 continue main_loop;// org_continue;
                             }
@@ -5610,7 +5609,7 @@ public abstract class CPUCore {
                                 saveIP();
                                 Register.setRegCX(Register.getRegCX() - 1);
                                 if (Register.getRegCX() != 0 && !Flags.getZF())
-                                    Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                                    Register.setRegEIP(Register.getRegEIP() + fetchBS());
                                 Register.setRegEIP(Register.getRegEIP() + 1);
                                 continue main_loop;// org_continue;
                             }
@@ -5623,7 +5622,7 @@ public abstract class CPUCore {
                                 saveIP();
                                 Register.setRegECX(Register.getRegECX() - 1);
                                 if (Register.getRegECX() != 0 && Flags.getZF())
-                                    Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                                    Register.setRegEIP(Register.getRegEIP() + fetchBS());
                                 Register.setRegEIP(Register.getRegEIP() + 1);
                                 continue main_loop;// org_continue;
                             }
@@ -5633,7 +5632,7 @@ public abstract class CPUCore {
                                 saveIP();
                                 Register.setRegCX(Register.getRegCX() - 1);
                                 if (Register.getRegCX() != 0 && Flags.getZF())
-                                    Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                                    Register.setRegEIP(Register.getRegEIP() + fetchBS());
                                 Register.setRegEIP(Register.getRegEIP() + 1);
                                 continue main_loop;// org_continue;
                             }
@@ -5646,7 +5645,7 @@ public abstract class CPUCore {
                                 saveIP();
                                 Register.setRegECX(Register.getRegECX() - 1);
                                 if (Register.getRegECX() != 0)
-                                    Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                                    Register.setRegEIP(Register.getRegEIP() + fetchBS());
                                 Register.setRegEIP(Register.getRegEIP() + 1);
                                 continue main_loop;// org_continue;
                             }
@@ -5656,7 +5655,7 @@ public abstract class CPUCore {
                                 saveIP();
                                 Register.setRegCX(Register.getRegCX() - 1);
                                 if (Register.getRegCX() != 0)
-                                    Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                                    Register.setRegEIP(Register.getRegEIP() + fetchBS());
                                 Register.setRegEIP(Register.getRegEIP() + 1);
                                 continue main_loop;// org_continue;
                             }
@@ -5668,7 +5667,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if ((Register.getRegECX() & AddrMaskTable[Core.Prefixes & PrefixAddr]) == 0)
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchBS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchBS());
                         Register.setRegEIP(Register.getRegEIP() + 1);
                         continue main_loop;// org_continue;
                     }
@@ -5698,14 +5697,14 @@ public abstract class CPUCore {
                         int addip = fetchDS();
                         saveIP();
                         CPU.push32(Register.getRegEIP());
-                        Register.setRegEIP(Register.getRegEIP() + (int) addip);
+                        Register.setRegEIP(Register.getRegEIP() + addip);
                         continue main_loop;// org_continue;
                     }
                     case CASE_D_0xe9: /* JMP Jd */
                     {
                         int addip = fetchDS();
                         saveIP();
-                        Register.setRegEIP(Register.getRegEIP() + (int) addip);
+                        Register.setRegEIP(Register.getRegEIP() + addip);
                         continue main_loop;// org_continue;
                     }
                     case CASE_D_0xea: /* JMP Ad */
@@ -5717,7 +5716,7 @@ public abstract class CPUCore {
                         // -- #region CPU_TRAP_CHECK
                         if (Register.getFlag(Register.FlagTF) != 0) {
                             CPU.CpuDecoder = CpuTrapDecoder;
-                            return (int) Callback.ReturnTypeNone;
+                            return Callback.ReturnTypeNone;
                         }
                         // -- #endregion
                         continue main_loop;// org_continue;
@@ -5726,7 +5725,7 @@ public abstract class CPUCore {
                     {
                         int addip = fetchBS();
                         saveIP();
-                        Register.setRegEIP(Register.getRegEIP() + (int) addip);
+                        Register.setRegEIP(Register.getRegEIP() + addip);
                         continue main_loop;// org_continue;
                     }
                     case CASE_D_0xed: /* IN EAX,DX */
@@ -5738,7 +5737,7 @@ public abstract class CPUCore {
                     case CASE_D_0xf7: /* GRP3 Ed(,Id) */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         switch (which) {
                             case 0x00: /* TEST Ed,Id */
                             case 0x01: /* TEST Ed,Id Undocumented */
@@ -5832,7 +5831,7 @@ public abstract class CPUCore {
                     case CASE_D_0xff: /* GRP 5 Ed */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         switch (which) {
                             case 0x00: /* INC Ed */
                                 // RMEd(INCD);
@@ -5880,7 +5879,7 @@ public abstract class CPUCore {
                                 // -- #region CPU_TRAP_CHECK
                                 if (Register.getFlag(Register.FlagTF) != 0) {
                                     CPU.CpuDecoder = CpuTrapDecoder;
-                                    return (int) Callback.ReturnTypeNone;
+                                    return Callback.ReturnTypeNone;
                                 }
                                 // -- #endregion
                                 continue main_loop;// org_continue;
@@ -5908,7 +5907,7 @@ public abstract class CPUCore {
                                 // -- #region CPU_TRAP_CHECK
                                 if (Register.getFlag(Register.FlagTF) != 0) {
                                     CPU.CpuDecoder = CpuTrapDecoder;
-                                    return (int) Callback.ReturnTypeNone;
+                                    return Callback.ReturnTypeNone;
                                 }
                                 // -- #endregion
                                 continue main_loop;// org_continue;
@@ -5945,7 +5944,7 @@ public abstract class CPUCore {
                             continue main_loop;
                         }
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         switch (which) {
                             case 0x00: /* SLDT */
                             case 0x01: /* STR */
@@ -6021,18 +6020,18 @@ public abstract class CPUCore {
                     case CASE_0F_D_0x01: /* Group 7 Ed */
                     {
                         int rm = fetchB();
-                        int which = (int) ((rm >>> 3) & 7);
+                        int which = (rm >>> 3) & 7;
                         if (rm < 0xc0) { // First ones all use EA
                             int eaa = Core.EATable[rm].get();
                             int limit;
                             switch (which) {
                                 case 0x00: /* SGDT */
                                     Memory.writeW(eaa, 0xffff & CPU.sgdtLimit());
-                                    Memory.writeD(eaa + 2, (int) CPU.sgdtBase());
+                                    Memory.writeD(eaa + 2, CPU.sgdtBase());
                                     break;
                                 case 0x01: /* SIDT */
                                     Memory.writeW(eaa, 0xffff & CPU.sidtLimit());
-                                    Memory.writeD(eaa + 2, (int) CPU.sidtBase());
+                                    Memory.writeD(eaa + 2, CPU.sidtBase());
                                     break;
                                 case 0x02: /* LGDT */
                                     if (CPU.Block.PMode && CPU.Block.CPL != 0) {
@@ -6087,7 +6086,7 @@ public abstract class CPUCore {
                                     continue main_loop;
                                 }
                                 case 0x04: /* SMSW */
-                                    Register.Regs[eardId].setDWord((int) CPU.smsw());
+                                    Register.Regs[eardId].setDWord(CPU.smsw());
                                     break;
                                 case 0x06: /* LMSW */
                                     if (CPU.lmsw(Register.Regs[eardId].getDWord())) {
@@ -6126,7 +6125,7 @@ public abstract class CPUCore {
                             ret = CPU.lar(Memory.readW(eaa), ar);
                         }
                         ar = ret < 0 ? ar : ret;
-                        Register.Regs[rwrdId].setDWord((int) ar);
+                        Register.Regs[rwrdId].setDWord(ar);
                     }
                         break;
                     case CASE_0F_D_0x03: /* LSL Gd,Ew */
@@ -6148,7 +6147,7 @@ public abstract class CPUCore {
                             ret = CPU.lsl(Memory.readW(eaa));
                         }
                         limit = ret < 0 ? limit : ret;
-                        Register.Regs[rwrdId].setDWord((int) limit);
+                        Register.Regs[rwrdId].setDWord(limit);
                     }
                         break;
                     case CASE_0F_D_0x80: /* JO */
@@ -6156,7 +6155,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgO())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6166,7 +6165,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNO())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6176,7 +6175,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgB())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6186,7 +6185,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNB())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6196,7 +6195,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgZ())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6206,7 +6205,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNZ())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6216,7 +6215,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgBE())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6226,7 +6225,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNBE())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6236,7 +6235,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgS())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6246,7 +6245,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNS())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6256,7 +6255,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgP())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6266,7 +6265,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNP())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6276,7 +6275,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgL())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6286,7 +6285,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNL())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6296,7 +6295,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgLE())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6306,7 +6305,7 @@ public abstract class CPUCore {
                     {
                         saveIP();
                         if (Flags.getTFlgNLE())
-                            Register.setRegEIP(Register.getRegEIP() + (int) fetchDS());
+                            Register.setRegEIP(Register.getRegEIP() + fetchDS());
                         Register.setRegEIP(Register.getRegEIP() + 4);
                         continue main_loop;// org_continue;
                     }
@@ -6333,7 +6332,7 @@ public abstract class CPUCore {
                                     (Register.Regs[eardId].getDWord() & mask));
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            eaa += (int) ((((int) Register.Regs[rwrdId].getDWord()) >>> 5) * 4);
+                            eaa += ((Register.Regs[rwrdId].getDWord()) >>> 5) * 4;
                             int old = Memory.readD(eaa);
                             Register.setFlagBit(Register.FlagCF, (old & mask));
                         }
@@ -6385,7 +6384,7 @@ public abstract class CPUCore {
                             Register.Regs[eardId].setDWord(Register.Regs[eardId].getDWord() | mask);
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            eaa += (int) ((((int) Register.Regs[rwrdId].getDWord()) >>> 5) * 4);
+                            eaa += (Register.Regs[rwrdId].getDWord() >>> 5) * 4;
                             int old = Memory.readD(eaa);
                             Register.setFlagBit(Register.FlagCF, (old & mask));
                             Memory.writeD(eaa, old | mask);
@@ -6425,11 +6424,10 @@ public abstract class CPUCore {
                             int rmrdId = lookupRMregd[rm];
                             if (rm >= 0xc0) {
                                 DIMULD(rmrdId, Register.Regs[lookupRMEAregd[rm]].getDWord(),
-                                        (int) Register.Regs[rmrdId].getDWord());
+                                        Register.Regs[rmrdId].getDWord());
                             } else {
                                 int eaa = Core.EATable[rm].get();
-                                DIMULD(rmrdId, Memory.readD(eaa),
-                                        (int) Register.Regs[rmrdId].getDWord());
+                                DIMULD(rmrdId, Memory.readD(eaa), Register.Regs[rmrdId].getDWord());
                             }
                         }
                         break;
@@ -6496,7 +6494,7 @@ public abstract class CPUCore {
                                     .setDWord(Register.Regs[eardId].getDWord() & ~mask);
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            eaa += (int) ((((int) Register.Regs[rwrdId].getDWord()) >>> 5) * 4);
+                            eaa += (Register.Regs[rwrdId].getDWord() >>> 5) * 4;
                             int old = Memory.readD(eaa);
                             Register.setFlagBit(Register.FlagCF, (old & mask));
                             Memory.writeD(eaa, old & ~mask);
@@ -6597,7 +6595,7 @@ public abstract class CPUCore {
                                     break;
                                 default:
                                     Support.exceptionExit("CPU:66:0F:BA:Illegal subfunction %X",
-                                            (int) (rm & 0x38));
+                                            rm & 0x38);
                                     break;
                             }
                         } else {
@@ -6623,7 +6621,7 @@ public abstract class CPUCore {
                                     break;
                                 default:
                                     Support.exceptionExit("CPU:66:0F:BA:Illegal subfunction %X",
-                                            (int) (rm & 0x38));
+                                            rm & 0x38);
                                     break;
                             }
                         }
@@ -6643,7 +6641,7 @@ public abstract class CPUCore {
                             Register.Regs[eardId].setDWord(Register.Regs[eardId].getDWord() ^ mask);
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            eaa += (int) ((((int) Register.Regs[rwrdId].getDWord()) >>> 5) * 4);
+                            eaa += (Register.Regs[rwrdId].getDWord() >>> 5) * 4;
                             int old = Memory.readD(eaa);
                             Register.setFlagBit(Register.FlagCF, (old & mask));
                             Memory.writeD(eaa, old ^ mask);
@@ -6824,7 +6822,7 @@ public abstract class CPUCore {
             saveIP();
         }
         Flags.fillFlags();
-        return (int) Callback.ReturnTypeNone;
+        return Callback.ReturnTypeNone;
         // decode_end:
         // SAVEIP();
         // Flags.FillFlags();
@@ -6838,7 +6836,7 @@ public abstract class CPUCore {
     public int decodeEnd() {
         saveIP();
         Flags.fillFlags();
-        return (int) Callback.ReturnTypeNone;
+        return Callback.ReturnTypeNone;
     }
 
     /*--------------------------- end CpuCoreRunMethod -----------------------------*/
@@ -7050,71 +7048,71 @@ public abstract class CPUCore {
     }
 
     private int EA_32_40_n() {
-        return (int) (Core.BaseDS + Register.getRegEAX() + fetchBS());
+        return Core.BaseDS + Register.getRegEAX() + fetchBS();
     }
 
     private int EA_32_41_n() {
-        return (int) (Core.BaseDS + Register.getRegECX() + fetchBS());
+        return Core.BaseDS + Register.getRegECX() + fetchBS();
     }
 
     private int EA_32_42_n() {
-        return (int) (Core.BaseDS + Register.getRegEDX() + fetchBS());
+        return Core.BaseDS + Register.getRegEDX() + fetchBS();
     }
 
     private int EA_32_43_n() {
-        return (int) (Core.BaseDS + Register.getRegEBX() + fetchBS());
+        return Core.BaseDS + Register.getRegEBX() + fetchBS();
     }
 
     private int EA_32_44_n() {
         int temp = Sib(1);
-        return (int) (temp + fetchBS());
+        return temp + fetchBS();
     }
 
     // static int EA_32_44_n(void) { return Sib(1)+Fetchbs();}
     private int EA_32_45_n() {
-        return (int) (Core.BaseSS + Register.getRegEBP() + fetchBS());
+        return Core.BaseSS + Register.getRegEBP() + fetchBS();
     }
 
     private int EA_32_46_n() {
-        return (int) (Core.BaseDS + Register.getRegESI() + fetchBS());
+        return Core.BaseDS + Register.getRegESI() + fetchBS();
     }
 
     private int EA_32_47_n() {
-        return (int) (Core.BaseDS + Register.getRegEDI() + fetchBS());
+        return Core.BaseDS + Register.getRegEDI() + fetchBS();
     }
 
     private int EA_32_80_n() {
-        return (int) (Core.BaseDS + Register.getRegEAX() + fetchDS());
+        return Core.BaseDS + Register.getRegEAX() + fetchDS();
     }
 
     private int EA_32_81_n() {
-        return (int) (Core.BaseDS + Register.getRegECX() + fetchDS());
+        return Core.BaseDS + Register.getRegECX() + fetchDS();
     }
 
     private int EA_32_82_n() {
-        return (int) (Core.BaseDS + Register.getRegEDX() + fetchDS());
+        return Core.BaseDS + Register.getRegEDX() + fetchDS();
     }
 
     private int EA_32_83_n() {
-        return (int) (Core.BaseDS + Register.getRegEBX() + fetchDS());
+        return Core.BaseDS + Register.getRegEBX() + fetchDS();
     }
 
     private int EA_32_84_n() {
         int temp = Sib(2);
-        return (int) (temp + fetchDS());
+        return temp + fetchDS();
     }
 
     // static int EA_32_84_n(void) { return Sib(2)+Fetchds();}
     private int EA_32_85_n() {
-        return (int) (Core.BaseSS + Register.getRegEBP() + fetchDS());
+        return Core.BaseSS + Register.getRegEBP() + fetchDS();
     }
 
     private int EA_32_86_n() {
-        return (int) (Core.BaseDS + Register.getRegESI() + fetchDS());
+        return Core.BaseDS + Register.getRegESI() + fetchDS();
     }
 
     private int EA_32_87_n() {
-        return (int) (Core.BaseDS + Register.getRegEDI() + fetchDS());
+        return Core.BaseDS + Register.getRegEDI() + fetchDS();
     }
 
     public EAHandler[][] EATable = new EAHandler[2][];
@@ -7685,9 +7683,9 @@ public abstract class CPUCore {
         } else {
             CPU.Cycles++;
             /* Calculate amount of ops to do before cycles run out */
-            if ((count > (int) CPU.Cycles) && (type < STRING_OP_SCASB)) {
-                countLeft = (int) (count - CPU.Cycles);
-                count = (int) CPU.Cycles;
+            if ((count > CPU.Cycles) && (type < STRING_OP_SCASB)) {
+                countLeft = count - CPU.Cycles;
+                count = CPU.Cycles;
                 CPU.Cycles = 0;
                 loadIP();// core.cseip = (regsModule.SegPhys(regsModule.SEG_NAME_cs) +
                          // regsModule.reg_eip); //RESET IP to the start
@@ -7696,7 +7694,7 @@ public abstract class CPUCore {
                 if ((count <= 1) && (CPU.Cycles <= 1))
                     CPU.Cycles--;
                 else if (type < STRING_OP_SCASB)
-                    CPU.Cycles -= (int) count;
+                    CPU.Cycles -= count;
                 countLeft = 0;
             }
         }
@@ -7706,97 +7704,97 @@ public abstract class CPUCore {
                 case STRING_OP_OUTSB:
                     for (; count > 0; count--) {
                         IO.writeB(Register.getRegDX(), Memory.readB(siBase + siIndex));
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_OUTSW:
                     addIndex <<= 1;
                     for (; count > 0; count--) {
                         IO.writeW(Register.getRegDX(), Memory.readW(siBase + siIndex));
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_OUTSD:
                     addIndex <<= 2;
                     for (; count > 0; count--) {
                         IO.writeD(Register.getRegDX(), Memory.readD(siBase + siIndex));
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_INSB:
                     for (; count > 0; count--) {
                         Memory.writeB(diBase + diIndex, IO.readB(Register.getRegDX()));
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_INSW:
                     addIndex <<= 1;
                     for (; count > 0; count--) {
                         Memory.writeW(diBase + diIndex, IO.readW(Register.getRegDX()));
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_STOSB:
                     for (; count > 0; count--) {
                         Memory.writeB(diBase + diIndex, Register.getRegAL());
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_STOSW:
                     addIndex <<= 1;
                     for (; count > 0; count--) {
                         Memory.writeW(diBase + diIndex, Register.getRegAX());
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_STOSD:
                     addIndex <<= 2;
                     for (; count > 0; count--) {
                         Memory.writeD(diBase + diIndex, Register.getRegEAX());
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_MOVSB:
                     for (; count > 0; count--) {
                         Memory.writeB(diBase + diIndex, Memory.readB(siBase + siIndex));
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_MOVSW:
                     addIndex <<= 1;
                     for (; count > 0; count--) {
                         Memory.writeW(diBase + diIndex, Memory.readW(siBase + siIndex));
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_MOVSD:
                     addIndex <<= 2;
                     for (; count > 0; count--) {
                         Memory.writeD(diBase + diIndex, Memory.readD(siBase + siIndex));
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_LODSB:
                     for (; count > 0; count--) {
                         Register.setRegAL(Memory.readB(siBase + siIndex));
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_LODSW:
                     addIndex <<= 1;
                     for (; count > 0; count--) {
                         Register.setRegAX(Memory.readW(siBase + siIndex));
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_LODSD:
                     addIndex <<= 2;
                     for (; count > 0; count--) {
                         Register.setRegEAX(Memory.readD(siBase + siIndex));
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
                     }
                     break;
                 case STRING_OP_SCASB: {
@@ -7805,7 +7803,7 @@ public abstract class CPUCore {
                         count--;
                         CPU.Cycles--;
                         val2 = Memory.readB(diBase + diIndex);
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
                         if ((Register.getRegAL() == val2) != Core.RepZero)
                             break;
                     }
@@ -7819,7 +7817,7 @@ public abstract class CPUCore {
                         count--;
                         CPU.Cycles--;
                         val2 = Memory.readW(diBase + diIndex);
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
                         if ((Register.getRegAX() == val2) != Core.RepZero)
                             break;
                     }
@@ -7833,7 +7831,7 @@ public abstract class CPUCore {
                         count--;
                         CPU.Cycles--;
                         val2 = Memory.readD(diBase + diIndex);
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        diIndex = (diIndex + addIndex) & addMask;
                         if ((Register.getRegEAX() == val2) != Core.RepZero)
                             break;
                     }
@@ -7847,8 +7845,8 @@ public abstract class CPUCore {
                         CPU.Cycles--;
                         val1 = Memory.readB(siBase + siIndex);
                         val2 = Memory.readB(diBase + diIndex);
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
+                        diIndex = (diIndex + addIndex) & addMask;
                         if ((val1 == val2) != Core.RepZero)
                             break;
                     }
@@ -7863,8 +7861,8 @@ public abstract class CPUCore {
                         CPU.Cycles--;
                         val1 = Memory.readW(siBase + siIndex);
                         val2 = Memory.readW(diBase + diIndex);
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
+                        diIndex = (diIndex + addIndex) & addMask;
                         if ((val1 == val2) != Core.RepZero)
                             break;
                     }
@@ -7879,8 +7877,8 @@ public abstract class CPUCore {
                         CPU.Cycles--;
                         val1 = Memory.readD(siBase + siIndex);
                         val2 = Memory.readD(diBase + diIndex);
-                        siIndex = (int) ((siIndex + addIndex) & addMask);
-                        diIndex = (int) ((diIndex + addIndex) & addMask);
+                        siIndex = (siIndex + addIndex) & addMask;
+                        diIndex = (diIndex + addIndex) & addMask;
                         if ((val1 == val2) != Core.RepZero)
                             break;
                     }
@@ -7945,7 +7943,7 @@ public abstract class CPUCore {
 
     // int op1, byte op2
     public void ADCB(int op1, int op2) {
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1b(Memory.readB(op1));
         Flags.setLzFVar2b(op2);
         Flags.setLzFResb(Flags.getLzFVar1b() + Flags.getLzFVar2b() + Flags.LzFlags.oldCF);
@@ -7955,7 +7953,7 @@ public abstract class CPUCore {
 
     // int regId, byte op2
     public void ADCBL(int regId, int op2) {
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1b(Register.Regs[regId].getByteL());
         Flags.setLzFVar2b(op2);
         Flags.setLzFResb(Flags.getLzFVar1b() + Flags.getLzFVar2b() + Flags.LzFlags.oldCF);
@@ -7965,7 +7963,7 @@ public abstract class CPUCore {
 
     // int regId, byte op2
     public void ADCBH(int regId, int op2) {
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1b(Register.Regs[regId].getByteH());
         Flags.setLzFVar2b(op2);
         Flags.setLzFResb(Flags.getLzFVar1b() + Flags.getLzFVar2b() + Flags.LzFlags.oldCF);
@@ -7975,7 +7973,7 @@ public abstract class CPUCore {
 
     // int op1, byte op2
     public void SBBB(int op1, int op2) {
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1b(Memory.readB(op1));
         Flags.setLzFVar2b(op2);
         Flags.setLzFResb(Flags.getLzFVar1b() - (Flags.getLzFVar2b() + Flags.LzFlags.oldCF));
@@ -8199,7 +8197,7 @@ public abstract class CPUCore {
     public void ADCW_M(int op1, int op2) {
         op2 &= 0xffff;
 
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1w(Memory.readW(op1));
         Flags.setLzFvar2w(op2);
         Flags.setLzFresw(
@@ -8211,7 +8209,7 @@ public abstract class CPUCore {
     public void ADCW(int regId, int op2) {
         op2 &= 0xffff;
 
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1w(Register.Regs[regId].getWord());
         Flags.setLzFvar2w(op2);
         Flags.setLzFresw(
@@ -8223,7 +8221,7 @@ public abstract class CPUCore {
     public void SBBW_M(int op1, int op2) {
         op2 &= 0xffff;
 
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1w(Memory.readW(op1));
         Flags.setLzFvar2w(op2);
         Flags.setLzFresw(
@@ -8235,7 +8233,7 @@ public abstract class CPUCore {
     public void SBBW(int regId, int op2) {
         op2 &= 0xffff;
 
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1w(Register.Regs[regId].getWord());
         Flags.setLzFvar2w(op2);
         Flags.setLzFresw(
@@ -8389,7 +8387,7 @@ public abstract class CPUCore {
     }
 
     public void ADCD_M(int op1, int op2) {
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1d(Memory.readD(op1));
         Flags.setLzFVar2d(op2);
         Flags.setLzFResd(Flags.getLzFVar1d() + Flags.getLzFVar2d() + Flags.LzFlags.oldCF);
@@ -8399,7 +8397,7 @@ public abstract class CPUCore {
     }
 
     public void ADCD(int regId, int op2) {
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1d(Register.Regs[regId].getDWord());
         Flags.setLzFVar2d(op2);
         Flags.setLzFResd(Flags.getLzFVar1d() + Flags.getLzFVar2d() + Flags.LzFlags.oldCF);
@@ -8409,7 +8407,7 @@ public abstract class CPUCore {
     }
 
     public void SBBD_M(int op1, int op2) {
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1d(Memory.readD(op1));
         Flags.setLzFVar2d(op2);
         Flags.setLzFResd(Flags.getLzFVar1d() - (Flags.getLzFVar2d() + Flags.LzFlags.oldCF));
@@ -8418,7 +8416,7 @@ public abstract class CPUCore {
     }
 
     public void SBBD(int regId, int op2) {
-        Flags.LzFlags.oldCF = Flags.getCF() ? (int) 1 : 0;
+        Flags.LzFlags.oldCF = Flags.getCF() ? 1 : 0;
         Flags.setLzFVar1d(Register.Regs[regId].getDWord());
         Flags.setLzFVar2d(op2);
         Flags.setLzFResd(Flags.getLzFVar1d() - (Flags.getLzFVar2d() + Flags.LzFlags.oldCF));
@@ -8846,7 +8844,7 @@ public abstract class CPUCore {
     }
 
     public void MULW_M(int op1) {
-        int tempu = (int) Register.getRegAX() * Memory.readW(op1);
+        int tempu = Register.getRegAX() * Memory.readW(op1);
         Register.setRegAX(0xffff & tempu);
         Register.setRegDX(0xffff & (tempu >>> 16));
         Flags.fillFlagsNoCFOF();
@@ -8876,8 +8874,8 @@ public abstract class CPUCore {
     }
 
     public void MULD_M(int op1) {
-        long tempu = (long) Register.getRegEAX() * Memory.readD(op1);
-        Register.setRegEAX((int) (tempu));
+        long tempu = (Register.getRegEAX() & 0xffffffffL) * (Memory.readD(op1) & 0xffffffffL);
+        Register.setRegEAX((int) tempu);
         Register.setRegEDX((int) (tempu >>> 32));
         Flags.fillFlagsNoCFOF();
         Register.setFlagBit(Register.FlagZF, Register.getRegEAX() == 0);
@@ -8891,8 +8889,9 @@ public abstract class CPUCore {
     }
 
     public void MULD(int regId) {
-        long tempu = (long) Register.getRegEAX() * Register.Regs[regId].getDWord();
-        Register.setRegEAX((int) (tempu));
+        long tempu = (Register.getRegEAX() & 0xffffffffL)
+                * (Register.Regs[regId].getDWord() & 0xffffffffL);
+        Register.setRegEAX((int) tempu);
         Register.setRegEDX((int) (tempu >>> 32));
         Flags.fillFlagsNoCFOF();
         Register.setFlagBit(Register.FlagZF, Register.getRegEAX() == 0);
@@ -9015,45 +9014,47 @@ public abstract class CPUCore {
     }
 
     public SwitchReturn DIVD_M(int op1) {
-        int val = Memory.readD(op1);
+        long val = Memory.readD(op1) & 0xffffffffL;
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        long num = (((long) Register.getRegEDX() << 32) | Register.getRegEAX());
-        long quo = num / val;
-        int rem = (int) (num % val);
-        int quo32 = (int) (quo & 0xffffffff);
-        if (quo != (long) quo32) {
+        long edx = Register.getRegEDX() & 0xffffffffL;
+
+        if (edx <= val) {// if (quo!=(Bit64u)quo32)
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
+        long num = (edx << 32) | (Register.getRegEAX() & 0xffffffffL);
+        long quo = num / val;
+        int rem = (int) (num % val);
         Register.setRegEDX(rem);
-        Register.setRegEAX(quo32);
+        Register.setRegEAX((int) quo);
 
         return SwitchReturn.None;
     }
 
     public SwitchReturn DIVD(int regId) {
-        int val = Register.Regs[regId].getDWord();
+        long val = Register.Regs[regId].getDWord() & 0xffffffffL;
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        long num = (((long) Register.getRegEDX() << 32) | Register.getRegEAX());
-        long quo = num / val;
-        int rem = (int) (num % val);
-        int quo32 = (int) (quo & 0xffffffff);
-        if (quo != (long) quo32) {
+        long edx = Register.getRegEDX() & 0xffffffffL;
+
+        if (edx <= val) {// if (quo!=(Bit64u)quo32)
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
+        long num = (edx << 32) | (Register.getRegEAX() & 0xffffffffL);
+        long quo = num / val;
+        int rem = (int) (num % val);
         Register.setRegEDX(rem);
-        Register.setRegEAX(quo32);
+        Register.setRegEAX((int) quo);
 
         return SwitchReturn.None;
     }
@@ -9073,8 +9074,8 @@ public abstract class CPUCore {
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        Register.setRegAH((byte) rem);
-        Register.setRegAL((byte) quo8s);
+        Register.setRegAH(rem);
+        Register.setRegAL(quo8s);
         return SwitchReturn.None;
     }
 
@@ -9093,8 +9094,8 @@ public abstract class CPUCore {
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        Register.setRegAH((byte) rem);
-        Register.setRegAL((byte) quo8s);
+        Register.setRegAH(rem);
+        Register.setRegAL(quo8s);
         return SwitchReturn.None;
     }
 
@@ -9122,16 +9123,16 @@ public abstract class CPUCore {
     }
 
     public SwitchReturn IDIVW_M(int op1) {
-        int val = (short) Memory.readW(op1);
+        int val = (short) Memory.readW(op1);// Bit16s
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        int num = (int) ((Register.getRegDX() << 16) | Register.getRegAX());
+        int num = ((Register.getRegDX() & 0xffff) << 16) | Register.getRegAX();
         int quo = num / val;
-        short rem = (short) (num % val);
-        short quo16s = (short) quo;
+        short rem = (short) (num % val);// Bit16s
+        short quo16s = (short) quo;// Bit16s
         if (quo != (int) quo16s) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
@@ -9150,7 +9151,7 @@ public abstract class CPUCore {
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        int num = (int) ((Register.getRegDX() << 16) | Register.getRegAX());
+        int num = ((Register.getRegDX() & 0xffff) << 16) | Register.getRegAX();
         int quo = num / val;
         short rem = (short) (num % val);
         short quo16s = (short) quo;
@@ -9166,13 +9167,14 @@ public abstract class CPUCore {
     }
 
     public SwitchReturn IDIVD_M(int op1) {
-        int val = (int) (Memory.readD(op1));
+        int val = Memory.readD(op1);// Bit32s
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        long num = (long) ((((long) Register.getRegEDX() << 32) | Register.getRegEAX()));
+        long num =
+                ((Register.getRegEDX() & 0xffffffffL) << 32) | (Register.getRegEAX() & 0xffffffffL);
         long quo = num / val;
         int rem = (int) (num % val);
         int quo32s = (int) (quo & 0xffffffff);
@@ -9181,20 +9183,21 @@ public abstract class CPUCore {
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        Register.setRegEDX((int) rem);
-        Register.setRegEAX((int) quo32s);
+        Register.setRegEDX(rem);
+        Register.setRegEAX(quo32s);
 
         return SwitchReturn.None;
     }
 
     public SwitchReturn IDIVD(int regId) {
-        int val = (int) (Register.Regs[regId].getDWord());
+        int val = Register.Regs[regId].getDWord();// bit32
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        long num = (long) ((((long) Register.getRegEDX() << 32) | Register.getRegEAX()));
+        long num =
+                ((Register.getRegEDX() & 0xffffffffL) << 32) | (Register.getRegEAX() & 0xffffffffL);
         long quo = num / val;
         int rem = (int) (num % val);
         int quo32s = (int) (quo & 0xffffffff);
@@ -9203,8 +9206,8 @@ public abstract class CPUCore {
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        Register.setRegEDX((int) rem);
-        Register.setRegEAX((int) quo32s);
+        Register.setRegEDX(rem);
+        Register.setRegEAX(quo32s);
 
         return SwitchReturn.None;
     }
@@ -9280,8 +9283,8 @@ public abstract class CPUCore {
     }
 
     public void IMULD_M(int op1) {
-        long temps = ((long) (Register.getRegEAX() * (long) Memory.readD(op1)));
-        Register.setRegEAX((int) (temps));
+        long temps = ((long) Register.getRegEAX()) * ((long) Memory.readD(op1));
+        Register.setRegEAX((int) temps);
         Register.setRegEDX((int) (temps >>> 32));
         Flags.fillFlagsNoCFOF();
         if ((Register.getRegEDX() == 0xffffffff) && (Register.getRegEAX() & 0x80000000) != 0) {
@@ -9329,10 +9332,10 @@ public abstract class CPUCore {
 
 
     public void DIMULD(int regId, int op2, int op3) {
-        long res = ((long) ((int) op2)) * ((long) ((int) op3));
-        Register.Regs[regId].setDWord((int) ((int) res));
+        long res = ((long) op2) * ((long) op3);
+        Register.Regs[regId].setDWord((int) res);
         Flags.fillFlagsNoCFOF();
-        if ((res > -((long) (2147483647) + 1)) && (res < (long) 2147483647)) {
+        if ((res > -((long) 2147483647 + 1)) && (res < (long) 2147483647)) {
             Register.setFlagBit(Register.FlagCF, false);
             Register.setFlagBit(Register.FlagOF, false);
         } else {
@@ -9616,7 +9619,7 @@ public abstract class CPUCore {
     // public void GRP2B(byte blah) {
     public void GRP2B(int blah) {
         int rm = fetchB();
-        int which = (int) ((rm >>> 3) & 7);
+        int which = (rm >>> 3) & 7;
 
         if (rm >= 0xc0) {
             boolean blhs = lookupRMEAregbl[rm] >= 0;
@@ -9889,7 +9892,7 @@ public abstract class CPUCore {
 
     public void GRP2W(DOSFuncInt blah) {
         int rm = fetchB();
-        int which = (int) (rm >>> 3) & 7;
+        int which = (rm >>> 3) & 7;
         if (rm >= 0xc0) {
             int regIdx = lookupRMEAregw[rm];
 
@@ -10142,7 +10145,7 @@ public abstract class CPUCore {
     // public void GRP2W(byte blah) {
     public void GRP2W(int blah) {
         int rm = fetchB();
-        int which = (int) (rm >>> 3) & 7;
+        int which = (rm >>> 3) & 7;
         if (rm >= 0xc0) {
             int regIdx = lookupRMEAregw[rm];
 
@@ -10394,7 +10397,7 @@ public abstract class CPUCore {
 
     public void GRP2D(DOSFuncInt blah) {
         int rm = fetchB();
-        int which = (int) ((rm >>> 3) & 7);
+        int which = (rm >>> 3) & 7;
         if (rm >= 0xc0) {
             int regIdx = lookupRMEAregd[rm];
             int op1 = Register.Regs[regIdx].getDWord();
@@ -10436,7 +10439,7 @@ public abstract class CPUCore {
                     // RCLD
                     if (val == 0)
                         break; {
-                    int cf = (int) (Flags.fillFlags() & 0x1);
+                    int cf = Flags.fillFlags() & 0x1;
                     Flags.setLzFVar1d(op1);
                     Flags.setLzFVar2b(val);
                     if (Flags.getLzFVar2b() == 1) {
@@ -10456,7 +10459,7 @@ public abstract class CPUCore {
                 case 0x03:
                     // RCRD
                     if (val != 0) {
-                        int cf = (int) Flags.fillFlags() & 0x1;
+                        int cf = Flags.fillFlags() & 0x1;
                         Flags.setLzFVar1d(op1);
                         Flags.setLzFVar2b(val);
                         if (Flags.getLzFVar2b() == 1) {
@@ -10551,7 +10554,7 @@ public abstract class CPUCore {
                     // RCLD
                     if (val == 0)
                         break; {
-                    int cf = (int) (Flags.fillFlags() & 0x1);
+                    int cf = Flags.fillFlags() & 0x1;
                     Flags.setLzFVar1d(Memory.readD(op1));
                     Flags.setLzFVar2b(val);
                     if (Flags.getLzFVar2b() == 1) {
@@ -10571,7 +10574,7 @@ public abstract class CPUCore {
                 case 0x03:
                     // RCRD
                     if (val != 0) {
-                        int cf = (int) Flags.fillFlags() & 0x1;
+                        int cf = Flags.fillFlags() & 0x1;
                         Flags.setLzFVar1d(Memory.readD(op1));
                         Flags.setLzFVar2b(val);
                         if (Flags.getLzFVar2b() == 1) {
@@ -10634,7 +10637,7 @@ public abstract class CPUCore {
     // public void GRP2D(byte blah) {
     public void GRP2D(int blah) {
         int rm = fetchB();
-        int which = (int) ((rm >>> 3) & 7);
+        int which = (rm >>> 3) & 7;
         if (rm >= 0xc0) {
             int regIdx = lookupRMEAregd[rm];
             int op1 = Register.Regs[regIdx].getDWord();
@@ -10676,7 +10679,7 @@ public abstract class CPUCore {
                     // RCLD
                     if (val == 0)
                         break; {
-                    int cf = (int) (Flags.fillFlags() & 0x1);
+                    int cf = Flags.fillFlags() & 0x1;
                     Flags.setLzFVar1d(op1);
                     Flags.setLzFVar2b(val);
                     if (Flags.getLzFVar2b() == 1) {
@@ -10696,7 +10699,7 @@ public abstract class CPUCore {
                 case 0x03:
                     // RCRD
                     if (val != 0) {
-                        int cf = (int) Flags.fillFlags() & 0x1;
+                        int cf = Flags.fillFlags() & 0x1;
                         Flags.setLzFVar1d(op1);
                         Flags.setLzFVar2b(val);
                         if (Flags.getLzFVar2b() == 1) {
@@ -10791,7 +10794,7 @@ public abstract class CPUCore {
                     // RCLD
                     if (val == 0)
                         break; {
-                    int cf = (int) (Flags.fillFlags() & 0x1);
+                    int cf = Flags.fillFlags() & 0x1;
                     Flags.setLzFVar1d(Memory.readD(op1));
                     Flags.setLzFVar2b(val);
                     if (Flags.getLzFVar2b() == 1) {
@@ -10811,7 +10814,7 @@ public abstract class CPUCore {
                 case 0x03:
                     // RCRD
                     if (val != 0) {
-                        int cf = (int) Flags.fillFlags() & 0x1;
+                        int cf = Flags.fillFlags() & 0x1;
                         Flags.setLzFVar1d(Memory.readD(op1));
                         Flags.setLzFVar2b(val);
                         if (Flags.getLzFVar2b() == 1) {
@@ -10882,10 +10885,10 @@ public abstract class CPUCore {
         if (val == 0)
             return false;
         Flags.setLzFVar2b(val);
-        Flags.setLzFVar1d((int) ((Memory.readW(op1) << 16) | op2));
+        Flags.setLzFVar1d((Memory.readW(op1) << 16) | op2);
         int tempd = Flags.getLzFVar1d() << Flags.getLzFVar2b();
         if (Flags.getLzFVar2b() > 16)
-            tempd |= (int) (op2 << (Flags.getLzFVar2b() - 16));
+            tempd |= (op2 << (Flags.getLzFVar2b() - 16));
         Flags.setLzFresw(0xffff & (tempd >>> 16));
         Memory.writeW(op1, Flags.getLzFresw());
         Flags.LzFlags.Type = Flags.TypeFlag.DSHLw;
@@ -10900,10 +10903,10 @@ public abstract class CPUCore {
             return false;
         // if (val == 0) break;
         Flags.setLzFVar2b(val);
-        Flags.setLzFVar1d((int) ((Register.Regs[regId].getWord() << 16) | op2));
+        Flags.setLzFVar1d(((Register.Regs[regId].getWord() << 16) | op2));
         int tempd = Flags.getLzFVar1d() << Flags.getLzFVar2b();
         if (Flags.getLzFVar2b() > 16)
-            tempd |= (int) (op2 << (Flags.getLzFVar2b() - 16));
+            tempd |= (op2 << (Flags.getLzFVar2b() - 16));
         Flags.setLzFresw(0xffff & (tempd >>> 16));
         Register.Regs[regId].setWord(Flags.getLzFresw());
         Flags.LzFlags.Type = Flags.TypeFlag.DSHLw;
@@ -10917,10 +10920,10 @@ public abstract class CPUCore {
         if (val == 0)
             return false;
         Flags.setLzFVar2b(val);
-        Flags.setLzFVar1d((int) ((op1 << 16) | op2));
+        Flags.setLzFVar1d((op1 << 16) | op2);
         int tempd = Flags.getLzFVar1d() << Flags.getLzFVar2b();
         if (Flags.getLzFVar2b() > 16)
-            tempd |= (int) (op2 << (Flags.getLzFVar2b() - 16));
+            tempd |= (op2 << (Flags.getLzFVar2b() - 16));
         Flags.setLzFresw(0xffff & (tempd >>> 16));
         op1 = Flags.getLzFresw();
         Flags.LzFlags.Type = Flags.TypeFlag.DSHLw;
@@ -10984,10 +10987,10 @@ public abstract class CPUCore {
         if (val == 0)
             return false;
         Flags.setLzFVar2b(val);
-        Flags.setLzFVar1d((int) ((op2 << 16) | Memory.readW(op1)));
+        Flags.setLzFVar1d((op2 << 16) | Memory.readW(op1));
         int tempd = Flags.getLzFVar1d() >>> Flags.getLzFVar2b();
         if (Flags.getLzFVar2b() > 16)
-            tempd |= (int) (op2 << (32 - Flags.getLzFVar2b()));
+            tempd |= (op2 << (32 - Flags.getLzFVar2b()));
         Flags.setLzFresw(0xffff & (tempd));
         Memory.writeW(op1, Flags.getLzFresw());
         Flags.LzFlags.Type = Flags.TypeFlag.DSHRw;
@@ -11002,10 +11005,10 @@ public abstract class CPUCore {
         if (val == 0)
             return false;
         Flags.setLzFVar2b(val);
-        Flags.setLzFVar1d((int) (op2 << 16) | Register.Regs[regId].getWord());
+        Flags.setLzFVar1d((op2 << 16) | Register.Regs[regId].getWord());
         int tempd = Flags.getLzFVar1d() >>> Flags.getLzFVar2b();
         if (Flags.getLzFVar2b() > 16)
-            tempd |= (int) (op2 << (32 - Flags.getLzFVar2b()));
+            tempd |= (op2 << (32 - Flags.getLzFVar2b()));
         Flags.setLzFresw(0xffff & (tempd));
         Register.Regs[regId].setWord(Flags.getLzFresw());
         Flags.LzFlags.Type = Flags.TypeFlag.DSHRw;
@@ -11019,10 +11022,10 @@ public abstract class CPUCore {
         if (val == 0)
             return false;
         Flags.setLzFVar2b(val);
-        Flags.setLzFVar1d((int) ((op2 << 16) | op1));
+        Flags.setLzFVar1d((op2 << 16) | op1);
         int tempd = Flags.getLzFVar1d() >>> Flags.getLzFVar2b();
         if (Flags.getLzFVar2b() > 16)
-            tempd |= (int) (op2 << (32 - Flags.getLzFVar2b()));
+            tempd |= (op2 << (32 - Flags.getLzFVar2b()));
         Flags.setLzFresw(0xffff & (tempd));
         op1 = Flags.getLzFresw();
         Flags.LzFlags.Type = Flags.TypeFlag.DSHRw;

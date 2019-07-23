@@ -62,7 +62,7 @@ public abstract class Program implements Disposable {
             Memory.strCopy(env_read, envString, 1024);
             if (envString.get(0) == 0)
                 return null;
-            env_read += (int) (envString.length() + 1);
+            env_read += envString.length() + 1;
             CStringPt equal = envString.positionOf('=');
             if (equal.isEmpty())
                 continue;
@@ -91,7 +91,7 @@ public abstract class Program implements Disposable {
                 result = envString.toString();
                 return result;
             }
-            envRead += (int) (envString.length() + 1);
+            envRead += envString.length() + 1;
             num--;
         } while (true);
         return null;
@@ -117,13 +117,13 @@ public abstract class Program implements Disposable {
             Memory.strCopy(envRead, envString, 1024);
             if (envString.get(0) == 0)
                 break;
-            envRead += (int) (envString.length() + 1);
+            envRead += envString.length() + 1;
             if (envString.lastIndexOf('=') < 0)
                 continue; /* Remove corrupt entry? */
             if ((envString.startWith(entry)) && envString.get(entry.length()) == '=')
                 continue;
             Memory.blockWrite(envWrite, envString);
-            envWrite += (int) (envString.length() + 1);
+            envWrite += envString.length() + 1;
         } while (true);
         /* TODO Maybe save the program name sometime. not really needed though */
         /* Save the new entry */
@@ -132,7 +132,7 @@ public abstract class Program implements Disposable {
             envString = CStringPt.create(String.format("%1$s=%2$s", entry, newString));
             // sprintf(env_string,"%s=%s",entry,new_string); //oldcode
             Memory.blockWrite(envWrite, envString);
-            envWrite += (int) (envString.length() + 1);
+            envWrite += envString.length() + 1;
         }
         /* Clear out the final piece of the environment */
         Memory.writeD(envWrite, 0);

@@ -549,10 +549,10 @@ public final class Memory {
             int next_idx = -1;
             while (pages != 0) {
                 if (next_idx < 0)
-                    ret = (int) index;
+                    ret = index;
                 else
-                    memory.mhandles[next_idx] = (int) index;
-                next_idx = (int) index;
+                    memory.mhandles[next_idx] = index;
+                next_idx = index;
                 index++;
                 pages--;
             }
@@ -573,10 +573,10 @@ public final class Memory {
                     // *next = index;
                     // next = &memory.mhandles[index];
                     if (next_idx < 0)
-                        ret = (int) index;
+                        ret = index;
                     else
-                        memory.mhandles[next_idx] = (int) index;
-                    next_idx = (int) index;
+                        memory.mhandles[next_idx] = index;
+                    next_idx = index;
                     index++;
                     pages--;
                 }
@@ -592,7 +592,7 @@ public final class Memory {
     }
 
     public static int getNextFreePage() {
-        return (int) bestMatch(1);
+        return bestMatch(1);
     }
 
     public static void releasePages(int handle) {
@@ -652,7 +652,7 @@ public final class Memory {
             if (sequence) {
                 index = last + 1;
                 int free = 0;
-                while ((index < (int) memory.pages) && memory.mhandles[index] == 0) {
+                while ((index < memory.pages) && memory.mhandles[index] == 0) {
                     index++;
                     free++;
                 }
@@ -671,8 +671,7 @@ public final class Memory {
                     int newhandle = allocatePages(pages, true);
                     if (newhandle == 0)
                         return false;
-                    Memory.blockCopy((int) newhandle * 4096, (int) handle * 4096,
-                            (int) old_pages * 4096);
+                    Memory.blockCopy(newhandle * 4096, handle * 4096, old_pages * 4096);
                     releasePages(handle);
                     refHandle.U32 = handle = newhandle;
                     return true;
@@ -855,7 +854,7 @@ public final class Memory {
             SectionProperty section = (SectionProperty) (configuration);
 
             /* Setup the Physical Page Links */
-            int memsize = (int) section.getInt("memsize");
+            int memsize = section.getInt("memsize");
 
             if (memsize < 1)
                 memsize = 1;

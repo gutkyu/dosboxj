@@ -23,19 +23,19 @@ public final class DOSInfoBlock extends MemStruct {
 
         saveIt(Size_sDIB_protFCBs, Off_sDIB_protFCBs, 0);
         saveIt(Size_sDIB_specialCodeSeg, Off_sDIB_specialCodeSeg, 0);
-        saveIt(Size_sDIB_joindedDrives, Off_sDIB_joindedDrives, (byte) 0);
+        saveIt(Size_sDIB_joindedDrives, Off_sDIB_joindedDrives, 0);
         // increase this if you add drives to cds-chain
         saveIt(Size_sDIB_lastdrive, Off_sDIB_lastdrive, 0x01);
         saveIt(Size_sDIB_diskInfoBuffer, Off_sDIB_diskInfoBuffer,
                 Memory.realMake(segment, Off_sDIB_diskBufferHeadPt));
-        saveIt(Size_sDIB_setverPtr, Off_sDIB_setverPtr, (int) 0);
+        saveIt(Size_sDIB_setverPtr, Off_sDIB_setverPtr, 0);
 
         saveIt(Size_sDIB_a20FixOfs, Off_sDIB_a20FixOfs, 0);
         saveIt(Size_sDIB_pspLastIfHMA, Off_sDIB_pspLastIfHMA, 0);
-        saveIt(Size_sDIB_blockDevices, Off_sDIB_blockDevices, (byte) 0);
+        saveIt(Size_sDIB_blockDevices, Off_sDIB_blockDevices, 0);
 
-        saveIt(Size_sDIB_bootDrive, Off_sDIB_bootDrive, (byte) 0);
-        saveIt(Size_sDIB_useDwordMov, Off_sDIB_useDwordMov, (byte) 1);
+        saveIt(Size_sDIB_bootDrive, Off_sDIB_bootDrive, 0);
+        saveIt(Size_sDIB_useDwordMov, Off_sDIB_useDwordMov, 1);
         saveIt(Size_sDIB_extendedSize, Off_sDIB_extendedSize, Memory.totalPages() * 4 - 1024);
         saveIt(Size_sDIB_magicWord, Off_sDIB_magicWord, 0x0001); // dos5+
 
@@ -45,20 +45,20 @@ public final class DOSInfoBlock extends MemStruct {
         saveIt(Size_sDIB_maxSectorLength, Off_sDIB_maxSectorLength, 0x200);
 
         saveIt(Size_sDIB_dirtyDiskBuffers, Off_sDIB_dirtyDiskBuffers, 0);
-        saveIt(Size_sDIB_lookaheadBufPt, Off_sDIB_lookaheadBufPt, (int) 0);
+        saveIt(Size_sDIB_lookaheadBufPt, Off_sDIB_lookaheadBufPt, 0);
         saveIt(Size_sDIB_lookaheadBufNumber, Off_sDIB_lookaheadBufNumber, 0);
         // buffer in base memory, no workspace
-        saveIt(Size_sDIB_bufferLocation, Off_sDIB_bufferLocation, (byte) 0);
-        saveIt(Size_sDIB_workspaceBuffer, Off_sDIB_workspaceBuffer, (int) 0);
+        saveIt(Size_sDIB_bufferLocation, Off_sDIB_bufferLocation, 0);
+        saveIt(Size_sDIB_workspaceBuffer, Off_sDIB_workspaceBuffer, 0);
 
         saveIt(Size_sDIB_minMemForExec, Off_sDIB_minMemForExec, 0);
         saveIt(Size_sDIB_memAllocScanStart, Off_sDIB_memAllocScanStart, DOSMain.DOS_MEM_START);
         saveIt(Size_sDIB_startOfUMBChain, Off_sDIB_startOfUMBChain, 0xffff);
-        saveIt(Size_sDIB_chainingUMB, Off_sDIB_chainingUMB, (byte) 0);
+        saveIt(Size_sDIB_chainingUMB, Off_sDIB_chainingUMB, 0);
 
-        saveIt(Size_sDIB_nulNextDriver, Off_sDIB_nulNextDriver, (int) 0xffffffff);
+        saveIt(Size_sDIB_nulNextDriver, Off_sDIB_nulNextDriver, 0xffffffff);
         saveIt(Size_sDIB_nulAttributes, Off_sDIB_nulAttributes, 0x8004);
-        saveIt(Size_sDIB_nulStrategy, Off_sDIB_nulStrategy, (int) 0x00000000);
+        saveIt(Size_sDIB_nulStrategy, Off_sDIB_nulStrategy, 0x00000000);
         saveIt(1, Off_sDIB_nulString + 0, 0x4e);
         saveIt(1, Off_sDIB_nulString + 1, 0x55);
         saveIt(1, Off_sDIB_nulString + 2, 0x4c);

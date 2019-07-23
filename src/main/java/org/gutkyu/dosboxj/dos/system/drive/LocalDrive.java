@@ -65,7 +65,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
                 DOSMain.setError(DOSMain.DOSERR_ACCESS_CODE_INVALID);
                 return null;
         }
-        CStringPt newname = CStringPt.create((int) Cross.LEN);
+        CStringPt newname = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newname);
         newname.concat(name);
 
@@ -87,7 +87,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     }
 
     public SeekableByteChannel getSystemFileChannel(String name, OpenOption... options) {
-        CStringPt newname = CStringPt.create((int) Cross.LEN);
+        CStringPt newname = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newname);
         newname.concat(name);
         dirCache.expandName(newname);
@@ -112,7 +112,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     public DOSFile fileCreate(String name, int attributes) {
         DOSFile file = null;
         // TODO Maybe care for attributes but not likely
-        CStringPt newName = CStringPt.create((int) Cross.LEN);
+        CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
         // Can only be used in till a new drive_cache action is preformed */
@@ -145,7 +145,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean fileUnlink(CStringPt name) {
-        CStringPt newName = CStringPt.create((int) Cross.LEN);
+        CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
         CStringPt fullname = dirCache.getExpandName(newName);
@@ -212,7 +212,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean removeDir(CStringPt dir) {
-        CStringPt newdir = CStringPt.create((int) Cross.LEN);
+        CStringPt newdir = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newdir);
         newdir.concat(dir);
 
@@ -228,7 +228,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean makeDir(CStringPt dir) {
-        CStringPt newdir = CStringPt.create((int) Cross.LEN);
+        CStringPt newdir = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newdir);
         newdir.concat(dir);
         Path dirPath = Paths.get(dirCache.getExpandName(newdir).toString());
@@ -244,7 +244,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean testDir(CStringPt dir) {
-        CStringPt newdir = CStringPt.create((int) Cross.LEN);
+        CStringPt newdir = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newdir);
         newdir.concat(dir);
         dirCache.expandName(newdir);
@@ -262,7 +262,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean testDir(String dir) {
-        CStringPt newdir = CStringPt.create((int) Cross.LEN);
+        CStringPt newdir = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newdir);
         newdir.concat(dir);
         dirCache.expandName(newdir);
@@ -280,7 +280,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean findFirst(CStringPt dir, DOSDTA dta, boolean fcbFindfirst) {
-        CStringPt tempDir = CStringPt.create((int) Cross.LEN);
+        CStringPt tempDir = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, tempDir);
         tempDir.concat(dir);
 
@@ -386,7 +386,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
             break;
         }
         /* file is okay, setup everything to be copied in DTA Block */
-        CStringPt findName = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt findName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         int findDate;// uint16
         int findTime;// uint16
         int findSize = 0;
@@ -409,34 +409,41 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         return true;
     }
 
+    public int returnedFileAttr = 0;
+
     @Override
-    public boolean getFileAttr(String name, RefU16Ret refAttr) {
-        CStringPt newName = CStringPt.create((int) Cross.LEN);
+    public boolean tryFileAttr(String name) {
+        CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
         dirCache.expandName(newName);
 
         Path path = Paths.get(newName.toString());
         if (Files.exists(path)) {
-            refAttr.U16 = DOSSystem.DOS_ATTR_ARCHIVE;
+            returnedFileAttr = 0xff & DOSSystem.DOS_ATTR_ARCHIVE;
             return true;
         } else if (Files.exists(path)) {
-            refAttr.U16 = DOSSystem.DOS_ATTR_ARCHIVE | DOSSystem.DOS_ATTR_DIRECTORY;
+            returnedFileAttr = 0xff & (DOSSystem.DOS_ATTR_ARCHIVE | DOSSystem.DOS_ATTR_DIRECTORY);
             return true;
         }
-        refAttr.U16 = 0;
+        returnedFileAttr = 0;
         return false;
     }
 
     @Override
+    public int returnFileAttr() {
+        return returnedFileAttr;
+    }
+
+    @Override
     public boolean rename(String oldName, String newName) {
-        CStringPt newOld = CStringPt.create((int) Cross.LEN);
+        CStringPt newOld = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newOld);
         newOld.concat(oldName);
 
         dirCache.expandName(newOld);
 
-        CStringPt newnew = CStringPt.create((int) Cross.LEN);
+        CStringPt newnew = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newnew);
         newnew.concat(newName);
         Path src = Paths.get(newOld.toString());
@@ -464,7 +471,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean fileExists(String name) {
-        CStringPt newName = CStringPt.create((int) Cross.LEN);
+        CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
 
@@ -474,7 +481,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean fileStat(String name, FileStatBlock statBlock) {
-        CStringPt newName = CStringPt.create((int) Cross.LEN);
+        CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
 
@@ -522,14 +529,14 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         return 0;
     }
 
-    public CStringPt basedir = CStringPt.create((int) Cross.LEN);
+    public CStringPt basedir = CStringPt.create(Cross.LEN);
 
     // private friend void DOS_Shell::CMD_SUBST(char* args);
     private class SrchInfo {
         public CStringPt srchDir;
 
         public SrchInfo() {
-            this.srchDir = CStringPt.create((int) Cross.LEN);
+            this.srchDir = CStringPt.create(Cross.LEN);
         }
     }
 

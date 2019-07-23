@@ -44,12 +44,12 @@ public final class DriveManager {
             result = DOSMain.Drives[drive].unMount();
         } else {
             // managed drive
-            int currentDisk = (int) driveInfos[drive].CurrentDisk;
+            int currentDisk = driveInfos[drive].CurrentDisk;
             result = driveInfos[drive].Disks.get(currentDisk).unMount();
             // only delete on success, current disk set to NULL because of UnMount
             if (result == 0) {
                 driveInfos[drive].Disks.set(currentDisk, null);
-                int dskSize = (int) driveInfos[drive].Disks.size();
+                int dskSize = driveInfos[drive].Disks.size();
                 for (int i = 0; i < dskSize; i++) {
                     driveInfos[drive].Disks.set(i, null);
                 }
@@ -64,10 +64,10 @@ public final class DriveManager {
     // static void CycleDisk(boolean pressed);
     public static void cycleAllDisks() {
         for (int idrive = 0; idrive < DOSMain.DOS_DRIVES; idrive++) {
-            int numDisks = (int) driveInfos[idrive].Disks.size();
+            int numDisks = driveInfos[idrive].Disks.size();
             if (numDisks > 1) {
                 // cycle disk
-                int currentDisk = (int) driveInfos[idrive].CurrentDisk;
+                int currentDisk = driveInfos[idrive].CurrentDisk;
                 DOSDrive oldDisk = driveInfos[idrive].Disks.get(currentDisk);
                 currentDisk = (currentDisk + 1) % numDisks;
                 DOSDrive newDisk = driveInfos[idrive].Disks.get(currentDisk);

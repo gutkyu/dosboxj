@@ -36,7 +36,9 @@ public abstract class DOSDrive {
 
     public abstract boolean findNext(DOSDTA dta);
 
-    public abstract boolean getFileAttr(String name, RefU16Ret refAttr);
+    public abstract boolean tryFileAttr(String name);
+
+    public abstract int returnFileAttr();
 
     public abstract boolean rename(String oldName, String newName);
 

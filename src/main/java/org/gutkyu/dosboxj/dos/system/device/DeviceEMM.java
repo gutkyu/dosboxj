@@ -114,7 +114,7 @@ public final class DeviceEMM extends DOSDevice {
                 }
                 /* build EMS page frame (0xe000-0xf000) */
                 for (int frct = 0; frct < 0x10 / 4; frct++) {
-                    int frnr = (int) (frct + EMS.EMM_PAGEFRAME4K / 4) * 6;
+                    int frnr = (frct + EMS.EMM_PAGEFRAME4K / 4) * 6;
                     Memory.writeB(GEMMIS_addr + 0x0a + frnr, 0x03); // frame type: EMS frame
                                                                     // in 64k page
                     Memory.writeB(GEMMIS_addr + 0x0b + frnr, 0xff); // owner: NONE
@@ -125,7 +125,7 @@ public final class DeviceEMM extends DOSDevice {
                     Memory.writeB(GEMMIS_addr + 0x0f + frnr, 0x00); // EMS frame
                 }
                 /* build non-EMS ROM frames (0xf000-0x10000) */
-                for (int frct = (int) (EMS.EMM_PAGEFRAME4K + 0x10) / 4; frct < 0xf0 / 4; frct++) {
+                for (int frct = (EMS.EMM_PAGEFRAME4K + 0x10) / 4; frct < 0xf0 / 4; frct++) {
                     Memory.writeB(GEMMIS_addr + 0x0a + frct * 6, 0x00); // frame type: NONE
                     Memory.writeB(GEMMIS_addr + 0x0b + frct * 6, 0xff); // owner: NONE
                     Memory.writeW(GEMMIS_addr + 0x0c + frct * 6, 0xffff); // non-EMS frame
@@ -143,7 +143,7 @@ public final class DeviceEMM extends DOSDevice {
                 Memory.writeD(GEMMIS_addr + 0x193, 0); // handle name
                 if (EMS.EMMHandles[EMS.EMM_SYSTEM_HANDLE].Pages != EMS.NULL_HANDLE) {
                     Memory.writeW(GEMMIS_addr + 0x197,
-                            0xffff & (int) ((EMS.EMMHandles[EMS.EMM_SYSTEM_HANDLE].Pages + 3) / 4));
+                            0xffff & ((EMS.EMMHandles[EMS.EMM_SYSTEM_HANDLE].Pages + 3) / 4));
                     // physical address
                     Memory.writeD(GEMMIS_addr + 0x199,
                             0xffff & (EMS.EMMHandles[EMS.EMM_SYSTEM_HANDLE].Mem << 12));

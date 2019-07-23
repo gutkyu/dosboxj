@@ -11,7 +11,7 @@ import org.gutkyu.dosboxj.hardware.io.iohandler.*;
 public final class PIC {
 
     private static final int PIC_MAXIRQ = 15;
-    private static final int PIC_NOIRQ =  0xFF;
+    private static final int PIC_NOIRQ = 0xFF;
 
     private PIC() {
         for (int i = 0; i < irqs.length; i++) {
@@ -213,7 +213,7 @@ public final class PIC {
                 Log.logging(Log.LogTypes.PIC, Log.LogServerities.Normal, "%d:Base vector %X",
                         port == 0x21 ? 0 : 1, val);
                 for (i = 0; i <= 7; i++) {
-                    irqs[i + irq_base].vector = (int) ((val & 0xf8) + i);
+                    irqs[i + irq_base].vector = (val & 0xf8) + i;
                 }
                 if (pic.IcwIndex++ >= pic.IcwWords)
                     pic.IcwIndex = 0;
@@ -314,7 +314,7 @@ public final class PIC {
     public static void deactivateIRQ(int irq) {
         if (irq < 16) {
             irqs[irq].active = false;
-            IRQCheck &= (0xffffffff &  ~(1 << irq));
+            IRQCheck &= (0xffffffff & ~(1 << irq));
             IRQOnSecondPicActive &= 0xffffffff & ~(1 << irq);
         }
     }
@@ -328,7 +328,7 @@ public final class PIC {
         IRQOnSecondPicActive &= 0xffffffff & ~(1 << i);
         // Console.WriteLine(irqs[i].vector);
         CPU.hwHInterrupt(irqs[i].vector);
-        int pic = (i & 8) >>>3;
+        int pic = (i & 8) >>> 3;
         if (!pics[pic].AutoEOI) { // irq 0-7 => pic 0 else pic 1
             IRQActive = i;
             irqs[i].inservice = true;
@@ -351,7 +351,7 @@ public final class PIC {
         if (CPU.CpuDecoder == CoreNormal.instance().CpuTrapDecoder)
             return;
 
-        short activeIRQ = (short) IRQActive;
+        int activeIRQ = IRQActive;
         if (activeIRQ == PIC_NOIRQ)
             activeIRQ = 16;
         /* Get the priority of the active irq */
@@ -374,7 +374,7 @@ public final class PIC {
         } else { /* Special mode variant */
             for (j = 0; j <= 15; j++) {
                 i = IRQ_priority_order[j];
-                if ((j < Priority_Active_IRQ) || (pics[((i & 8) >>>3)].Special)) {
+                if ((j < Priority_Active_IRQ) || (pics[((i & 8) >>> 3)].Special)) {
                     if (!irqs[i].masked && irqs[i].active) {
                         /*
                          * the irq line is active. it's not masked and the irq is allowed priority

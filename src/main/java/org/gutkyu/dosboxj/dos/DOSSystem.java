@@ -137,7 +137,7 @@ public final class DOSSystem {
                         dotpos.movePtToR1();
                         int nlen = filename.length();
                         int extlen = dotpos.length();
-                        int nmelen = (int) nlen - (int) extlen;
+                        int nmelen = nlen - extlen;
                         if (nmelen < 1)
                             return true;
                         nlen -= (extlen + 1);

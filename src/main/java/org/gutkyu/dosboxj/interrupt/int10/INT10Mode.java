@@ -719,7 +719,7 @@ public final class INT10Mode {
         /* Setup the VGA to the correct mode */
         // VGA_SetMode(CurMode.type);
         /* Setup the CRTC */
-        int crtc_base = DOSBox.Machine == DOSBox.MachineType.HERC ? (int) 0x3b4 : (int) 0x3d4;
+        int crtc_base = DOSBox.Machine == DOSBox.MachineType.HERC ? 0x3b4 : 0x3d4;
         // Horizontal total
         IO.writeW(crtc_base, 0x00 | (CurMode.HTotal) << 8);
         // Horizontal displayed
@@ -763,7 +763,7 @@ public final class INT10Mode {
                     scanline = 4;
                 break;
         }
-        IO.writeW(crtc_base, (int) (0x09 | (scanline - 1) << 8));
+        IO.writeW(crtc_base, 0x09 | (scanline - 1) << 8);
         // Setup the CGA palette using VGA DAC palette
         for (byte ct = 0; ct < 16; ct++)
             VGA.instance().Dac.setEntry(ct, cga_palette[ct][0], cga_palette[ct][1],
@@ -995,7 +995,7 @@ public final class INT10Mode {
         if (DOSBox.isVGAArch() && (DOSBox.SVGACard == DOSBox.SVGACards.S3Trio)) {
             // Disable MMIO here so we can read / write memory
             IO.write(crtcBase, 0x53);
-            IO.write((int) (crtcBase + 1), 0x0);
+            IO.write(crtcBase + 1, 0x0);
         }
 
         /* Setup MISC Output Register */
@@ -1074,11 +1074,11 @@ public final class INT10Mode {
         /* Program CRTC */
         /* First disable write protection */
         IO.write(crtcBase, 0x11);
-        IO.write((int) (crtcBase + 1), IO.read((0xffff & crtcBase) + 1) & 0x7f);
+        IO.write(crtcBase + 1, IO.read((0xffff & crtcBase) + 1) & 0x7f);
         /* Clear all the regs */
         for (byte ct = 0x0; ct <= 0x18; ct++) {
             IO.write(crtcBase, ct);
-            IO.write((int) (crtcBase + 1), 0);
+            IO.write(crtcBase + 1, 0);
         }
         byte overflow = 0;
         byte max_scanline = 0;
@@ -1086,20 +1086,20 @@ public final class INT10Mode {
         byte hor_overflow = 0;
         /* Horizontal Total */
         IO.write(crtcBase, 0x00);
-        IO.write((int) (crtcBase + 1), 0xff & (CurMode.HTotal - 5));
+        IO.write(crtcBase + 1, 0xff & (CurMode.HTotal - 5));
         hor_overflow |= (byte) (((CurMode.HTotal - 5) & 0x100) >>> 8);
         /* Horizontal Display End */
         IO.write(crtcBase, 0x01);
-        IO.write((int) (crtcBase + 1), 0xff & (CurMode.HDispend - 1));
+        IO.write(crtcBase + 1, 0xff & (CurMode.HDispend - 1));
         hor_overflow |= (byte) (((CurMode.HDispend - 1) & 0x100) >>> 7);
         /* Start horizontal Blanking */
         IO.write(crtcBase, 0x02);
-        IO.write((int) (crtcBase + 1), 0xff & CurMode.HDispend);
+        IO.write(crtcBase + 1, 0xff & CurMode.HDispend);
         hor_overflow |= (byte) (((CurMode.HDispend) & 0x100) >>> 6);
         /* End horizontal Blanking */
         int blank_end = (CurMode.HTotal - 2) & 0x7f;
         IO.write(crtcBase, 0x03);
-        IO.write((int) (crtcBase + 1), 0xff & (0x80 | (blank_end & 0x1f)));
+        IO.write(crtcBase + 1, 0xff & (0x80 | (blank_end & 0x1f)));
 
         /* Start Horizontal Retrace */
         int ret_start;
@@ -1110,7 +1110,7 @@ public final class INT10Mode {
         else
             ret_start = (CurMode.HDispend + 4);
         IO.write(crtcBase, 0x04);
-        IO.write((int) (crtcBase + 1), 0xff & ret_start);
+        IO.write(crtcBase + 1, 0xff & ret_start);
         hor_overflow |= (byte) ((ret_start & 0x100) >>> 4);
 
         /* End Horizontal Retrace */
@@ -1128,11 +1128,11 @@ public final class INT10Mode {
             ret_end = (CurMode.HTotal - 4) & 0x1f;
 
         IO.write(crtcBase, 0x05);
-        IO.write((int) (crtcBase + 1), 0xff & (ret_end | (blank_end & 0x20) << 2));
+        IO.write(crtcBase + 1, 0xff & (ret_end | (blank_end & 0x20) << 2));
 
         /* Vertical Total */
         IO.write(crtcBase, 0x06);
-        IO.write((int) (crtcBase + 1), 0xff & (CurMode.VTotal - 2));
+        IO.write(crtcBase + 1, 0xff & (CurMode.VTotal - 2));
         overflow |= (byte) (((CurMode.VTotal - 2) & 0x100) >>> 8);
         overflow |= (byte) (((CurMode.VTotal - 2) & 0x200) >>> 4);
         ver_overflow |= (byte) (((CurMode.VTotal - 2) & 0x400) >>> 10);
@@ -1166,18 +1166,18 @@ public final class INT10Mode {
 
         /* Vertical Retrace Start */
         IO.write(crtcBase, 0x10);
-        IO.write((int) (crtcBase + 1), 0xff & vretrace);
+        IO.write(crtcBase + 1, 0xff & vretrace);
         overflow |= (byte) ((vretrace & 0x100) >>> 6);
         overflow |= (byte) ((vretrace & 0x200) >>> 2);
         ver_overflow |= (byte) ((vretrace & 0x400) >>> 6);
 
         /* Vertical Retrace End */
         IO.write(crtcBase, 0x11);
-        IO.write((int) (crtcBase + 1), 0xff & ((vretrace + 2) & 0xF));
+        IO.write(crtcBase + 1, (vretrace + 2) & 0xF);
 
         /* Vertical Display End */
         IO.write(crtcBase, 0x12);
-        IO.write((int) (crtcBase + 1), 0xff & (CurMode.VDispend - 1));
+        IO.write(crtcBase + 1, 0xff & (CurMode.VDispend - 1));
         overflow |= (byte) (((CurMode.VDispend - 1) & 0x100) >>> 7);
         overflow |= (byte) (((CurMode.VDispend - 1) & 0x200) >>> 3);
         ver_overflow |= (byte) (((CurMode.VDispend - 1) & 0x400) >>> 9);
@@ -1211,19 +1211,19 @@ public final class INT10Mode {
 
         /* Vertical Blank Start */
         IO.write(crtcBase, 0x15);
-        IO.write((int) (crtcBase + 1), 0xff & (CurMode.VDispend + vblank_trim));
+        IO.write(crtcBase + 1, 0xff & (CurMode.VDispend + vblank_trim));
         overflow |= (byte) (((CurMode.VDispend + vblank_trim) & 0x100) >>> 5);
         max_scanline |= (byte) (((CurMode.VDispend + vblank_trim) & 0x200) >>> 4);
         ver_overflow |= (byte) (((CurMode.VDispend + vblank_trim) & 0x400) >>> 8);
 
         /* Vertical Blank End */
         IO.write(crtcBase, 0x16);
-        IO.write((int) (crtcBase + 1), 0xff & (CurMode.VTotal - vblank_trim - 2));
+        IO.write(crtcBase + 1, 0xff & (CurMode.VTotal - vblank_trim - 2));
 
         /* Line Compare */
         int line_compare = (CurMode.VTotal < 1024) ? 1023 : 2047;
         IO.write(crtcBase, 0x18);
-        IO.write((int) (crtcBase + 1), 0xff & (line_compare & 0xff));
+        IO.write(crtcBase + 1, line_compare & 0xff);
         overflow |= (byte) ((line_compare & 0x100) >>> 4);
         max_scanline |= (byte) ((line_compare & 0x200) >>> 3);
         ver_overflow |= (byte) ((line_compare & 0x400) >>> 4);
@@ -1258,21 +1258,21 @@ public final class INT10Mode {
             underline = 0x0f;
 
         IO.write(crtcBase, 0x09);
-        IO.write((int) (crtcBase + 1), max_scanline);
+        IO.write(crtcBase + 1, max_scanline);
         IO.write(crtcBase, 0x14);
-        IO.write((int) (crtcBase + 1), underline);
+        IO.write(crtcBase + 1, underline);
 
         /* OverFlow */
         IO.write(crtcBase, 0x07);
-        IO.write((int) (crtcBase + 1), overflow);
+        IO.write(crtcBase + 1, overflow);
 
         if (DOSBox.SVGACard == DOSBox.SVGACards.S3Trio) {
             /* Extended Horizontal Overflow */
             IO.write(crtcBase, 0x5d);
-            IO.write((int) (crtcBase + 1), hor_overflow);
+            IO.write(crtcBase + 1, hor_overflow);
             /* Extended Vertical Overflow */
             IO.write(crtcBase, 0x5e);
-            IO.write((int) (crtcBase + 1), ver_overflow);
+            IO.write(crtcBase + 1, ver_overflow);
         }
 
         /* Offset Register */
@@ -1293,19 +1293,19 @@ public final class INT10Mode {
                 break;
         }
         IO.write(crtcBase, 0x13);
-        IO.write((int) (crtcBase + 1), offset & 0xff);
+        IO.write(crtcBase + 1, offset & 0xff);
 
         if (DOSBox.SVGACard == DOSBox.SVGACards.S3Trio) {
             /* Extended System Control 2 Register */
             /* This register actually has more bits but only use the extended offset ones */
             IO.write(crtcBase, 0x51);
-            IO.write((int) (crtcBase + 1), (offset & 0x300) >>> 4);
+            IO.write(crtcBase + 1, (offset & 0x300) >>> 4);
             /* Clear remaining bits of the display start */
             IO.write(crtcBase, 0x69);
-            IO.write((int) (crtcBase + 1), 0);
+            IO.write(crtcBase + 1, 0);
             /* Extended Vertical Overflow */
             IO.write(crtcBase, 0x5e);
-            IO.write((int) (crtcBase + 1), ver_overflow);
+            IO.write(crtcBase + 1, ver_overflow);
         }
 
         /* Mode Control */
@@ -1347,10 +1347,10 @@ public final class INT10Mode {
         }
 
         IO.write(crtcBase, 0x17);
-        IO.write((int) (crtcBase + 1), mode_control);
+        IO.write(crtcBase + 1, mode_control);
         /* Renable write protection */
         IO.write(crtcBase, 0x11);
-        IO.write((int) (crtcBase + 1), 0xff & (IO.read((0xffff & crtcBase) + 1) | 0x80));
+        IO.write(crtcBase + 1, 0xff & (IO.read((0xffff & crtcBase) + 1) | 0x80));
 
         if (DOSBox.SVGACard == DOSBox.SVGACards.S3Trio) {
             /* Setup the correct clock */
@@ -1379,7 +1379,7 @@ public final class INT10Mode {
                     break;
             }
             IO.writeB(crtcBase, 0x67);
-            IO.writeB((int) (crtcBase + 1), misc_control_2);
+            IO.writeB(crtcBase + 1, misc_control_2);
         }
 
         /* Write Misc Output */
@@ -1655,20 +1655,20 @@ public final class INT10Mode {
         if (DOSBox.SVGACard == DOSBox.SVGACards.S3Trio) {
             /* Setup the CPU Window */
             IO.write(crtcBase, 0x6a);
-            IO.write((int) (crtcBase + 1), 0);
+            IO.write(crtcBase + 1, 0);
             /* Setup the linear frame buffer */
             IO.write(crtcBase, 0x59);
-            IO.write((int) (crtcBase + 1), (INT10.S3_LFB_BASE >>> 24) & 0xff);
+            IO.write(crtcBase + 1, (INT10.S3_LFB_BASE >>> 24) & 0xff);
             IO.write(crtcBase, 0x5a);
-            IO.write((int) (crtcBase + 1), (INT10.S3_LFB_BASE >>> 16) & 0xff);
+            IO.write(crtcBase + 1, (INT10.S3_LFB_BASE >>> 16) & 0xff);
             IO.write(crtcBase, 0x6b); // BIOS scratchpad
-            IO.write((int) (crtcBase + 1), (INT10.S3_LFB_BASE >>> 24) & 0xff);
+            IO.write(crtcBase + 1, (INT10.S3_LFB_BASE >>> 24) & 0xff);
 
             /* Setup some remaining S3 registers */
             IO.write(crtcBase, 0x41); // BIOS scratchpad
-            IO.write((int) (crtcBase + 1), 0x88);
+            IO.write(crtcBase + 1, 0x88);
             IO.write(crtcBase, 0x52); // extended BIOS scratchpad
-            IO.write((int) (crtcBase + 1), 0x80);
+            IO.write(crtcBase + 1, 0x80);
 
             IO.write(0x3c4, 0x15);
             IO.write(0x3c5, 0x03);
@@ -1706,7 +1706,7 @@ public final class INT10Mode {
                     break;
             }
             IO.writeB(crtcBase, 0x50);
-            IO.writeB((int) (crtcBase + 1), reg_50);
+            IO.writeB(crtcBase + 1, reg_50);
 
             byte reg_31, reg_3a;
             switch (CurMode.Type) {
@@ -1741,16 +1741,16 @@ public final class INT10Mode {
                     break;
             }
             IO.write(crtcBase, 0x3a);
-            IO.write((int) (crtcBase + 1), reg_3a);
+            IO.write(crtcBase + 1, reg_3a);
             IO.write(crtcBase, 0x31);
-            IO.write((int) (crtcBase + 1), reg_31); // Enable banked memory and 256k+ access
+            IO.write(crtcBase + 1, reg_31); // Enable banked memory and 256k+ access
             IO.write(crtcBase, 0x58);
-            IO.write((int) (crtcBase + 1), 0x3); // Enable 8 mb of linear addressing
+            IO.write(crtcBase + 1, 0x3); // Enable 8 mb of linear addressing
 
             IO.write(crtcBase, 0x38);
-            IO.write((int) (crtcBase + 1), 0x48); // Register lock 1
+            IO.write(crtcBase + 1, 0x48); // Register lock 1
             IO.write(crtcBase, 0x39);
-            IO.write((int) (crtcBase + 1), 0xa5); // Register lock 2
+            IO.write(crtcBase + 1, 0xa5); // Register lock 2
         } else if (VGA.instance().SVGADrv.SetVideoMode != null) {
             ModeExtraData modeData = new ModeExtraData();
             modeData.VOverflow = ver_overflow;

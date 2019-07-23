@@ -78,7 +78,7 @@ public final class CPUModule extends ModuleBase {
                         int percval = 0;
                         percval = Integer.parseInt(str);
                         if ((percval > 0) && (percval <= 105))
-                            CPU.CyclePercUsed = (int) percval;
+                            CPU.CyclePercUsed = percval;
                     } else if (str == "limit") {
                         cmdnum++;
                         if ((str = cmd.findCommand(cmdnum)) != null) {
@@ -104,7 +104,7 @@ public final class CPUModule extends ModuleBase {
                             int percval = 0;
                             percval = Integer.parseInt(str);
                             if ((percval > 0) && (percval <= 105))
-                                CPU.CyclePercUsed = (int) percval;
+                                CPU.CyclePercUsed = percval;
                         } else if (str == "limit") {
                             cmdnum++;
                             if ((str = cmd.findCommand(cmdnum)) != null) {
@@ -117,8 +117,8 @@ public final class CPUModule extends ModuleBase {
                             int rmdval = 0;
                             rmdval = Integer.parseInt(str);
                             if (rmdval > 0) {
-                                CPU.CycleMax = (int) rmdval;
-                                CPU.OldCycleMax = (int) rmdval;
+                                CPU.CycleMax = rmdval;
+                                CPU.OldCycleMax = rmdval;
                             }
                         }
                     }
@@ -127,12 +127,12 @@ public final class CPUModule extends ModuleBase {
                 str = cmd.findCommand(1);
                 int rmdval = 0;
                 rmdval = Integer.parseInt(str);
-                CPU.CycleMax = (int) rmdval;
+                CPU.CycleMax = rmdval;
             } else {
                 int rmdval = 0;
                 rmdval = Integer.parseInt(type);
                 if (rmdval != 0)
-                    CPU.CycleMax = (int) rmdval;
+                    CPU.CycleMax = rmdval;
             }
             CPU.CycleAutoAdjust = false;
         }

@@ -105,10 +105,10 @@ public final class Mouse {
                 yDiff = (short) (0x100 + yDiff);
                 mDat |= 0x20;
             }
-            CPU.push16((short) mDat);
-            CPU.push16((short) (xDiff % 256));
-            CPU.push16((short) (yDiff % 256));
-            CPU.push16((short) 0);
+            CPU.push16(mDat);
+            CPU.push16(xDiff % 256);
+            CPU.push16(yDiff % 256);
+            CPU.push16(0);
             CPU.push16(Memory.realSeg(_ps2Callback));
             CPU.push16(Memory.realOff(_ps2Callback));
             Register.segSet16(Register.SEG_NAME_CS, _ps2CbSeg);
@@ -195,7 +195,7 @@ public final class Mouse {
         public short[] LastPressedY; // 6
         public short Hidden; // 2
         public float addX, addY; // 4,4
-        public short MinX, MaxX, minY, MaxY; // 2,2,2,2
+        public short MinX, MaxX, MinY, MaxY; // 2,2,2,2
         public float MickeyX, MickeyY; // 4,4
         public float X, Y; // 4,4
         public ButtonEvent[] EventQueue; // 64
@@ -237,7 +237,7 @@ public final class Mouse {
         public short Language; // 2
         public short CursorType; // 2
         public short OldHidden; // 2
-        public byte Page; // 1
+        public int Page; // 1, uint8
         public boolean Enabled; // 1
         public boolean InhibitDraw; // 1
         public boolean TimerInProgress; // 1
@@ -376,9 +376,9 @@ public final class Mouse {
                 case 50:
                     return MASK_B0 & (MaxX >>> SHIFT_B1);
                 case 51:
-                    return MASK_B0 & minY;
+                    return MASK_B0 & MinY;
                 case 52:
-                    return MASK_B0 & (minY >>> SHIFT_B1);
+                    return MASK_B0 & (MinY >>> SHIFT_B1);
                 case 53:
                     return MASK_B0 & MaxY;
                 case 54:
@@ -702,8 +702,8 @@ public final class Mouse {
 
                 if ((short) Register.getRegDX() >= mouse.MaxY)
                     mouse.Y = (float) (mouse.MaxY);
-                else if (mouse.minY >= (short) Register.getRegDX())
-                    mouse.Y = (float) (mouse.minY);
+                else if (mouse.MinY >= (short) Register.getRegDX())
+                    mouse.Y = (float) (mouse.MinY);
                 else if ((short) Register.getRegDX() != posY())
                     mouse.Y = (float) (Register.getRegDX());
                 drawCursor();
@@ -736,7 +736,7 @@ public final class Mouse {
             { // lemmings set 1-640 and wants that. iron seeds set 0-640 but doesn't like 640
               // Iron seed works if newvideo mode with mode 13 sets 0-639
               // Larry 6 actually wants newvideo mode with mode 13 to set it to 0-319
-                short max, min;
+                short max, min;// Bit16s
                 if ((short) Register.getRegCX() < (short) Register.getRegDX()) {
                     min = (short) Register.getRegCX();
                     max = (short) Register.getRegDX();
@@ -769,13 +769,13 @@ public final class Mouse {
                     min = (short) Register.getRegDX();
                     max = (short) Register.getRegCX();
                 }
-                mouse.minY = min;
+                mouse.MinY = min;
                 mouse.MaxY = max;
                 /* Battlechess wants this */
                 if (mouse.Y > mouse.MaxY)
                     mouse.Y = mouse.MaxY;
-                if (mouse.Y < mouse.minY)
-                    mouse.Y = mouse.minY;
+                if (mouse.Y < mouse.MinY)
+                    mouse.Y = mouse.MinY;
                 /*
                  * Or alternatively this: mouse.y = (mouse.max_y - mouse.min_y + 1)/2;
                  */
@@ -890,7 +890,7 @@ public final class Mouse {
                 /* Can't really set a rate this is host determined */
                 break;
             case 0x1d: /* Set display page number */
-                mouse.Page = (byte) Register.getRegBL();
+                mouse.Page = Register.getRegBL();
                 break;
             case 0x1e: /* Get display page number */
                 Register.setRegBX(mouse.Page);
@@ -932,7 +932,7 @@ public final class Mouse {
                 break;
             case 0x31: /* Get Current Minimum/Maximum virtual coordinates */
                 Register.setRegAX((short) mouse.MinX);
-                Register.setRegBX((short) mouse.minY);
+                Register.setRegBX((short) mouse.MinY);
                 Register.setRegCX((short) mouse.MaxX);
                 Register.setRegDX((short) mouse.MaxY);
                 break;
@@ -1087,7 +1087,7 @@ public final class Mouse {
         mouse.Hidden = 1;
         mouse.MaxX = 639;
         mouse.MinX = 0;
-        mouse.minY = 0;
+        mouse.MinY = 0;
         mouse.GranMask = (mode == 0x0d || mode == 0x13) ? (short) 0xfffe : (short) 0xffff;
 
         mouse.Events = 0;
@@ -1136,7 +1136,7 @@ public final class Mouse {
             // mouse.BackData[1], true);
             CHAR.writeChar1(mouse.BackPosX, mouse.BackPosY,
                     Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE),
-                    mouse.BackData[0], mouse.BackData[1], true);
+                    mouse.BackData[0], 0xff & mouse.BackData[1], true);
             mouse.Background = false;
         }
     }
@@ -1446,8 +1446,8 @@ public final class Mouse {
                 mouse.X = mouse.MinX;
             if (mouse.Y > mouse.MaxY)
                 mouse.Y = mouse.MaxY;
-            if (mouse.Y < mouse.minY)
-                mouse.Y = mouse.minY;
+            if (mouse.Y < mouse.MinY)
+                mouse.Y = mouse.MinY;
         }
         addEvent((byte) MOUSE_HAS_MOVED);
         drawCursor();

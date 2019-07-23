@@ -59,7 +59,7 @@ class InitPageUserROHandler extends PageHandler {
 
     @Override
     public boolean writeDChecked(int addr, int val) {
-        int writecode = initPageCheckOnly(addr, (int) val);
+        int writecode = initPageCheckOnly(addr, val);
         if (writecode != 0) {
             int tlb_addr;
             if (writecode > 1)
@@ -73,7 +73,7 @@ class InitPageUserROHandler extends PageHandler {
     }
 
     public void initPage(int lin_addr, int val) {
-        int lin_page = lin_addr >>>12;
+        int lin_page = lin_addr >>> 12;
         int phys_page;
         if (Paging.paging.Enabled) {
             if ((CPU.Block.CPL & CPU.Block.MPL) != 3)
@@ -90,7 +90,7 @@ class InitPageUserROHandler extends PageHandler {
 
             if (table.a == 0) {
                 table.a = 1; // Set access
-                Memory.physWriteD((int) ((Paging.paging.Base.Page << 12) + (lin_page >>>10) * 4),
+                Memory.physWriteD((int) ((Paging.paging.Base.Page << 12) + (lin_page >>> 10) * 4),
                         table.getLoad());
             }
             if ((entry.a == 0) || (entry.d == 0)) {
@@ -110,7 +110,7 @@ class InitPageUserROHandler extends PageHandler {
     }
 
     public int initPageCheckOnly(int lin_addr, int val) {
-        int lin_page = lin_addr >>>12;
+        int lin_page = lin_addr >>> 12;
         if (Paging.paging.Enabled) {
             if ((CPU.Block.CPL & CPU.Block.MPL) != 3)
                 return 2;
@@ -143,7 +143,7 @@ class InitPageUserROHandler extends PageHandler {
     }
 
     public void initPageForced(int lin_addr) {
-        int lin_page = lin_addr >>>12;
+        int lin_page = lin_addr >>> 12;
         int phys_page;
         if (Paging.paging.Enabled) {
             X86PageEntry table = new X86PageEntry();
@@ -152,7 +152,7 @@ class InitPageUserROHandler extends PageHandler {
 
             if (table.a == 0) {
                 table.a = 1; // Set access
-                Memory.physWriteD((int) ((Paging.paging.Base.Page << 12) + (lin_page >>>10) * 4),
+                Memory.physWriteD((int) ((Paging.paging.Base.Page << 12) + (lin_page >>> 10) * 4),
                         table.getLoad());
             }
             if (entry.a == 0) {

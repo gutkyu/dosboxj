@@ -334,7 +334,7 @@ public final class DOSShell extends DOSShellBase {
                     nameSource.concat(name);
                     // Open Source
                     if (DOSMain.openFile(nameSource.toString(), 0)) {
-                        sourceHandle = DOSMain.FileEntry;
+                        sourceHandle = DOSMain.CreatedOrOpenedFileEntry;
                         // Create Target or open it if in concat mode
                         CStringPt.copy(pathTarget, nameTarget);
                         if (nameTarget.get(nameTarget.length() - 1) == '\\')
@@ -342,15 +342,14 @@ public final class DOSShell extends DOSShellBase {
 
                         // Don't create a newfile when in concat mode
                         if (oldSource.concat || DOSMain.createFile(nameTarget.toString(), 0)) {
-                            targetHandle = DOSMain.FileEntry;
-                            int dummy = 0;
-                            RefU32Ret refPos = new RefU32Ret(dummy);
+                            targetHandle = DOSMain.CreatedOrOpenedFileEntry;
+                            long dummy = 0;
                             // In concat mode. Open the target and seek to the eof
                             if (!oldSource.concat || (DOSMain.openFile(nameTarget.toString(),
                                     DOSSystem.OPEN_READWRITE)
-                                    && (dummy = (int) DOSMain.seekFile(0xffff & targetHandle, dummy,
+                                    && (dummy = DOSMain.seekFile(0xffff & targetHandle, dummy,
                                             DOSSystem.DOS_SEEK_END)) >= 0)) {
-                                targetHandle = DOSMain.FileEntry;
+                                targetHandle = DOSMain.CreatedOrOpenedFileEntry;
 
                                 // Copy
                                 // buffer = new byte[0x8000];// static, otherwise stack overflow
@@ -482,9 +481,8 @@ public final class DOSShell extends DOSShellBase {
         args = expandDot(args, buffer);
 
         if (args.lastPositionOf('*').isEmpty() && args.lastPositionOf('?').isEmpty()) {
-            RefU16Ret refAttr = new RefU16Ret(0);
-            if (DOSMain.getFileAttr(args.toString(), refAttr)
-                    && (refAttr.U16 & DOSSystem.DOS_ATTR_DIRECTORY) != 0) {
+            if (DOSMain.tryFileAttr(args.toString())
+                    && (DOSMain.returnFileAttr() & DOSSystem.DOS_ATTR_DIRECTORY) != 0) {
                 args.concat("\\*.*"); // if no wildcard and a directory, get its files
             }
         }
@@ -974,7 +972,7 @@ public final class DOSShell extends DOSShellBase {
                 writeOut(Message.get("SHELL_CMD_FILE_NOT_FOUND"), word);
                 return;
             }
-            handle = DOSMain.FileEntry;
+            handle = DOSMain.CreatedOrOpenedFileEntry;
             int n;
             byte c = 0;
             do {
@@ -1304,7 +1302,7 @@ public final class DOSShell extends DOSShellBase {
                 int dummy = 0;
                 DOSMain.closeFile(InputHandle);
                 DOSMain.openFile("con", 2);
-                dummy = DOSMain.FileEntry;
+                dummy = DOSMain.CreatedOrOpenedFileEntry;
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                         "Reopening the input handle.This is a bug!");
             }

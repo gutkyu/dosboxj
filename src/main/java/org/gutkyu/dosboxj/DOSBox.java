@@ -108,38 +108,42 @@ public final class DOSBox {
             if (ticksNew > _ticksLast) {
                 _ticksRemain = ticksNew - _ticksLast;
                 _ticksLast = ticksNew;
-                _ticksDone += (int) _ticksRemain;
+                _ticksDone += _ticksRemain;
                 if (_ticksRemain > 20) {
                     _ticksRemain = 20;
                 }
                 _ticksAdded = _ticksRemain;
                 if (CPU.CycleAutoAdjust && !CPU.SkipCycleAutoAdjust) {
-                    if (_ticksScheduled >= 250 || _ticksDone >= 250 || (_ticksAdded > 15 && _ticksScheduled >= 5)) {
+                    if (_ticksScheduled >= 250 || _ticksDone >= 250
+                            || (_ticksAdded > 15 && _ticksScheduled >= 5)) {
                         if (_ticksDone < 1)
                             _ticksDone = 1; // Protect against div by zero
                         /* ratio we are aiming for is around 90% usage */
-                        int ratio = (int) (_ticksScheduled * (CPU.CyclePercUsed * 90 * 1024 / 100 / 100)) / _ticksDone;
+                        int ratio = (_ticksScheduled * (CPU.CyclePercUsed * 90 * 1024 / 100 / 100))
+                                / _ticksDone;
                         int new_cmax = CPU.CycleMax;
                         long cproc = (long) CPU.CycleMax * (long) _ticksScheduled;
                         if (cproc > 0) {
                             /*
-                             * ignore the cycles added due to the io delay code in order to have smoother
-                             * auto cycle adjustments
+                             * ignore the cycles added due to the io delay code in order to have
+                             * smoother auto cycle adjustments
                              */
                             double ratioremoved = (double) CPU.IODelayRemoved / (double) cproc;
                             if (ratioremoved < 1.0) {
                                 ratio = (int) ((double) ratio * (1 - ratioremoved));
                                 /*
-                                 * Don't allow very high ratio which can cause us to lock as we don't scale down
-                                 * for very low ratios. High ratio might result because of timing resolution
+                                 * Don't allow very high ratio which can cause us to lock as we
+                                 * don't scale down for very low ratios. High ratio might result
+                                 * because of timing resolution
                                  */
                                 if (_ticksScheduled >= 250 && _ticksDone < 10 && ratio > 20480)
                                     ratio = 20480;
                                 long cmax_scaled = (long) CPU.CycleMax * (long) ratio;
                                 if (ratio <= 1024)
-                                    new_cmax = (int) (cmax_scaled / (long) 1024);
+                                    new_cmax = (int) (cmax_scaled / 1024);
                                 else
-                                    new_cmax = (int) (1 + (CPU.CycleMax >>> 1) + cmax_scaled / (long) 2048);
+                                    new_cmax =
+                                            (int) (1 + (CPU.CycleMax >>> 1) + cmax_scaled / 2048);
                             }
                         }
 
@@ -152,9 +156,9 @@ public final class DOSBox {
                          */
                         if (ratio > 10) {
                             /*
-                             * ratios below 12% along with a large time since the last update has taken
-                             * place are most likely caused by heavy load through a different application,
-                             * the cycles adjusting is skipped as well
+                             * ratios below 12% along with a large time since the last update has
+                             * taken place are most likely caused by heavy load through a different
+                             * application, the cycles adjusting is skipped as well
                              */
                             if ((ratio > 120) || (_ticksDone < 700)) {
                                 CPU.CycleMax = new_cmax;
@@ -169,9 +173,9 @@ public final class DOSBox {
                         _ticksScheduled = 0;
                     } else if (_ticksAdded > 15) {
                         /*
-                         * ticksAdded > 15 but ticksScheduled < 5, lower the cycles but do not reset the
-                         * scheduled/done ticks to take them into account during the next auto cycle
-                         * adjustment
+                         * ticksAdded > 15 but ticksScheduled < 5, lower the cycles but do not reset
+                         * the scheduled/done ticks to take them into account during the next auto
+                         * cycle adjustment
                          */
                         CPU.CycleMax /= 3;
                         if (CPU.CycleMax < CPU.CyclesLowerLimit)
@@ -181,7 +185,7 @@ public final class DOSBox {
             } else {
                 _ticksAdded = 0;
                 // SDL_Delay(1);
-                _ticksDone -= (int) (Timer.getTicks() - ticksNew);
+                _ticksDone -= Timer.getTicks() - ticksNew;
                 if (_ticksDone < 0)
                     _ticksDone = 0;
             }
@@ -225,7 +229,8 @@ public final class DOSBox {
         setLoop(DOSBox::normalLoop);
         Message.init(section);
 
-        GUIPlatform.mapper.addKeyHandler(DOSBox::unlockSpeed, MapKeys.F12, Mapper.MMOD2, "speedlock", "Speedlock");
+        GUIPlatform.mapper.addKeyHandler(DOSBox::unlockSpeed, MapKeys.F12, Mapper.MMOD2,
+                "speedlock", "Speedlock");
         String cmd_machine = "";
         if ((cmd_machine = Control.CmdLine.findString("-machine", true)) != null) {
             // update value in config (else no matching against suggested values
@@ -284,18 +289,18 @@ public final class DOSBox {
         // SDLNetInited = false;
 
         // Some frequently used option sets
-        String[] rates = { "44100", "48000", "32000", "22050", "16000", "11025", "8000", "49716" };
-        String[] oplrates = { "44100", "49716", "48000", "32000", "22050", "16000", "11025", "8000" };
-        String[] ios = { "220", "240", "260", "280", "2a0", "2c0", "2e0", "300" };
-        String[] irqssb = { "7", "5", "3", "9", "10", "11", "12" };
-        String[] dmassb = { "1", "5", "0", "3", "6", "7" };
-        String[] iosgus = { "240", "220", "260", "280", "2a0", "2c0", "2e0", "300" };
-        String[] irqsgus = { "5", "3", "7", "9", "10", "11", "12" };
-        String[] dmasgus = { "3", "0", "1", "5", "6", "7" };
+        String[] rates = {"44100", "48000", "32000", "22050", "16000", "11025", "8000", "49716"};
+        String[] oplrates = {"44100", "49716", "48000", "32000", "22050", "16000", "11025", "8000"};
+        String[] ios = {"220", "240", "260", "280", "2a0", "2c0", "2e0", "300"};
+        String[] irqssb = {"7", "5", "3", "9", "10", "11", "12"};
+        String[] dmassb = {"1", "5", "0", "3", "6", "7"};
+        String[] iosgus = {"240", "220", "260", "280", "2a0", "2c0", "2e0", "300"};
+        String[] irqsgus = {"5", "3", "7", "9", "10", "11", "12"};
+        String[] dmasgus = {"3", "0", "1", "5", "6", "7"};
 
         /* Setup all the different modules making up DOSBox */
-        String[] machines = { "hercules", "cga", "tandy", "pcjr", "ega", "vgaonly", "svga_s3", "svga_et3000",
-                "svga_et4000", "svga_paradise", "vesa_nolfb", "vesa_oldvbe" };
+        String[] machines = {"hercules", "cga", "tandy", "pcjr", "ega", "vgaonly", "svga_s3",
+                "svga_et3000", "svga_et4000", "svga_paradise", "vesa_nolfb", "vesa_oldvbe"};
         secProp = Control.addSectionProp("dosbox", DOSBox::realInit);
         pString = secProp.addPath("language", Property.Changeable.Always, "");
         pString.setHelp("Select another language file.");
@@ -340,7 +345,7 @@ public final class DOSBox {
                 + "  If 'forced' is appended, then the scaler will be used even if the result might not be desired.");
         pString = pMulti.getSection().addString("type", Property.Changeable.Always, "normal2x");
 
-        String[] scalers = { "none", "normal2x", "normal3x",
+        String[] scalers = {"none", "normal2x", "normal3x",
                 // #if RENDER_USE_ADVANCED_SCALERS>2
                 // "advmame2x", "advmame3x", "advinterp2x", "advinterp3x", "hq2x", "hq3x",
                 // "2xsai",
@@ -352,35 +357,38 @@ public final class DOSBox {
         };
         pString.setValues(scalers);
 
-        String[] force = { "", "forced" };
+        String[] force = {"", "forced"};
         pString = pMulti.getSection().addString("force", Property.Changeable.Always, "");
         pString.setValues(force);
 
         secProp = Control.addSectionProp("cpu", CPU::init, true);// done
-        String[] cores = { "auto",
+        String[] cores = {"auto",
                 /*
                  * #if (C_DYNAMIC_X86) || (C_DYNREC) "dynamic", #endif
                  */
-                "normal", "simple" };
+                "normal", "simple"};
         pString = secProp.addString("core", Property.Changeable.WhenIdle, "auto");
         pString.setValues(cores);
-        pString.setHelp("CPU Core used in emulation. auto will switch to dynamic if available and appropriate.");
+        pString.setHelp(
+                "CPU Core used in emulation. auto will switch to dynamic if available and appropriate.");
 
-        String[] cputype_values = { "auto", "386", "386_slow", "486_slow", "pentium_slow", "386_prefetch", };
+        String[] cputype_values =
+                {"auto", "386", "386_slow", "486_slow", "pentium_slow", "386_prefetch",};
         pString = secProp.addString("cputype", Property.Changeable.Always, "auto");
         pString.setValues(cputype_values);
         pString.setHelp("CPU Type used in emulation. auto is the fastest choice.");
 
         pMultiRemain = secProp.addMultiRemain("cycles", Property.Changeable.Always, ' ');
         pMultiRemain.setHelp("Amount of instructions DOSBox tries to emulate each millisecond.\n"
-                + "Setting this value too high results in sound dropouts and lags.\n" + "Cycles can be set in 3 ways:\n"
+                + "Setting this value too high results in sound dropouts and lags.\n"
+                + "Cycles can be set in 3 ways:\n"
                 + "  'auto'          tries to guess what a game needs.\n"
                 + "                  It usually works, but can fail for certain games.\n"
                 + "  'fixed #number' will set a fixed amount of cycles. This is what you usually need if 'auto' fails.\n"
                 + "                  (Example: fixed 4000).\n"
                 + "  'max'           will allocate as much cycles as your computer is able to handle.\n");
 
-        String[] cyclest = { "auto", "fixed", "max", "%u" };
+        String[] cyclest = {"auto", "fixed", "max", "%u"};
         pString = pMultiRemain.getSection().addString("type", Property.Changeable.Always, "auto");
         pMultiRemain.setValue("auto");
         pString.setValues(cyclest);
@@ -457,8 +465,8 @@ public final class DOSBox {
 
         // TODO ?
         secLine = Control.addSectionLine("autoexec", Autoexec::init);
-        Message.addMsg("AUTOEXEC_CONFIGFILE_HELP",
-                "Lines in this section will be run at startup.\n" + "You can put your MOUNT lines here.\n");
+        Message.addMsg("AUTOEXEC_CONFIGFILE_HELP", "Lines in this section will be run at startup.\n"
+                + "You can put your MOUNT lines here.\n");
         Message.addMsg("CONFIGFILE_INTRO",
                 "# This is the configurationfile for DOSBox %s. (Please use the latest version of DOSBox)\n"
                         + "# Lines starting with a # are commentlines and are ignored by DOSBox.\n"

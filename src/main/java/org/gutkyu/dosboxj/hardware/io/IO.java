@@ -53,7 +53,7 @@ public final class IO {
 
     // -- #region IO_prefix
     private static int readBlocked(int port, int iolen) {
-        return ~(int) 0;
+        return ~0;
     }
 
     private static void writeBlocked(int port, int val, int iolen) {
@@ -161,7 +161,7 @@ public final class IO {
     private static final int IODELAY_WRITE_MICROSk = (int) (1024 / 0.75);
 
     private static void readDelayUSEC() {
-        int delaycyc = (int) (CPU.CycleMax / IODELAY_READ_MICROSk);
+        int delaycyc = CPU.CycleMax / IODELAY_READ_MICROSk;
         if ((CPU.Cycles < 3 * delaycyc))
             delaycyc = 0; // Else port acces will set cycles to 0. which might trigger problem with
                           // games which read 16 bit values
@@ -170,7 +170,7 @@ public final class IO {
     }
 
     private static void writeDelayUSEC() {
-        int delaycyc = (int) (CPU.CycleMax / IODELAY_WRITE_MICROSk);
+        int delaycyc = CPU.CycleMax / IODELAY_WRITE_MICROSk;
         if ((CPU.Cycles < 3 * delaycyc))
             delaycyc = 0;
         CPU.Cycles -= delaycyc;
@@ -339,7 +339,7 @@ public final class IO {
             Register.setRegDX(port);
             int icb = Callback.realPointer(Callback.callPrivIO);
             Register.segSet16(Register.SEG_NAME_CS, Memory.realSeg(icb));
-            Register.setRegEIP((int) (Memory.realOff(icb) + 0x02));
+            Register.setRegEIP(Memory.realOff(icb) + 0x02);
             CPU.exception(CPU.Block.Exception.Which, CPU.Block.Exception.Error);
 
             DOSBox.runMachine();
@@ -374,7 +374,7 @@ public final class IO {
             Register.setRegDX(port);
             int icb = Callback.realPointer(Callback.callPrivIO);
             Register.segSet16(Register.SEG_NAME_CS, Memory.realSeg(icb));
-            Register.setRegEIP((int) (Memory.realOff(icb) + 0x04));
+            Register.setRegEIP(Memory.realOff(icb) + 0x04);
             CPU.exception(CPU.Block.Exception.Which, CPU.Block.Exception.Error);
 
             DOSBox.runMachine();

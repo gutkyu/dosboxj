@@ -18,18 +18,18 @@ public final class SDescriptor {
     public int Base24to31;// :8;
 
     public void fill(int input0, int input1) {
-        Limit0to15 = (int) input0 & 0xFFFF;
-        Base0to15 = (int) (input0 >>>16) & 0xFFFF;
-        Base16to23 = (int) input1 & 0xFF;
-        Type = (int) (input1 >>>8) & 0x1F;
-        DPL = (int) (input1 >>>13) & 0x3;
-        P = (int) (input1 >>>15) & 0x1;
-        Limit16to19 = (int) (input1 >>>16) & 0xF;
-        AVL = (int) (input1 >>>20) & 0x1;
-        R = (int) (input1 >>>21) & 0x1;
-        Big = (int) (input1 >>>22) & 0x1;
-        G = (int) (input1 >>>23) & 0x1;
-        Base24to31 = (int) (input1 >>>24) & 0xFF;
+        Limit0to15 = input0 & 0xFFFF;
+        Base0to15 = (input0 >>> 16) & 0xFFFF;
+        Base16to23 = input1 & 0xFF;
+        Type = (input1 >>> 8) & 0x1F;
+        DPL = (input1 >>> 13) & 0x3;
+        P = (input1 >>> 15) & 0x1;
+        Limit16to19 = (input1 >>> 16) & 0xF;
+        AVL = (input1 >>> 20) & 0x1;
+        R = (input1 >>> 21) & 0x1;
+        Big = (input1 >>> 22) & 0x1;
+        G = (input1 >>> 23) & 0x1;
+        Base24to31 = (input1 >>> 24) & 0xFF;
     }
 
     public int takeOutInput0() {

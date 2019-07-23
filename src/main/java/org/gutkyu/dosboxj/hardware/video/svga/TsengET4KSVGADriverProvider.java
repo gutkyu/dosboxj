@@ -183,9 +183,7 @@ public final class TsengET4KSVGADriverProvider {
             case 0x37:
                 if (val != _store_3d4_37) {
                     _store_3d4_37 = val;
-                    _vga.VMemWrap =
-                            (int) (((64 * 1024) << (int) ((val & 8) >>> 2)) << (int) ((val & 3)
-                                    - 1));
+                    _vga.VMemWrap = ((64 * 1024) << ((val & 8) >>> 2)) << ((val & 3) - 1);
                     _vga.setupHandlers();
                 }
                 break;
@@ -303,7 +301,7 @@ public final class TsengET4KSVGADriverProvider {
     }
 
     private int readP3CD(int port, int iolen) {
-        return (int) ((_vga.SVGA.BankRead << 4) | _vga.SVGA.BankWrite);
+        return ((_vga.SVGA.BankRead & 0xff) << 4) | (_vga.SVGA.BankWrite & 0xff);
     }
 
     private void writeP3C0(int reg, int val, int iolen) {
@@ -364,16 +362,16 @@ public final class TsengET4KSVGADriverProvider {
     private int getClockIndex() {
         // Ignoring bit 4, using "only" 16 frequencies. Looks like most implementations had only
         // that
-        return (int) ((_vga.MiscOutput >>> 2) & 3) | ((_store_3d4_34 << 1) & 4)
+        return ((_vga.MiscOutput >>> 2) & 3) | ((_store_3d4_34 << 1) & 4)
                 | ((_store_3d4_31 >>> 3) & 8);
     }
 
     private void setClockIndex(int index) {
         // Shortwiring register reads/writes for simplicity
         IO.write(0x3c2, 0xff & (0xff & (_vga.MiscOutput & ~0x0c) | ((index & 3) << 2)));
-        _store_3d4_34 = (int) ((_store_3d4_34 & ~0x02) | ((index & 4) >>> 1));
+        _store_3d4_34 = (_store_3d4_34 & ~0x02) | ((index & 4) >>> 1);
         // (index&0x18) if 32 clock frequencies are to be supported
-        _store_3d4_31 = (int) ((_store_3d4_31 & ~0xc0) | ((index & 8) << 3));
+        _store_3d4_31 = (_store_3d4_31 & ~0xc0) | ((index & 8) << 3);
     }
 
     private void finishSetMode(int crtc_base, ModeExtraData modeData) {
@@ -429,7 +427,7 @@ public final class TsengET4KSVGADriverProvider {
             int best = 1;
             int dist = 100000000;
             for (int i = 0; i < 16; i++) {
-                int cdiff = Math.abs((int) (target - _clockFreq[i]));
+                int cdiff = Math.abs(target - _clockFreq[i]);
                 if (cdiff < dist) {
                     best = i;
                     dist = cdiff;

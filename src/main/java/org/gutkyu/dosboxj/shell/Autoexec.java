@@ -84,7 +84,7 @@ public final class Autoexec extends ModuleBase {
                     String currDir =
                             Paths.get(System.getProperty("user.dir")).toAbsolutePath().toString();
                     if (currDir.length() > Cross.LEN)
-                        sb.append(currDir, 0, (int) Cross.LEN);
+                        sb.append(currDir, 0, Cross.LEN);
                     else
                         sb.append(currDir);
 
@@ -113,7 +113,7 @@ public final class Autoexec extends ModuleBase {
                         String currDir = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
                                 .toString();
                         if (currDir.length() > Cross.LEN)
-                            sb.append(currDir, 0, (int) Cross.LEN);
+                            sb.append(currDir, 0, Cross.LEN);
                         else
                             sb.append(currDir);
 
@@ -172,8 +172,7 @@ public final class Autoexec extends ModuleBase {
             break;
         }
         // nomount:
-        VFile.register("AUTOEXEC.BAT", ShellInner.autoexec_data,
-                (int) ShellInner.autoexec_data.length);
+        VFile.register("AUTOEXEC.BAT", ShellInner.autoexecData, ShellInner.autoexecData.length);
     }
 
     @Override

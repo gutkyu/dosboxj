@@ -180,16 +180,16 @@ public final class CMOSModule extends ModuleBase {
             case 0x09: /* Year */
                 return makeReturn(loctime.getYear() % 100);
             case 0x32: /* Century */
-                return makeReturn((int) (loctime.getYear() / 100));
+                return makeReturn(loctime.getYear() / 100);
             case 0x01: /* Seconds Alarm */
             case 0x03: /* Minutes Alarm */
             case 0x05: /* Hours Alarm */
                 return CMOSInfo.regs[CMOSInfo.reg];
             case 0x0a: /* Status register A */
                 if (PIC.getTickIndex() < 0.002) {
-                    return (int) ((CMOSInfo.regs[0x0a] & 0x7f) | 0x80);
+                    return (CMOSInfo.regs[0x0a] & 0x7f) | 0x80;
                 } else {
-                    return (int) (CMOSInfo.regs[0x0a] & 0x7f);
+                    return CMOSInfo.regs[0x0a] & 0x7f;
                 }
             case 0x0c: /* Status register C */
                 CMOSInfo.timer.acknowledged = true;

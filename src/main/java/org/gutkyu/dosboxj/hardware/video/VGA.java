@@ -151,19 +151,17 @@ public final class VGA {
             TXTFGTable[i] = i | (i << 8) | (i << 16) | (i << 24);
             TXTBGTable[i] = i | (i << 8) | (i << 16) | (i << 24);
 
-            FillTable[i] = (int) (((i & 1) != 0 ? 0x000000ff : 0) | ((i & 2) != 0 ? 0x0000ff00 : 0)
-                    | ((i & 4) != 0 ? 0x00ff0000 : 0) | ((i & 8) != 0 ? 0xff000000 : 0));
-            TXTFontTable[i] =
-                    (int) (((i & 1) != 0 ? 0xff000000 : 0) | ((i & 2) != 0 ? 0x00ff0000 : 0)
-                            | ((i & 4) != 0 ? 0x0000ff00 : 0) | ((i & 8) != 0 ? 0x000000ff : 0));
+            FillTable[i] = ((i & 1) != 0 ? 0x000000ff : 0) | ((i & 2) != 0 ? 0x0000ff00 : 0)
+                    | ((i & 4) != 0 ? 0x00ff0000 : 0) | ((i & 8) != 0 ? 0xff000000 : 0);
+            TXTFontTable[i] = ((i & 1) != 0 ? 0xff000000 : 0) | ((i & 2) != 0 ? 0x00ff0000 : 0)
+                    | ((i & 4) != 0 ? 0x0000ff00 : 0) | ((i & 8) != 0 ? 0x000000ff : 0);
 
         }
         for (int j = 0; j < 4; j++) {
             for (int i = 0; i < 16; i++) {
-                Expand16Table[j][i] = ((i & 1) != 0 ? 1 << (int) (24 + j) : 0)
-                        | ((i & 2) != 0 ? 1 << (int) (16 + j) : 0)
-                        | ((i & 4) != 0 ? 1 << (int) (8 + j) : 0)
-                        | ((i & 8) != 0 ? 1 << (int) j : 0);
+                Expand16Table[j][i] =
+                        ((i & 1) != 0 ? 1 << (24 + j) : 0) | ((i & 2) != 0 ? 1 << (16 + j) : 0)
+                                | ((i & 4) != 0 ? 1 << (8 + j) : 0) | ((i & 8) != 0 ? 1 << j : 0);
 
             }
         }
@@ -252,7 +250,7 @@ public final class VGA {
             SVGADrv.SetClock.exec(which, target);
             return;
         }
-        int bestErr = (int) target;
+        int bestErr = target;
         int bestM = 1;
         int bestN = 1;
         int n;
@@ -265,16 +263,16 @@ public final class VGA {
                 break;
         }
         for (n = 1; n <= 31; n++) {
-            m = (int) ((target * (n + 2) * (1 << r) + (S3_CLOCK_REF / 2)) / S3_CLOCK_REF - 2);
+            m = (target * (n + 2) * (1 << r) + (S3_CLOCK_REF / 2)) / S3_CLOCK_REF - 2;
             if (0 <= m && m <= 127) {
                 // int temp_target = S3_CLOCK(m, n, r);
-                int tempTarget = (int) ((S3_CLOCK_REF * (m + 2)) / ((n + 2) * (1 << r)));
-                int err = (int) (target - tempTarget);
+                int tempTarget = (S3_CLOCK_REF * (m + 2)) / ((n + 2) * (1 << r));
+                int err = target - tempTarget;
                 if (err < 0)
                     err = -err;
                 if (err < bestErr) {
                     bestErr = err;
-                    bestM = (int) m;
+                    bestM = m;
                     bestN = n;
                 }
             }
@@ -553,12 +551,12 @@ public final class VGA {
             // 3)
             // Need to get rid of the third bit, so "/8 *2" becomes ">>>2 & ~1"
             int cursorMemStart =
-                    (int) ((sourceStartBit >>> 2) & ~1) + (((int) S3.HGC.StartAddr) << 10);
+                    ((sourceStartBit >>> 2) & ~1) + ((0xffff & S3.HGC.StartAddr) << 10);
             int cursorStartBit = sourceStartBit & 0x7;
             // stay at the right position in the pattern
             if ((cursorMemStart & 0x2) != 0)
                 cursorMemStart--;
-            int cursorMemEnd = (int) (cursorMemStart + ((64 - S3.HGC.PosX) >>> 2));
+            int cursorMemEnd = cursorMemStart + ((64 - S3.HGC.PosX) >>> 2);
             byte[] xat = TempLine;
             int xatIdx = S3.HGC.OriginX; // mouse data start pos. in scanline
             for (int m = cursorMemStart; m < cursorMemEnd; m += ((m & 1) != 0) ? 3 : 1) {
@@ -603,11 +601,11 @@ public final class VGA {
             ArrayHelper.copy(Mem.LinearAlloc, vidStart, TempLine, 0, Draw.Width * 2);
             int sourceStartBit = ((lineat - S3.HGC.OriginY) + S3.HGC.PosY) * 64 + S3.HGC.PosX;
             int cursorMemStart =
-                    (int) ((sourceStartBit >>> 2) & ~1) + (((int) S3.HGC.StartAddr) << 10);
+                    ((sourceStartBit >>> 2) & ~1) + ((0xffff & S3.HGC.StartAddr) << 10);
             int cursorStartBit = sourceStartBit & 0x7;
             if ((cursorMemStart & 0x2) != 0)
                 cursorMemStart--;
-            int cursorMemEnd = (int) (cursorMemStart + ((64 - S3.HGC.PosX) >>> 2));
+            int cursorMemEnd = cursorMemStart + ((64 - S3.HGC.PosX) >>> 2);
 
             // Bit16u* xat = &((Bit16u*)TempLine)[vga.s3.hgc.originx];
             int xatIdx = S3.HGC.OriginX * 2;
@@ -660,11 +658,11 @@ public final class VGA {
             ArrayHelper.copy(Mem.LinearAlloc, vidStart, TempLine, 0, Draw.Width * 4);
             int sourceStartBit = ((lineat - S3.HGC.OriginY) + S3.HGC.PosY) * 64 + S3.HGC.PosX;
             int cursorMemStart =
-                    (int) ((sourceStartBit >>> 2) & ~1) + (((int) S3.HGC.StartAddr) << 10);
+                    ((sourceStartBit >>> 2) & ~1) + ((0xffff & S3.HGC.StartAddr) << 10);
             int cursorStartBit = sourceStartBit & 0x7;
             if ((cursorMemStart & 0x2) != 0)
                 cursorMemStart--;
-            int cursorMemEnd = (int) (cursorMemStart + ((64 - S3.HGC.PosX) >>> 2));
+            int cursorMemEnd = cursorMemStart + ((64 - S3.HGC.PosX) >>> 2);
             // Bit32u* xat = &((Bit32u*)TempLine)[vga.s3.hgc.originx];
             int xatIdx = S3.HGC.OriginX * 4;
             for (int m = cursorMemStart; m < cursorMemEnd; m += ((m & 1) != 0) ? 3 : 1) {
@@ -717,7 +715,7 @@ public final class VGA {
             ArrayHelper.copy(Tandy.DrawAlloc, Tandy.DrawBase, TempLine,
                     TempLine.length / 2 + break_pos, line_end - break_pos);
             currentTextMemwrap = TempLine;
-            currentTextMemwrapOffset = (int) TempLine.length / 2;
+            currentTextMemwrapOffset = TempLine.length / 2;
         } else {
             currentTextMemwrap = Tandy.DrawAlloc;
             currentTextMemwrapOffset = Tandy.DrawBase + vidStart;
@@ -803,7 +801,7 @@ public final class VGA {
                     else
                         fg = TXTFGTable[0x0];
                 } else {
-                    if (((int) (Crtc.UnderlineLocation & 0x1f) == line) && ((attrib & 0x77) == 0x1))
+                    if (((Crtc.UnderlineLocation & 0x1f) == line) && ((attrib & 0x77) == 0x1))
                         underline = true;
                     bg = TXTBGTable[0x0];
                     if ((attrib & 0x8) != 0)
@@ -829,8 +827,8 @@ public final class VGA {
         while (true) {
             if (Draw.Cursor.Enabled == 0 || (Draw.Cursor.Count & 0x8) == 0)
                 break;// goto skip_cursor;
-            fontAddr = (int) (Draw.Cursor.Address - vidstart) >>> 1;
-            if (fontAddr >= 0 && fontAddr < (int) Draw.Blocks) {
+            fontAddr = (Draw.Cursor.Address - vidstart) >>> 1;
+            if (fontAddr >= 0 && fontAddr < Draw.Blocks) {
                 if (line < Draw.Cursor.SLine)
                     break;// goto skip_cursor;
                 if (line > Draw.Cursor.ELine)
@@ -890,8 +888,8 @@ public final class VGA {
         while (true) {
             if (Draw.Cursor.Enabled == 0 || (Draw.Cursor.Count & 0x8) == 0)
                 break;// goto skip_cursor;
-            fontAddr = (int) (Draw.Cursor.Address - vidStart) >>> 1;
-            if (fontAddr >= 0 && fontAddr < (int) Draw.Blocks) {
+            fontAddr = (Draw.Cursor.Address - vidStart) >>> 1;
+            if (fontAddr >= 0 && fontAddr < Draw.Blocks) {
                 if (line < Draw.Cursor.SLine)
                     break;// goto skip_cursor;
                 if (line > Draw.Cursor.ELine)
@@ -919,7 +917,7 @@ public final class VGA {
     private void drawLine9TEXTXlat16(int vidStart, int line) {
         int fontAddr;
         int drawIdx = 0;
-        boolean underline = (int) (Crtc.UnderlineLocation & 0x1f) == line;
+        boolean underline = (Crtc.UnderlineLocation & 0x1f) == line;
         byte pelPan = (byte) Draw.Panning;
         if ((Attr.ModeControl & 0x20) == 0 && (Draw.LinesDone >= Draw.SplitLine))
             pelPan = 0;
@@ -988,8 +986,8 @@ public final class VGA {
         while (true) {
             if (Draw.Cursor.Enabled == 0 || (Draw.Cursor.Count & 0x8) == 0)
                 break;// goto skip_cursor;
-            fontAddr = (int) ((Draw.Cursor.Address - vidStart) >>> 1);
-            if (fontAddr >= 0 && fontAddr < (int) Draw.Blocks) {
+            fontAddr = (Draw.Cursor.Address - vidStart) >>> 1;
+            if (fontAddr >= 0 && fontAddr < Draw.Blocks) {
                 if (line < Draw.Cursor.SLine)
                     break;// goto skip_cursor;
                 if (line > Draw.Cursor.ELine)
@@ -1172,7 +1170,7 @@ public final class VGA {
 
         Draw.AddressLine = Config.HLinesSkip;
         if (DOSBox.isEGAVGAArch()) {
-            Draw.SplitLine = (int) ((Config.LineCompare + 1) / Draw.LinesScaled);
+            Draw.SplitLine = (Config.LineCompare + 1) / Draw.LinesScaled;
             if ((DOSBox.SVGACard == DOSBox.SVGACards.S3Trio) && (Config.LineCompare == 0))
                 Draw.SplitLine = 0;
             Draw.SplitLine -= Draw.VBlankSkip;
@@ -1189,7 +1187,7 @@ public final class VGA {
         switch (Mode) {
             case EGA:
                 if ((Crtc.ModeControl & 0x1) == 0)
-                    Draw.LinearMask &= (int) ~0x10000;
+                    Draw.LinearMask &= ~0x10000;
                 else
                     Draw.LinearMask |= 0x10000;
                 // goto GotoM_LIN4;
@@ -1520,7 +1518,7 @@ public final class VGA {
                 case CGA:
                 case TANDY:
                 case PCJR:
-                    clock = (int) ((Tandy.ModeControl & 1) != 0 ? 14318180 : (14318180 / 2)) / 8;
+                    clock = ((Tandy.ModeControl & 1) != 0 ? 14318180 : (14318180 / 2)) / 8;
                     break;
                 case HERC:
                     if ((Herc.ModeControl & 0x2) != 0)
@@ -1935,7 +1933,7 @@ public final class VGA {
         PIC.removeEvents(drawPartWrap);
         PIC.removeEvents(drawSingleLineWrap);
         Draw.PartsLeft = 0;
-        Draw.LinesDone = (int) ~0;
+        Draw.LinesDone = ~0;
         Render.instance().endUpdate(true);
     }
 
@@ -2531,7 +2529,7 @@ public final class VGA {
                         "MC6845:Read from illegal index %x", Other.Index);
                 break;
         }
-        return (int) (~0);
+        return ~0;
     }
 
     private double _hueOffset = 0.0;
@@ -2728,7 +2726,7 @@ public final class VGA {
             Tandy.LineShift = 13;
             Tandy.AddrMask = (1 << 13) - 1;
         } else {
-            Tandy.AddrMask = (int) (~0);
+            Tandy.AddrMask = ~0;
             Tandy.LineShift = 0;
         }
     }
@@ -2738,7 +2736,7 @@ public final class VGA {
             case 0x0:
                 if (DOSBox.Machine == DOSBox.MachineType.PCJR) {
                     Tandy.ModeControl = val;
-                    setBlinking((int) (val & 0x20));
+                    setBlinking(val & 0x20);
                     findModePCJr();
                     Attr.Disabled = (val & 0x8) != 0 ? (byte) 0 : (byte) 1;
                 } else {
@@ -3272,7 +3270,7 @@ public final class VGA {
 
     public static final class VGAHwCursor {
         public byte CurMode;
-        public short OriginX, OriginY;
+        public int OriginX, OriginY;// uint16
         public byte ForeStackPos, BackStackPos;
         // public byte forestack[3];
         public byte[] ForeStack;

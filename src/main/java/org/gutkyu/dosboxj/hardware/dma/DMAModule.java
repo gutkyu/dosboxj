@@ -118,11 +118,11 @@ public final class DMAModule extends ModuleBase {
         int highpart_addr_page = spage >>> 12;
         size <<= dma16;
         offset <<= dma16;
-        int dma_wrap = (int) ((int) ((0xffff << dma16) + dma16) | _dmaWrapping);
+        int dmaWrap = ((0xffff << dma16) + dma16) | _dmaWrapping;
         for (; size > 0; size--, offset++) {
             if (offset > (_dmaWrapping << dma16))
                 Support.exceptionExit("DMA segbound wrapping (read)");
-            offset &= dma_wrap;
+            offset &= dmaWrap;
             int page = highpart_addr_page + (offset >>> 12);
             /* care for EMS pageframe etc. */
             if (page < EMM_PAGEFRAME4K)
@@ -143,7 +143,7 @@ public final class DMAModule extends ModuleBase {
         int highpart_addr_page = spage >>> 12;
         size <<= dma16;
         offset <<= dma16;
-        int dma_wrap = (int) ((int) ((0xffff << dma16) + dma16) | _dmaWrapping);
+        int dma_wrap = ((0xffff << dma16) + dma16) | _dmaWrapping;
         for (; size > 0; size--, offset++) {
             if (offset > (_dmaWrapping << dma16))
                 Support.exceptionExit("DMA segbound wrapping (write)");

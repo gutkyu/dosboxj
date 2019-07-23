@@ -23,7 +23,7 @@ class BatchFile implements Disposable {
             // TODO Come up with something better
             Support.exceptionExit("SHELL:Can't open BatchFile %s", totalname.toString());
         }
-        fileHandle = DOSMain.FileEntry;
+        fileHandle = DOSMain.CreatedOrOpenedFileEntry;
         DOSMain.closeFile(fileHandle);
     }
 
@@ -46,7 +46,7 @@ class BatchFile implements Disposable {
             dispose();
             return false;
         }
-        fileHandle = DOSMain.FileEntry;
+        fileHandle = DOSMain.CreatedOrOpenedFileEntry;
         long loc = DOSMain.seekFile(fileHandle, this.location, DOSSystem.DOS_SEEK_SET);
         if (loc >= 0)
             this.location = (int) loc;
@@ -168,7 +168,7 @@ class BatchFile implements Disposable {
             this.dispose();
             return false;
         }
-        fileHandle = DOSMain.FileEntry;
+        fileHandle = DOSMain.CreatedOrOpenedFileEntry;
 
         CStringPt cmdBuffer = CStringPt.create(ShellInner.CMD_MAXLINE);
         CStringPt cmdWrite;

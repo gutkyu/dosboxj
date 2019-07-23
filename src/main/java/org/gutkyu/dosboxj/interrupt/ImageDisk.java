@@ -13,7 +13,7 @@ public final class ImageDisk implements Disposable {
     public byte readSector(int head, int cylinder, int sector, byte[] data) {
         int sectnum;
 
-        sectnum = (int) (((cylinder * heads + head) * sectors) + sector - 1L);
+        sectnum = ((cylinder * heads + head) * sectors) + sector - 1;
 
         return readAbsoluteSector(sectnum, data, 0);
     }
@@ -21,7 +21,7 @@ public final class ImageDisk implements Disposable {
     public byte writeSector(int head, int cylinder, int sector, byte[] data) {
         int sectnum;
 
-        sectnum = (int) (((cylinder * heads + head) * sectors) + sector - 1L);
+        sectnum = ((cylinder * heads + head) * sectors) + sector - 1;
 
         return writeAbsoluteSector(sectnum, data, 0);
 
@@ -31,7 +31,7 @@ public final class ImageDisk implements Disposable {
         long bytenum;
 
         bytenum = sectnum * sector_size;
-        ByteBuffer buf = ByteBuffer.wrap(data, data_start, (int) (1 * sector_size));
+        ByteBuffer buf = ByteBuffer.wrap(data, data_start, 1 * sector_size);
         try {
             diskimg.position(bytenum).read(buf);
         } catch (IOException e) {
@@ -46,7 +46,7 @@ public final class ImageDisk implements Disposable {
         bytenum = sectnum * sector_size;
 
         // Log.LOG_MSG("Writing sectors to %ld at bytenum %d", sectnum, bytenum);
-        ByteBuffer buf = ByteBuffer.wrap(data, data_start, (int) (1 * sector_size));
+        ByteBuffer buf = ByteBuffer.wrap(data, data_start, 1 * sector_size);
 
         try {
             diskimg.position(bytenum).write(buf);
@@ -125,7 +125,7 @@ public final class ImageDisk implements Disposable {
             } else {
                 int equipment = Memory.readW(BIOS.BIOS_CONFIGURATION);
                 if ((equipment & 1) != 0) {
-                    int numofdisks = (int) (equipment >>> 6) & 3;
+                    int numofdisks = (equipment >>> 6) & 3;
                     numofdisks++;
                     if (numofdisks > 1)
                         numofdisks = 1;// max 2 floppies at the moment
@@ -134,7 +134,7 @@ public final class ImageDisk implements Disposable {
                 } else
                     equipment |= 1;
                 Memory.writeW(BIOS.BIOS_CONFIGURATION, equipment);
-                CMOSModule.setRegister(0x14, (byte) (equipment & 0xff));
+                CMOSModule.setRegister(0x14, (byte) equipment);
             }
         }
     }

@@ -22,13 +22,15 @@ public final class Timer {
     }
 
 
-    private static short doBIN2BCD(short val) {
-        return (short) (val % 10 + (((val / 10) % 10) << 4) + (((val / 100) % 10) << 8)
+    // uint16(uint16)
+    private static int doBIN2BCD(int val) {
+        return 0xffff & (val % 10 + (((val / 10) % 10) << 4) + (((val / 100) % 10) << 8)
                 + (((val / 1000) % 10) << 12));
     }
 
-    private static short doBCD2BIN(short val) {
-        return (short) ((val & 0x0f) + ((val >>> 4) & 0x0f) * 10 + ((val >>> 8) & 0x0f) * 100
+    // uint16(uint16)
+    private static int doBCD2BIN(int val) {
+        return 0xffff & ((val & 0x0f) + ((val >>> 4) & 0x0f) * 10 + ((val >>> 8) & 0x0f) * 100
                 + ((val >>> 12) & 0x0f) * 1000);
     }
 
@@ -37,8 +39,8 @@ public final class Timer {
         public float delay;
         public double start;
 
-        public short read_latch;
-        public short write_latch;
+        public int readLatch;// uint16
+        public int writeLatch;// uint16
 
         public byte mode;
         public byte latch_mode;
@@ -162,43 +164,43 @@ public final class Timer {
                     index -= p.delay;
                     if (p.bcd) {
                         index = index % (1000.0 / PIT_TICK_RATE) * 10000.0;
-                        p.read_latch = (short) (9999 - index * (PIT_TICK_RATE / 1000.0));
+                        p.readLatch = 0xffff & (int) (9999 - index * (PIT_TICK_RATE / 1000.0));
                     } else {
                         index = index % (1000.0 / PIT_TICK_RATE) * (double) 0x10000;
-                        p.read_latch = (short) (0xffff - index * (PIT_TICK_RATE / 1000.0));
+                        p.readLatch = 0xffff & (int) (0xffff - index * (PIT_TICK_RATE / 1000.0));
                     }
                 } else {
-                    p.read_latch = (short) (p.cntr - index * (PIT_TICK_RATE / 1000.0));
+                    p.readLatch = 0xffff & (int) (p.cntr - index * (PIT_TICK_RATE / 1000.0));
                 }
                 break;
             case 1: // countdown
                 if (p.counting) {
                     if (index > p.delay) { // has timed out
-                        p.read_latch = (short) 0xffff; // unconfirmed
+                        p.readLatch = 0xffff; // unconfirmed
                     } else {
-                        p.read_latch = (short) (p.cntr - index * (PIT_TICK_RATE / 1000.0));
+                        p.readLatch = 0xffff & (int) (p.cntr - index * (PIT_TICK_RATE / 1000.0));
                     }
                 }
                 break;
             case 2: /* Rate Generator */
                 index = index % (double) p.delay;
-                p.read_latch = (short) (p.cntr - (index / p.delay) * p.cntr);
+                p.readLatch = 0xffff & (int) (p.cntr - (index / p.delay) * p.cntr);
                 break;
             case 3: /* Square Wave Rate Generator */
                 index = index % (double) p.delay;
                 index *= 2;
                 if (index > p.delay)
                     index -= p.delay;
-                p.read_latch = (short) (p.cntr - (index / p.delay) * p.cntr);
+                p.readLatch = 0xffff & (int) (p.cntr - (index / p.delay) * p.cntr);
                 // In mode 3 it never returns odd numbers LSB (if odd number is written 1 will be
                 // subtracted on first clock and then always 2)
                 // fixes "Corncob 3D"
-                p.read_latch &= 0xfffe;
+                p.readLatch &= 0xfffe;
                 break;
             default:
                 Log.logging(Log.LogTypes.PIT, Log.LogServerities.Error,
                         "Illegal Mode %d for reading counter %d", p.mode, counter);
-                p.read_latch = (short) 0xffff;
+                p.readLatch = 0xffff;
                 break;
         }
     }
@@ -209,34 +211,34 @@ public final class Timer {
         int counter = port - 0x40;
         PIT_Block p = pit[counter];
         if (p.bcd == true)
-            p.write_latch = doBIN2BCD(p.write_latch);
+            p.writeLatch = doBIN2BCD(p.writeLatch);
 
         switch (p.write_state) {
             case 0:
-                p.write_latch = (short) (p.write_latch | ((val & 0xff) << 8));
+                p.writeLatch = p.writeLatch | ((val & 0xff) << 8);
                 p.write_state = 3;
                 break;
             case 3:
-                p.write_latch = (short) (val & 0xff);
+                p.writeLatch = val & 0xff;
                 p.write_state = 0;
                 break;
             case 1:
-                p.write_latch = (short) (val & 0xff);
+                p.writeLatch = val & 0xff;
                 break;
             case 2:
-                p.write_latch = (short) ((val & 0xff) << 8);
+                p.writeLatch = (val & 0xff) << 8;
                 break;
         }
         if (p.bcd == true)
-            p.write_latch = doBCD2BIN(p.write_latch);
+            p.writeLatch = doBCD2BIN(p.writeLatch);
         if (p.write_state != 0) {
-            if (p.write_latch == 0) {
+            if (p.writeLatch == 0) {
                 if (p.bcd == false)
                     p.cntr = 0x10000;
                 else
                     p.cntr = 9999;
             } else
-                p.cntr = p.write_latch;
+                p.cntr = p.writeLatch;
 
             if ((!p.new_mode) && (p.mode == 2) && (counter == 0)) {
                 // In mode 2 writing another value has no direct effect on the count
@@ -280,34 +282,34 @@ public final class Timer {
     private static int readLatch(int port, int iolen) {
         // LOG(LOG_PIT,LOG_ERROR)("port read %X",port);
         int counter = port - 0x40;
-        byte ret = 0;
+        int ret = 0;// uint8
         if (pit[counter].counterstatus_set) {
             pit[counter].counterstatus_set = false;
             latched_timerstatus_locked = false;
-            ret = latched_timerstatus;
+            ret = 0xff & latched_timerstatus;
         } else {
             if (pit[counter].go_read_latch == true)
                 doCounterLatch(counter);
 
             if (pit[counter].bcd == true)
-                pit[counter].read_latch = doBIN2BCD(pit[counter].read_latch);
+                pit[counter].readLatch = doBIN2BCD(pit[counter].readLatch);
 
             switch (pit[counter].read_state) {
                 case 0: /* read MSB & return to state 3 */
-                    ret = (byte) ((pit[counter].read_latch >>> 8) & 0xff);
+                    ret = (pit[counter].readLatch >>> 8) & 0xff;
                     pit[counter].read_state = 3;
                     pit[counter].go_read_latch = true;
                     break;
                 case 3: /* read LSB followed by MSB */
-                    ret = (byte) (pit[counter].read_latch & 0xff);
+                    ret = pit[counter].readLatch & 0xff;
                     pit[counter].read_state = 0;
                     break;
                 case 1: /* read LSB */
-                    ret = (byte) (pit[counter].read_latch & 0xff);
+                    ret = pit[counter].readLatch & 0xff;
                     pit[counter].go_read_latch = true;
                     break;
                 case 2: /* read MSB */
-                    ret = (byte) ((pit[counter].read_latch >>> 8) & 0xff);
+                    ret = (pit[counter].readLatch >>> 8) & 0xff;
                     pit[counter].go_read_latch = true;
                     break;
                 default:
@@ -315,7 +317,7 @@ public final class Timer {
                     break;
             }
             if (pit[counter].bcd == true)
-                pit[counter].read_latch = doBCD2BIN(pit[counter].read_latch);
+                pit[counter].readLatch = doBCD2BIN(pit[counter].readLatch);
         }
         return ret;
     }
@@ -414,7 +416,7 @@ public final class Timer {
                 else {
                     // Fill readlatch and store it.
                     doCounterLatch(2);
-                    pit[2].cntr = pit[2].read_latch;
+                    pit[2].cntr = pit[2].readLatch;
                 }
                 break;
             case 1:
@@ -535,8 +537,8 @@ public final class Timer {
             pit[0].cntr = 0x10000;
             pit[0].write_state = 3;
             pit[0].read_state = 3;
-            pit[0].read_latch = 0;
-            pit[0].write_latch = 0;
+            pit[0].readLatch = 0;
+            pit[0].writeLatch = 0;
             pit[0].mode = 3;
             pit[0].bcd = false;
             pit[0].go_read_latch = true;
@@ -552,7 +554,7 @@ public final class Timer {
             pit[1].write_state = 3;
             pit[1].counterstatus_set = false;
 
-            pit[2].read_latch = 1320; /* MadTv1 */
+            pit[2].readLatch = 1320; /* MadTv1 */
             pit[2].write_state = 3; /* Chuck Yeager */
             pit[2].read_state = 3;
             pit[2].mode = 3;

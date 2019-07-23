@@ -52,17 +52,17 @@ public class ChainedVGAHandler extends PageHandler {
 
     private void writeBHandler(int addr, int val) {
         // No need to check for compatible chains here, this one is only enabled if that bit is set
-        _vga.Mem.LinearAlloc[(int) ((addr & ~3) << 2) + (addr & 3)] = (byte) val;
+        _vga.Mem.LinearAlloc[((addr & ~3) << 2) + (addr & 3)] = (byte) val;
     }
 
     private void writeDHandler(int addr, int val) {
         // No need to check for compatible chains here, this one is only enabled if that bit is set
-        Memory.hostWriteD(_vga.Mem.LinearAlloc, (int) ((addr & ~3) << 2) + (addr & 3), val);
+        Memory.hostWriteD(_vga.Mem.LinearAlloc, ((addr & ~3) << 2) + (addr & 3), val);
     }
 
     private void writeWHandler(int addr, int val) {
         // No need to check for compatible chains here, this one is only enabled if that bit is set
-        Memory.hostWriteW(_vga.Mem.LinearAlloc, (int) ((addr & ~3) << 2) + (addr & 3), val);
+        Memory.hostWriteW(_vga.Mem.LinearAlloc, ((addr & ~3) << 2) + (addr & 3), val);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ChainedVGAHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & _vga.PageMask;
         addr += _vga.SVGA.BankFeadFull;
         addr = _vga.checked(addr);
-        return readBHandler(addr);
+        return readBHandler(addr) & 0xff;
     }
 
     @Override
@@ -79,7 +79,7 @@ public class ChainedVGAHandler extends PageHandler {
         addr += _vga.SVGA.BankFeadFull;
         addr = _vga.checked(addr);
         if ((addr & 1) != 0)
-            return (int) ((readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8));
+            return ((readBHandler(addr + 0) & 0xff) << 0) | ((readBHandler(addr + 1) & 0xff) << 8);
         else
             return readWHandler(addr);
     }
@@ -90,8 +90,9 @@ public class ChainedVGAHandler extends PageHandler {
         addr += _vga.SVGA.BankFeadFull;
         addr = _vga.checked(addr);
         if ((addr & 3) != 0)
-            return (int) ((readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8)
-                    | (readBHandler(addr + 2) << 16) | (readBHandler(addr + 3) << 24));
+            return ((readBHandler(addr + 0) & 0xff) << 0) | ((readBHandler(addr + 1) & 0xff) << 8)
+                    | ((readBHandler(addr + 2) & 0xff) << 16)
+                    | ((readBHandler(addr + 3) & 0xff) << 24);
         else
             return readDHandler(addr);
     }
@@ -118,8 +119,8 @@ public class ChainedVGAHandler extends PageHandler {
          */
         // MEM_CHANGED( addr + 1);
         if ((addr & 1) != 0) {
-            writeBHandler(addr + 0, val >>>0);
-            writeBHandler(addr + 1, val >>>8);
+            writeBHandler(addr + 0, val >>> 0);
+            writeBHandler(addr + 1, val >>> 8);
         } else {
             writeWHandler(addr, val);
         }
@@ -136,10 +137,10 @@ public class ChainedVGAHandler extends PageHandler {
          */
         // MEM_CHANGED( addr + 3);
         if ((addr & 3) != 0) {
-            writeBHandler(addr + 0, val >>>0);
-            writeBHandler(addr + 1, val >>>8);
-            writeBHandler(addr + 2, val >>>16);
-            writeBHandler(addr + 3, val >>>24);
+            writeBHandler(addr + 0, val >>> 0);
+            writeBHandler(addr + 1, val >>> 8);
+            writeBHandler(addr + 2, val >>> 16);
+            writeBHandler(addr + 3, val >>> 24);
         } else {
             writeDHandler(addr, val);
         }

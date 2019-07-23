@@ -102,7 +102,7 @@ public class DOSDriveCache implements Disposable {
 
     public boolean openDir(CStringPt path, RefU16Ret refId) {
         short id = refId.U16;
-        CStringPt expand = CStringPt.create((int) Cross.LEN);
+        CStringPt expand = CStringPt.create(Cross.LEN);
         expand.set(0, (char) 0);
         CFileInfo dir = findDirInfo(path, expand);
         if (openDir(dir, expand, refId)) {
@@ -161,12 +161,12 @@ public class DOSDriveCache implements Disposable {
         CStringPt.copy(getExpandName(path), path);
     }
 
-    private CStringPt work = CStringPt.create((int) Cross.LEN);
+    private CStringPt work = CStringPt.create(Cross.LEN);
 
     public CStringPt getExpandName(CStringPt path) {
         work.set(0, (char) 0);
 
-        CStringPt dir = CStringPt.create((char) Cross.LEN);
+        CStringPt dir = CStringPt.create(Cross.LEN);
 
         work.set(0, (char) 0);
         CStringPt.copy(path, dir);
@@ -198,16 +198,16 @@ public class DOSDriveCache implements Disposable {
 
     public boolean getShortName(CStringPt fullName, CStringPt shortName) {
         // Get Dir Info
-        CStringPt expand = CStringPt.create((int) Cross.LEN);
+        CStringPt expand = CStringPt.create(Cross.LEN);
         expand.set(0, (char) 0);
         CFileInfo curDir = findDirInfo(fullName, expand);
 
-        int filelist_size = curDir.longNameList.size();
-        if (filelist_size <= 0)
+        int fileListSize = curDir.longNameList.size();
+        if (fileListSize <= 0)
             return false;
 
         int low = 0;
-        int high = (int) (filelist_size - 1);
+        int high = (fileListSize - 1);
         int mid, res = 0;
 
         while (low <= high) {
@@ -237,13 +237,13 @@ public class DOSDriveCache implements Disposable {
         // Find a free slot.
         // If the next one isn't free, move on to the next, if none is free => reset and assume the
         // worst
-        int local_findcounter = 0;
-        while (local_findcounter < DOSSystem.MAX_OPENDIRS) {
+        int localFindCounter = 0;
+        while (localFindCounter < DOSSystem.MAX_OPENDIRS) {
             if (dirFindFirst[this.nextFreeFindFirst] == null)
                 break;
             if (++this.nextFreeFindFirst >= DOSSystem.MAX_OPENDIRS)
                 this.nextFreeFindFirst = 0; // Wrap around
-            local_findcounter++;
+            localFindCounter++;
         }
 
         int dirFindFirstID = this.nextFreeFindFirst++;
@@ -251,7 +251,7 @@ public class DOSDriveCache implements Disposable {
             this.nextFreeFindFirst = 0; // Increase and wrap around for the next search.
 
         // Here is the reset from above. no free slot found...
-        if (local_findcounter == DOSSystem.MAX_OPENDIRS) {
+        if (localFindCounter == DOSSystem.MAX_OPENDIRS) {
             Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                     "DIRCACHE: FindFirst/Next: All slots full. Resetting");
             // Clear the internal list then.
@@ -313,17 +313,17 @@ public class DOSDriveCache implements Disposable {
 
 
     public void cacheOut(CStringPt path, boolean ignoreLastDir) {
-        CStringPt expand = CStringPt.create((int) Cross.LEN);
+        CStringPt expand = CStringPt.create(Cross.LEN);
         expand.set(0, (char) 0);
         CFileInfo dir;
 
         if (ignoreLastDir) {
-            CStringPt tmp = CStringPt.create((int) Cross.LEN);
+            CStringPt tmp = CStringPt.create(Cross.LEN);
             tmp.set(0, (char) 0);
             int len = 0;
             CStringPt pos = path.lastPositionOf(Cross.FILESPLIT);
             if (!pos.isEmpty())
-                len = (int) (CStringPt.diff(pos, path));
+                len = CStringPt.diff(pos, path);
             if (len > 0) {
                 CStringPt.safeCopy(path, tmp, len + 1);
             } else {
@@ -354,8 +354,8 @@ public class DOSDriveCache implements Disposable {
 
     public void addEntry(CStringPt path, boolean checkExists) {
         // Get Last part...
-        CStringPt file = CStringPt.create((int) Cross.LEN);
-        CStringPt expand = CStringPt.create((int) Cross.LEN);
+        CStringPt file = CStringPt.create(Cross.LEN);
+        CStringPt expand = CStringPt.create(Cross.LEN);
 
         CFileInfo dir = findDirInfo(path, expand);
         CStringPt pos = path.lastPositionOf(Cross.FILESPLIT);
@@ -376,7 +376,7 @@ public class DOSDriveCache implements Disposable {
                 // Check if there are any open search dir that are affected by this...
                 if (dir != null)
                     for (i = 0; i < DOSSystem.MAX_OPENDIRS; i++) {
-                        if ((dirSearch[i] == dir) && ((int) index <= dirSearch[i].nextEntry))
+                        if ((dirSearch[i] == dir) && (index <= dirSearch[i].nextEntry))
                             dirSearch[i].nextEntry++;
                     }
             }
@@ -398,7 +398,7 @@ public class DOSDriveCache implements Disposable {
         if (!ignoreLastDir) {
             // Check if there are any open search dir that are affected by this...
             int i;
-            CStringPt expand = CStringPt.create((int) Cross.LEN);
+            CStringPt expand = CStringPt.create(Cross.LEN);
             CFileInfo dir = findDirInfo(path, expand);
             if (dir != null)
                 for (i = 0; i < DOSSystem.MAX_OPENDIRS; i++) {
@@ -464,8 +464,8 @@ public class DOSDriveCache implements Disposable {
             longNameList.clear();
         }
 
-        public CStringPt orgname = CStringPt.create((int) Cross.LEN);
-        public CStringPt shortname = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        public CStringPt orgname = CStringPt.create(Cross.LEN);
+        public CStringPt shortname = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         public boolean isDir;
         public int nextEntry;
         public int shortNr;
@@ -497,7 +497,7 @@ public class DOSDriveCache implements Disposable {
         removeTrailingDot(shortName);
         // Search long name and return array number of element
         int low = 0;
-        int high = (int) (filelist_size - 1);
+        int high = filelist_size - 1;
         int mid, res;
         while (low <= high) {
             mid = (low + high) / 2;
@@ -519,7 +519,7 @@ public class DOSDriveCache implements Disposable {
         int len = 0;
         boolean createShort = false;
 
-        CStringPt tmpNameBuffer = CStringPt.create((int) Cross.LEN);
+        CStringPt tmpNameBuffer = CStringPt.create(Cross.LEN);
 
         CStringPt tmpName = tmpNameBuffer;
 
@@ -539,17 +539,17 @@ public class DOSDriveCache implements Disposable {
             }
             pos = tmpName.positionOf('.');
             if (!pos.isEmpty())
-                len = (int) (CStringPt.diff(pos, tmpName));
+                len = CStringPt.diff(pos, tmpName);
             else
-                len = (int) (tmpName.length());
+                len = tmpName.length();
         } else {
-            len = (int) (tmpName.length());
+            len = tmpName.length();
         }
 
         // Should shortname version be created ?
         createShort = createShort || (len > 8);
         if (!createShort) {
-            CStringPt buffer = CStringPt.create((int) Cross.LEN);
+            CStringPt buffer = CStringPt.create(Cross.LEN);
             CStringPt.copy(tmpName, buffer);
             createShort = (getLongName(curDir, buffer) >= 0);
         }
@@ -566,7 +566,7 @@ public class DOSDriveCache implements Disposable {
             int tocopy = 0;
             int buflen = buffer.length();
             if (len + buflen + 1 > 8)
-                tocopy = (int) (8 - buflen - 1);
+                tocopy = 8 - buflen - 1;
             else
                 tocopy = len;
             CStringPt.safeCopy(tmpName, info.shortname, tocopy + 1);
@@ -579,7 +579,7 @@ public class DOSDriveCache implements Disposable {
                 pos = tmpName.lastPositionOf('.');
                 // add extension
                 info.shortname.concat(pos.toString().substring(0, 4));
-                info.shortname.set((int) DOSSystem.DOS_NAMELENGTH, (char) 0);
+                info.shortname.set(DOSSystem.DOS_NAMELENGTH, (char) 0);
             }
 
             // keep list sorted for CreateShortNameID to work correctly
@@ -620,13 +620,13 @@ public class DOSDriveCache implements Disposable {
 
     private int createShortNameID(CFileInfo curDir, CStringPt name) {
 
-        int filelist_size = curDir.longNameList.size();
-        if (filelist_size <= 0)
+        int fileListSize = curDir.longNameList.size();
+        if (fileListSize <= 0)
             return 1; // shortener IDs start with 1
 
         int foundNr = 0;
         int low = 0;
-        int high = (int) (filelist_size - 1);
+        int high = fileListSize - 1;
         int mid, res;
 
         while (low <= high) {
@@ -642,7 +642,7 @@ public class DOSDriveCache implements Disposable {
                 do {
                     foundNr = curDir.longNameList.get(mid).shortNr;
                     mid++;
-                } while ((int) mid < curDir.longNameList.size()
+                } while (mid < curDir.longNameList.size()
                         && (compareShortname(name, curDir.longNameList.get(mid).shortname) == 0));
                 break;
             }
@@ -685,13 +685,13 @@ public class DOSDriveCache implements Disposable {
     }
 
     private boolean setResult(CFileInfo dir, CStringPt result, int entryNr) {
-        CStringPt res = CStringPt.create((int) Cross.LEN);
+        CStringPt res = CStringPt.create(Cross.LEN);
         res.set(0, (char) 0);
 
         CStringPt.copyPt(res, result);
         if (entryNr >= dir.fileList.size())
             return false;
-        CFileInfo info = dir.fileList.get((int) entryNr);
+        CFileInfo info = dir.fileList.get(entryNr);
         // copy filename, short version
         CStringPt.copy(info.shortname, res);
         // Set to next Entry
@@ -707,8 +707,8 @@ public class DOSDriveCache implements Disposable {
         // statics
         CStringPt split = CStringPt.create(String.valueOf(Cross.FILESPLIT));
 
-        CStringPt dir = CStringPt.create((int) Cross.LEN);
-        CStringPt work = CStringPt.create((int) Cross.LEN);
+        CStringPt dir = CStringPt.create(Cross.LEN);
+        CStringPt work = CStringPt.create(Cross.LEN);
         CStringPt start = path;// path
         CStringPt pos;
         CFileInfo curDir = dirBase;
@@ -732,7 +732,7 @@ public class DOSDriveCache implements Disposable {
             RefU16Ret refId = new RefU16Ret(id);
             if (openDir(curDir, work, refId)) {
                 id = refId.U16;
-                CStringPt buffer = CStringPt.create((int) Cross.LEN);
+                CStringPt buffer = CStringPt.create(Cross.LEN);
                 CStringPt result = CStringPt.create();
                 CStringPt.copy(dirPath, buffer);
                 readDir(id, result);
@@ -768,7 +768,7 @@ public class DOSDriveCache implements Disposable {
 
                     if (openDir(curDir, expandedPath, refId)) {
                         id = refId.U16;
-                        CStringPt buffer = CStringPt.create((int) Cross.LEN);
+                        CStringPt buffer = CStringPt.create(Cross.LEN);
                         CStringPt result = CStringPt.create();
                         CStringPt.copy(dirPath, buffer);
                         readDir(id, result);
@@ -810,7 +810,7 @@ public class DOSDriveCache implements Disposable {
     private boolean openDir(CFileInfo dir, CStringPt expand, RefU16Ret refId) {
         short id = getFreeID(dir);
         dirSearch[id] = dir;
-        CStringPt expandcopy = CStringPt.create((int) Cross.LEN);
+        CStringPt expandcopy = CStringPt.create(Cross.LEN);
         CStringPt.copy(expand, expandcopy);
         // Add "/"
         char[] end = {Cross.FILESPLIT, (char) 0};
@@ -904,13 +904,13 @@ public class DOSDriveCache implements Disposable {
     }
 
     private CFileInfo dirBase;
-    private CStringPt dirPath = CStringPt.create((int) Cross.LEN);
-    private CStringPt basePath = CStringPt.create((int) Cross.LEN);
+    private CStringPt dirPath = CStringPt.create(Cross.LEN);
+    private CStringPt basePath = CStringPt.create(Cross.LEN);
     private boolean dirFirstTime;
     private TDirSort sortDirType;
     private CFileInfo save_dir;
-    private CStringPt save_path = CStringPt.create((int) Cross.LEN);
-    private CStringPt save_expanded = CStringPt.create((int) Cross.LEN);
+    private CStringPt save_path = CStringPt.create(Cross.LEN);
+    private CStringPt save_expanded = CStringPt.create(Cross.LEN);
 
     private short srchNr;
     private CFileInfo[] dirSearch = new CFileInfo[DOSSystem.MAX_OPENDIRS];
@@ -919,7 +919,7 @@ public class DOSDriveCache implements Disposable {
     private CFileInfo[] dirFindFirst = new CFileInfo[DOSSystem.MAX_OPENDIRS];
     private short nextFreeFindFirst;
 
-    private CStringPt label = CStringPt.create((int) Cross.LEN);
+    private CStringPt label = CStringPt.create(Cross.LEN);
     private boolean updatelabel;
 
     // private static boolean SortByName(CFileInfo a, CFileInfo b)

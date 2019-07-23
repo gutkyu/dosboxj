@@ -735,7 +735,7 @@ public final class DOSMain {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         DOSNAMEBUF);
                 if (createFile(name1, Register.getRegCX())) {
-                    Register.Regs[Register.AX].setWord(FileEntry);
+                    Register.Regs[Register.AX].setWord(CreatedOrOpenedFileEntry);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -748,7 +748,7 @@ public final class DOSMain {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         DOSNAMEBUF);
                 if (openFile(name1, Register.getRegAL())) {
-                    Register.Regs[Register.AX].setWord(FileEntry);
+                    Register.Regs[Register.AX].setWord(CreatedOrOpenedFileEntry);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -811,11 +811,11 @@ public final class DOSMain {
                 break;
             case 0x42: /* LSEEK Set current file position */
             {
-                long pos = (long) ((Register.getRegCX() << 16) + Register.getRegDX());
+                long pos = (Register.getRegCX() << 16) + Register.getRegDX();
                 if ((pos = seekFile(Register.Regs[Register.BX].getWord(), pos,
                         Register.getRegAL())) >= 0) {
-                    Register.setRegDX((int) pos >>> 16);
-                    Register.setRegAX((int) pos & 0xFFFF);
+                    Register.setRegDX((int) (pos >>> 16));
+                    Register.setRegAX((int) (pos & 0xFFFF));
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -829,10 +829,11 @@ public final class DOSMain {
                 switch (Register.getRegAL()) {
                     case 0x00: /* Get */
                     {
+                        // TODO : DOSFile Attr 불러오는 함수에 인자로 대입할 필요없다. 굳이 attr 인자의 초기값으로 설정할 필요있나? 확인
+                        // 필요
                         int attrVal = Register.getRegCX();
-                        RefU16Ret refAttr = new RefU16Ret(attrVal);
-                        if (getFileAttr(name1, refAttr)) {
-                            attrVal = refAttr.U16;
+                        if (tryFileAttr(name1)) {
+                            attrVal = returnFileAttr();
                             Register.setRegCX(attrVal);
                             Register.setRegAX(attrVal); /* Undocumented */
                             Callback.scf(false);
@@ -1086,12 +1087,11 @@ public final class DOSMain {
                 break;
             case 0x5a: /* Create temporary file */
             {
-                short handle = 0;
+                int handle = 0;
                 Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         name1pt, DOSNAMEBUF);
-                RefU16Ret refHandle = new RefU16Ret(handle);
-                if (createTempFile(name1pt, refHandle)) {
-                    handle = refHandle.U16;
+                if (createTempFile(name1pt)) {
+                    handle = CreatedOrOpenedFileEntry;
                     Register.setRegAX(handle);
                     Memory.blockWrite(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                             name1pt);
@@ -1108,7 +1108,7 @@ public final class DOSMain {
                         DOSNAMEBUF);
                 int handle = 0;
                 if (openFile(name1, 0)) {
-                    handle = FileEntry;
+                    handle = CreatedOrOpenedFileEntry;
                     closeFile(handle);
                     setError(DOSERR_FILE_ALREADY_EXISTS);
                     Register.setRegAX(DOS.ErrorCode);
@@ -1116,7 +1116,7 @@ public final class DOSMain {
                     break;
                 }
                 if (createFile(name1, Register.getRegCX())) {
-                    Register.setRegAX(FileEntry);
+                    Register.setRegAX(CreatedOrOpenedFileEntry);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -3149,14 +3149,12 @@ public final class DOSMain {
             return false;
         }
         /* Test if target exists => no access */
-        short attr = 0;
-        RefU16Ret refAttr = new RefU16Ret(attr);
-        if (Drives[drivenew].getFileAttr(fullnew.toString(), refAttr)) {
+        if (Drives[drivenew].tryFileAttr(fullnew.toString())) {
             setError(DOSERR_ACCESS_DENIED);
             return false;
         }
         /* Source must exist, check for path ? */
-        if (!Drives[driveold].getFileAttr(fullold.toString(), refAttr)) {
+        if (!Drives[driveold].tryFileAttr(fullold.toString())) {
             setError(DOSERR_FILE_NOT_FOUND);
             return false;
         }
@@ -3407,7 +3405,7 @@ public final class DOSMain {
         return true;
     }
 
-    public static int FileEntry;
+    public static int CreatedOrOpenedFileEntry;
 
     // 생성한 file handle은 FileEntry에 저장
     // bool(string, uint16 , ref uint16)
@@ -3441,8 +3439,8 @@ public final class DOSMain {
             return false;
         }
         /* We have a position in the main table now find one in the psp table */
-        FileEntry = 0xffff & psp.findFreeFileEntry();
-        if (FileEntry == 0xff) {
+        CreatedOrOpenedFileEntry = 0xffff & psp.findFreeFileEntry();
+        if (CreatedOrOpenedFileEntry == 0xff) {
             setError(DOSERR_TOO_MANY_OPEN_FILES);
             return false;
         }
@@ -3456,7 +3454,7 @@ public final class DOSMain {
         if (foundit) {
             Files[handle].setDrive(drive);
             Files[handle].addRef();
-            psp.setFileHandle(FileEntry, handle);
+            psp.setFileHandle(CreatedOrOpenedFileEntry, handle);
             return true;
         } else {
             if (!pathExists(name))
@@ -3480,12 +3478,11 @@ public final class DOSMain {
                     "file open command %X file %s", flags, name);
 
         DOSPSP psp = new DOSPSP(DOS.getPSP());
-        short attr = 0;
+        int attr = 0;
         byte devnum = findDevice(name);
         boolean device = (devnum != DOS_DEVICES);
-        RefU16Ret refAttr = new RefU16Ret(attr);
-        if (!device && getFileAttr(name, refAttr)) {
-            attr = refAttr.U16;
+        if (!device && tryFileAttr(name)) {
+            attr = returnFileAttr();
             // DON'T ALLOW directories to be openened.(skip test if file is device).
             if ((attr & DOSSystem.DOS_ATTR_DIRECTORY) != 0
                     || (attr & DOSSystem.DOS_ATTR_VOLUME) != 0) {
@@ -3516,9 +3513,9 @@ public final class DOSMain {
             return false;
         }
         /* We have a position in the main table now find one in the psp table */
-        FileEntry = 0xffff & psp.findFreeFileEntry();
+        CreatedOrOpenedFileEntry = 0xffff & psp.findFreeFileEntry();
 
-        if (FileEntry == 0xff) {
+        if (CreatedOrOpenedFileEntry == 0xff) {
             setError(DOSERR_TOO_MANY_OPEN_FILES);
             return false;
         }
@@ -3532,7 +3529,7 @@ public final class DOSMain {
         }
         if (exists || device) {
             Files[handle].addRef();
-            psp.setFileHandle(FileEntry, handle);
+            psp.setFileHandle(CreatedOrOpenedFileEntry, handle);
             return true;
         } else {
             // Test if file exists, but opened in read-write mode (and writeprotected)
@@ -3567,7 +3564,7 @@ public final class DOSMain {
             }
         }
         if (openFile(name, flags & 0xff)) {
-            FileExtendedEntry = FileEntry;
+            FileExtendedEntry = CreatedOrOpenedFileEntry;
             // File already exists
             switch (action & 0x0f) {
                 case 0x00: // failed
@@ -3577,11 +3574,11 @@ public final class DOSMain {
                     result = 1;
                     break;
                 case 0x02: // replace
-                    closeFile(FileEntry);
+                    closeFile(CreatedOrOpenedFileEntry);
                     if (!createFile(name, createAttr))
                         return false;
                     result = 3;
-                    FileExtendedEntry = FileEntry;
+                    FileExtendedEntry = CreatedOrOpenedFileEntry;
                     break;
                 default:
                     setError(DOSERR_FUNCTION_NUMBER_INVALID);
@@ -3599,7 +3596,7 @@ public final class DOSMain {
                 // uses error code from failed create
                 return false;
             }
-            FileExtendedEntry = FileEntry;
+            FileExtendedEntry = CreatedOrOpenedFileEntry;
             result = 2;
         }
         // success
@@ -3624,7 +3621,9 @@ public final class DOSMain {
         }
     }
 
-    public static boolean getFileAttr(String name, RefU16Ret refAttr) {
+    public static int returnedFileAttr;
+
+    public static boolean tryFileAttr(String name) {
         CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
@@ -3632,7 +3631,8 @@ public final class DOSMain {
             return false;
         drive = refDrive.U8;
 
-        if (Drives[drive].getFileAttr(fullname.toString(), refAttr)) {
+        if (Drives[drive].tryFileAttr(fullname.toString())) {
+            returnedFileAttr = Drives[drive].returnFileAttr();
             return true;
         } else {
             setError(DOSERR_FILE_NOT_FOUND);
@@ -3640,12 +3640,15 @@ public final class DOSMain {
         }
     }
 
+    public static int returnFileAttr() {
+        return returnedFileAttr;
+    }
+
     // this function does not change the file attributs
     // it just does some tests if file is available
     // returns false when using on cdrom (stonekeep)
     // public static boolean SetFileAttr(String name, short attr)
     public static boolean setFileAttr(String name, int attr) {
-        RefU16Ret refAttrTmp = new RefU16Ret((short) 0);
         CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
@@ -3658,7 +3661,7 @@ public final class DOSMain {
             setError(DOSERR_ACCESS_DENIED);
             return false;
         }
-        return Drives[drive].getFileAttr(fullname.toString(), refAttrTmp);
+        return Drives[drive].tryFileAttr(fullname.toString());
     }
 
     public static boolean canonicalize(String name, CStringPt big) {
@@ -3742,7 +3745,7 @@ public final class DOSMain {
     }
 
     // 이 메소드의 쓰임새를 봤을때 name을 굳이 string으로 변경할 필요없음
-    public static boolean createTempFile(CStringPt name, RefU16Ret refEntry) {
+    public static boolean createTempFile(CStringPt name) {
         int namelen = name.length();
         CStringPt tempname = CStringPt.clone(name, namelen);
         if (namelen == 0) {
@@ -4027,7 +4030,7 @@ public final class DOSMain {
         fcb.getName(shortname);
         if (!createFile(shortname.toString(), DOSSystem.DOS_ATTR_ARCHIVE))
             return false;
-        fcb.openFile((byte) FileEntry);
+        fcb.openFile((byte) CreatedOrOpenedFileEntry);
         return true;
     }
 
@@ -4063,7 +4066,7 @@ public final class DOSMain {
         }
         if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READWRITE))
             return false;
-        handle = FileEntry;
+        handle = CreatedOrOpenedFileEntry;
         fcb.openFile((byte) handle);
         return true;
     }
@@ -4117,7 +4120,7 @@ public final class DOSMain {
         recSize = fcb.getSeqDataFileSize();
         curBlock = fcb.getBlock();
         curRec = fcb.getRecord();
-        long pos = (long) (((curBlock * 128) + curRec) * recSize);
+        long pos = ((curBlock * 128L) + curRec) * recSize;
         if ((pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
             return FCB_READ_NODATA;
         int toread = recSize;
@@ -4154,7 +4157,7 @@ public final class DOSMain {
         recSize = fcb.getSeqDataFileSize();
         curBlock = fcb.getBlock();
         curRec = fcb.getRecord();
-        long pos = (long) (((curBlock * 128) + curRec) * recSize);
+        long pos = ((curBlock * 128L) + curRec) * recSize;
         if ((pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
             return FCB_ERR_WRITE;
         Memory.blockRead(Memory.real2Phys(DOS.getDTA()) + recNo * recSize, dosCopyBuf, 0, recSize);
@@ -4199,7 +4202,7 @@ public final class DOSMain {
         recSize = fcb.getSeqDataFileSize();
         curBlock = fcb.getBlock();
         curRec = fcb.getRecord();
-        long pos = (long) (((curBlock * 128) + curRec) * recSize);
+        long pos = ((curBlock * 128L) + curRec) * recSize;
         if ((pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET)) < 0)
             return FCB_ERR_WRITE;
         int towrite = 0;
@@ -4252,7 +4255,7 @@ public final class DOSMain {
 
         /* Set the correct record from the random data */
         random = fcb.getRandom();
-        fcb.setRecord(0xffff & (short) (random / 128), random & 127);
+        fcb.setRecord(0xffff & (random / 128), random & 127);
         if (restore) {
             // store this for after the read.
             oldBlock = fcb.getBlock();
@@ -4286,7 +4289,7 @@ public final class DOSMain {
 
         /* Set the correct record from the random data */
         random = fcb.getRandom();
-        fcb.setRecord(0xffff & (short) (random / 128), random & 127);
+        fcb.setRecord(0xffff & (random / 128), random & 127);
         if (restore) {
             oldBlock = fcb.getBlock();
             oldRec = fcb.getRecord();
@@ -4324,7 +4327,7 @@ public final class DOSMain {
         fcb.getName(shortname);
         if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READ))
             return false;
-        entry = 0xffff & FileEntry;
+        entry = 0xffff & CreatedOrOpenedFileEntry;
         handle = realHandle(entry);
         long size = 0;
         size = Files[handle].seek(size, DOSSystem.DOS_SEEK_END);
@@ -4753,7 +4756,7 @@ public final class DOSMain {
             setError(DOSERR_FILE_NOT_FOUND);
             return false;
         }
-        fHandle = FileEntry;
+        fHandle = CreatedOrOpenedFileEntry;
         len = Size_EXE_Header;
         if (!readFile(fHandle, head, 0, len)) {
             closeFile(fHandle);
@@ -4886,7 +4889,7 @@ public final class DOSMain {
             if (!isCom) {
                 /* Check if requested to load program into upper part of allocated memory */
                 if ((headMinMemory == 0) && (headMaxMemory == 0))
-                    loadSeg = 0xffff & ((short) (((pspSeg + memSize) * 0x10 - imagesize) / 0x10));
+                    loadSeg = 0xffff & (((pspSeg + memSize) * 0x10 - imagesize) / 0x10);
             }
         } else
             loadSeg = block.Overlay.LoadSeg;

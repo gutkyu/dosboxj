@@ -130,7 +130,7 @@ public final class ImgMount extends Program {
             }
 
             // find all file parameters, assuming that all option parameters have been removed
-            while ((TempLine = Cmd.findCommand((int) (paths.size() + 2))) != null
+            while ((TempLine = Cmd.findCommand(paths.size() + 2)) != null
                     && TempLine.length() > 0) {
                 Path path = Paths.get(TempLine);
                 BasicFileAttributes attr = null;
@@ -148,9 +148,9 @@ public final class ImgMount extends Program {
                         TempLine = homedir;
                     } catch (Exception e1) {
                         // convert dosbox filename to system filename
-                        CStringPt fullname = CStringPt.create((int) Cross.LEN);
-                        CStringPt tmp = CStringPt.create((int) Cross.LEN);
-                        CStringPt.safeCopy(TempLine, tmp, (int) Cross.LEN);
+                        CStringPt fullname = CStringPt.create(Cross.LEN);
+                        CStringPt tmp = CStringPt.create(Cross.LEN);
+                        CStringPt.safeCopy(TempLine, tmp, Cross.LEN);
                         byte dummy = 0;
                         RefU8Ret refDrive = new RefU8Ret(dummy);
                         if (!DOSMain.makeName(tmp.toString(), fullname, refDrive)
@@ -282,7 +282,7 @@ public final class ImgMount extends Program {
             }
             DOSMain.Drives[drive - 'A'] = newdrive;
             // Set the correct media byte in the table
-            Memory.writeB(Memory.real2Phys(DOSMain.DOS.tables.MediaId) + (int) (drive - 'A') * 2,
+            Memory.writeB(Memory.real2Phys(DOSMain.DOS.tables.MediaId) + (drive - 'A') * 2,
                     mediaId);
             writeOut(Message.get("PROGRAM_MOUNT_STATUS_2"), drive, TempLine);
             if (((FATDrive) newdrive).LoadedDisk.hardDrive) {

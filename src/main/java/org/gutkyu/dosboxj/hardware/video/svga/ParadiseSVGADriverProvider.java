@@ -108,7 +108,7 @@ public final class ParadiseSVGADriverProvider {
             case 0x0b:
                 // Memory size. We only allow to mess with bit 3 here (enable bank B) - this may
                 // break some detection schemes
-                _pr1 = (int) ((_pr1 & ~0x08) | (val & 0x08));
+                _pr1 = (_pr1 & ~0x08) | (val & 0x08);
                 setupBank();
                 break;
             case 0x0c:

@@ -53,7 +53,7 @@ public final class Boot extends Program {
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
         SeekableByteChannel tmpCh;
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
 
         LocalDrive ldp = null;
         if (!DOSMain.makeName(fileName, fullname, refDrive))
@@ -78,7 +78,7 @@ public final class Boot extends Program {
             // ksize = (int)(tmpfile.Position / 1024);
             // bsize = (int)tmpfile.Position;
             // tmpfile.Close();
-            refKSize.U32 = kSize = (int) tmpCh.size() / 1024;
+            refKSize.U32 = kSize = (int) (tmpCh.size() / 1024);
             refBSize.U32 = bSize = (int) tmpCh.size();
             tmpCh.close();
 
@@ -123,7 +123,7 @@ public final class Boot extends Program {
             // fseek(tmpfile,0L, SEEK_END);
             // *ksize = (ftell(tmpfile) / 1024);
             // *bsize = ftell(tmpfile);
-            kSize = (int) tmpCh.size() / 1024;
+            kSize = (int) (tmpCh.size() / 1024);
             bSize = (int) tmpCh.size();
         } catch (Exception e1) {
             try {
@@ -294,12 +294,12 @@ public final class Boot extends Program {
                     byte[] buf = new byte[257];
                     if (cart_cmd == "?") {
                         while (clen != 0) {
-                            CStringHelper.strncpy(buf, 0, rombuf, (int) ct + 1, clen);
+                            CStringHelper.strncpy(buf, 0, rombuf, ct + 1, clen);
                             buf[clen] = 0;
                             CStringHelper.upcase(buf);
                             CStringHelper.strcat(cmdlist, tmSpB);
                             CStringHelper.strcat(cmdlist, buf);
-                            ct += 1 + (int) clen + 3;
+                            ct += 1 + clen + 3;
                             if (ct > cmdlist.length)
                                 break;
                             clen = rombuf[ct];
@@ -320,15 +320,15 @@ public final class Boot extends Program {
                         return;
                     } else {
                         while (clen != 0) {
-                            CStringHelper.strncpy(buf, 0, rombuf, (int) ct + 1, clen);
+                            CStringHelper.strncpy(buf, 0, rombuf, ct + 1, clen);
                             buf[clen] = 0;
                             CStringHelper.upcase(buf);
                             CStringHelper.strcat(cmdlist, tmSpB);
                             CStringHelper.strcat(cmdlist, buf);
-                            ct += 1 + (int) clen;
+                            ct += 1 + clen;
                             if (cart_cmd == new String(buf, 0, CStringHelper.strlen(buf),
                                     StandardCharsets.US_ASCII)) {
-                                cfound_at = (int) ct;
+                                cfound_at = ct;
                                 break;
                             }
 
@@ -388,7 +388,7 @@ public final class Boot extends Program {
                         int romseg_pt = Memory.hostReadW(rombuf, 0x1ce) << 4;
 
                         /* read cartridge data into buffer */
-                        rbBuf = ByteBuffer.wrap(rombuf, 0, (int) (1 * (rombytesize_2 - 0x200)));
+                        rbBuf = ByteBuffer.wrap(rombuf, 0, 1 * (rombytesize_2 - 0x200));
                         useFileCh2.position(0x200L).read(rbBuf);
                         // fclose(usefile_2); //usefile_2 is in diskSwap structure which should be
                         // deleted to close the file
@@ -405,7 +405,7 @@ public final class Boot extends Program {
                     int romseg = Memory.hostReadW(rombuf, 0x1ce);
 
                     /* read cartridge data into buffer */
-                    rbBuf = ByteBuffer.wrap(rombuf, 0, (int) (1 * (rombytesize_1 - 0x200)));
+                    rbBuf = ByteBuffer.wrap(rombuf, 0, 1 * (rombytesize_1 - 0x200));
                     useFileCh1.position(0x200L).read(rbBuf);
                     // fclose(usefile_1); //usefile_1 is in diskSwap structure which should be
                     // deleted to close the file

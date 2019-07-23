@@ -18,10 +18,10 @@ public final class DeviceCON extends DOSDevice {
         ansi.enabled = false;
         ansi.attr = 0x7;
         // should be updated once set/reset modeis implemented
-        ansi.ncols = Memory.realReadW(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_COLS);
-        ansi.nrows = (Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_ROWS) + 1);
-        ansi.saverow = 0;
-        ansi.savecol = 0;
+        ansi.nCols = Memory.realReadW(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_COLS);
+        ansi.nRows = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_ROWS) + 1;
+        ansi.saveRow = 0;
+        ansi.saveCol = 0;
         ansi.warned = false;
         ClearAnsi();
     }
@@ -41,7 +41,7 @@ public final class DeviceCON extends DOSDevice {
         if (readcache != 0 && size > 0) {
             data[offset + count++] = readcache;
             if (DOSMain.DOS.Echo)
-                CHAR.teletypeOutput((byte) readcache, (byte) 7);
+                CHAR.teletypeOutput((byte) readcache, 7);
             readcache = 0;
         }
         while (size > count) {
@@ -57,8 +57,8 @@ public final class DeviceCON extends DOSDevice {
                     Register.setRegAX(oldax);
                     if (DOSMain.DOS.Echo) {
                         // maybe don't do this ( no need for it actually ) (but it's compatible)
-                        CHAR.teletypeOutput((byte) 13, (byte) 7);
-                        CHAR.teletypeOutput((byte) 10, (byte) 7);
+                        CHAR.teletypeOutput((byte) 13, 7);
+                        CHAR.teletypeOutput((byte) 10, 7);
                     }
                     return true;
                 // break;
@@ -70,8 +70,8 @@ public final class DeviceCON extends DOSDevice {
                     else if (count != 0) { // Remove data if it exists (extended keys don't go
                                            // right)
                         data[offset + count--] = 0;
-                        CHAR.teletypeOutput((byte) 8, (byte) 7);
-                        CHAR.teletypeOutput((byte) ' ', (byte) 7);
+                        CHAR.teletypeOutput((byte) 8, 7);
+                        CHAR.teletypeOutput((byte) ' ', 7);
                     } else {
                         continue; // no data read yet so restart whileloop.
                     }
@@ -99,7 +99,7 @@ public final class DeviceCON extends DOSDevice {
                     break;
             }
             if (DOSMain.DOS.Echo) { // what to do if *size==1 and character is BS ?????
-                CHAR.teletypeOutput((byte) Register.getRegAL(), (byte) 7);
+                CHAR.teletypeOutput((byte) Register.getRegAL(), 7);
             }
         }
         rdSz = count;
@@ -123,8 +123,8 @@ public final class DeviceCON extends DOSDevice {
     public boolean write(byte[] buf, int offset, int size) {
         int count = 0;
         int i;
-        byte col, row;
-        byte tempdata;
+        int col, row;// uint8
+        int tempData;// uint8
         while (size > count) {
             if (!ansi.esc) {
                 if (buf[count + offset] == 0x1b) // c++ 8진수표현 '\033' -> c# 16진수 유니코드'\u001B'
@@ -170,7 +170,7 @@ public final class DeviceCON extends DOSDevice {
                 continue;
             }
             /* ansi.esc and ansi.sci are true */
-            byte page = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE);
+            int page = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE);
             switch (buf[count + offset]) {
                 case (byte) '0':
                 case (byte) '1':
@@ -182,14 +182,14 @@ public final class DeviceCON extends DOSDevice {
                 case (byte) '7':
                 case (byte) '8':
                 case (byte) '9':
-                    ansi.data[ansi.numberofarg] =
-                            (byte) (10 * ansi.data[ansi.numberofarg] + (buf[count + offset] - '0'));
+                    ansi.data[ansi.numberOfArg] = (byte) (10 * (ansi.data[ansi.numberOfArg] & 0xff)
+                            + (buf[count + offset] - '0'));
                     break;
                 case (byte) ';': /* till a max of NUMBER_ANSI_DATA */
-                    ansi.numberofarg++;
+                    ansi.numberOfArg++;
                     break;
                 case (byte) 'm': /* SGR */
-                    for (i = 0; i <= ansi.numberofarg; i++) {
+                    for (i = 0; i <= ansi.numberOfArg; i++) {
                         ansi.enabled = true;
                         switch (ansi.data[i]) {
                             case 0: /* normal */
@@ -293,11 +293,11 @@ public final class DeviceCON extends DOSDevice {
                         ansi.data[0] = 1;
                     if (ansi.data[1] == 0)
                         ansi.data[1] = 1;
-                    if (ansi.data[0] > ansi.nrows)
-                        ansi.data[0] = (byte) ansi.nrows;
-                    if (ansi.data[1] > ansi.ncols)
-                        ansi.data[1] = (byte) ansi.ncols;
-                    CHAR.setCursorPos(--(ansi.data[0]), --(ansi.data[1]),
+                    if ((ansi.data[0] & 0xff) > ansi.nRows)
+                        ansi.data[0] = (byte) ansi.nRows;
+                    if ((ansi.data[1] & 0xff) > ansi.nCols)
+                        ansi.data[1] = (byte) ansi.nCols;
+                    CHAR.setCursorPos((ansi.data[0] & 0xff) - 1, (ansi.data[1] & 0xff) - 1,
                             page); /* ansi=1 based, int10 is 0 based */
                     ClearAnsi();
                     break;
@@ -307,11 +307,11 @@ public final class DeviceCON extends DOSDevice {
                 case (byte) 'A': /* cursor up */
                     col = INT10.getCursorPosCol(page);
                     row = INT10.getCursorPosRow(page);
-                    tempdata = (ansi.data[0] != 0 ? ansi.data[0] : (byte) 1);
-                    if (tempdata > row) {
+                    tempData = 0xff & (ansi.data[0] != 0 ? ansi.data[0] : 1);
+                    if (tempData > row) {
                         row = 0;
                     } else {
-                        row -= tempdata;
+                        row -= tempData;
                     }
                     CHAR.setCursorPos(row, col, page);
                     ClearAnsi();
@@ -319,11 +319,11 @@ public final class DeviceCON extends DOSDevice {
                 case (byte) 'B': /* cursor Down */
                     col = INT10.getCursorPosCol(page);
                     row = INT10.getCursorPosRow(page);
-                    tempdata = (ansi.data[0] != 0 ? ansi.data[0] : (byte) 1);
-                    if (tempdata + (int) row >= ansi.nrows) {
-                        row = (byte) (ansi.nrows - 1);
+                    tempData = 0xff & (ansi.data[0] != 0 ? ansi.data[0] : 1);
+                    if (tempData + row >= ansi.nRows) {
+                        row = 0xff & (ansi.nRows - 1);
                     } else {
-                        row += tempdata;
+                        row += tempData;
                     }
                     CHAR.setCursorPos(row, col, page);
                     ClearAnsi();
@@ -331,11 +331,11 @@ public final class DeviceCON extends DOSDevice {
                 case (byte) 'C': /* cursor forward */
                     col = INT10.getCursorPosCol(page);
                     row = INT10.getCursorPosRow(page);
-                    tempdata = (ansi.data[0] != 0 ? ansi.data[0] : (byte) 1);
-                    if (tempdata + (int) col >= ansi.ncols) {
-                        col = (byte) (ansi.ncols - 1);
+                    tempData = 0xff & (ansi.data[0] != 0 ? ansi.data[0] : 1);
+                    if (tempData + col >= ansi.nCols) {
+                        col = 0xff & (ansi.nCols - 1);
                     } else {
-                        col += tempdata;
+                        col += tempData;
                     }
                     CHAR.setCursorPos(row, col, page);
                     ClearAnsi();
@@ -343,11 +343,11 @@ public final class DeviceCON extends DOSDevice {
                 case (byte) 'D': /* Cursor Backward */
                     col = INT10.getCursorPosCol(page);
                     row = INT10.getCursorPosRow(page);
-                    tempdata = (ansi.data[0] != 0 ? ansi.data[0] : (byte) 1);
-                    if (tempdata > col) {
+                    tempData = 0xff & (ansi.data[0] != 0 ? ansi.data[0] : 1);
+                    if (tempData > col) {
                         col = 0;
                     } else {
-                        col -= tempdata;
+                        col -= tempData;
                     }
                     CHAR.setCursorPos(row, col, page);
                     ClearAnsi();
@@ -357,12 +357,12 @@ public final class DeviceCON extends DOSDevice {
                         ansi.data[0] = 2;
                     if (ansi.data[0] != 2) {/* every version behaves like type 2 */
                         Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal,
-                                "ANSI: esc[%dJ called : not supported handling as 2", ansi.data[0]);
+                                "ANSI: esc[%dJ called : not supported handling as 2",
+                                ansi.data[0] & 0xff);
                     }
-                    CHAR.scrollWindow((byte) 0, (byte) 0, (byte) 255, (byte) 255, (byte) 0,
-                            ansi.attr, page);
+                    CHAR.scrollWindow(0, 0, 255, 255, 0, ansi.attr, page);
                     ClearAnsi();
-                    CHAR.setCursorPos((byte) 0, (byte) 0, page);
+                    CHAR.setCursorPos(0, 0, page);
                     break;
                 case (byte) 'h': /* SET MODE (if code =7 enable linewrap) */
                 case (byte) 'I': /* RESET MODE */
@@ -371,19 +371,20 @@ public final class DeviceCON extends DOSDevice {
                     ClearAnsi();
                     break;
                 case (byte) 'u': /* Restore Cursor Pos */
-                    CHAR.setCursorPos((byte) ansi.saverow, (byte) ansi.savecol, page);
+                    // TODO:확인 필요 - unsigned byte로 변환해서 처리할거면 왜 signed byte로 선언했는지?
+                    CHAR.setCursorPos(0xff & ansi.saveRow, 0xff & ansi.saveCol, page);
                     ClearAnsi();
                     break;
                 case (byte) 's': /* SAVE CURSOR POS */
-                    ansi.savecol = (byte) INT10.getCursorPosCol(page);
-                    ansi.saverow = (byte) INT10.getCursorPosRow(page);
+                    ansi.saveCol = (byte) INT10.getCursorPosCol(page);
+                    ansi.saveRow = (byte) INT10.getCursorPosRow(page);
                     ClearAnsi();
                     break;
                 case (byte) 'K': /* erase till end of line (don't touch cursor) */
                     col = INT10.getCursorPosCol(page);
                     row = INT10.getCursorPosRow(page);
                     // Use this one to prevent scrolling when end of screen is reached
-                    CHAR.writeChar2((byte) ' ', ansi.attr, page, (short) (ansi.ncols - col), true);
+                    CHAR.writeChar2((byte) ' ', ansi.attr, page, ansi.nCols - col, true);
                     // for(i = col;i<(int) ansi.ncols; i++) INT10_TeletypeOutputAttr('
                     // ',ansi.attr,true);
                     CHAR.setCursorPos(row, col, page);
@@ -392,10 +393,8 @@ public final class DeviceCON extends DOSDevice {
                 case (byte) 'M': /* delete line (NANSI) */
                     col = INT10.getCursorPosCol(page);
                     row = INT10.getCursorPosRow(page);
-                    CHAR.scrollWindow(row, (byte) 0, (byte) (ansi.nrows - 1),
-                            (byte) (ansi.ncols - 1),
-                            ansi.data[0] != 0 ? (byte) -ansi.data[0] : (byte) -1, ansi.attr,
-                            (byte) 0xFF);
+                    CHAR.scrollWindow(row, 0, 0xff & (ansi.nRows - 1), 0xff & (ansi.nCols - 1),
+                            ansi.data[0] != 0 ? -(ansi.data[0] & 0xff) : -1, ansi.attr, 0xFF);
                     ClearAnsi();
                     break;
                 case (byte) 'l':/* (if code =7) disable linewrap */
@@ -450,7 +449,7 @@ public final class DeviceCON extends DOSDevice {
             ansi.data[i] = 0;
         ansi.esc = false;
         ansi.sci = false;
-        ansi.numberofarg = 0;
+        ansi.numberOfArg = 0;
     }
 
     // uint16()
@@ -493,15 +492,15 @@ public final class DeviceCON extends DOSDevice {
         public boolean esc;
         public boolean sci;
         public boolean enabled;
-        public byte attr;
+        public int attr;// uint8
         public byte[] data = new byte[NUMBER_ANSI_DATA];
-        public byte numberofarg;
-        public int nrows;
-        public int ncols;
+        public int numberOfArg;// uint8
+        public int nRows;// uint16
+        public int nCols;// uint16
         // sbyte
-        public byte savecol;
+        public byte saveCol;
         // sbyte
-        public byte saverow;
+        public byte saveRow;
         public boolean warned;
     }
 

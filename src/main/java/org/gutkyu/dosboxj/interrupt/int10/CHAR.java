@@ -8,11 +8,12 @@ import org.gutkyu.dosboxj.*;
 
 /*--------------------------- begin INT10Char -----------------------------*/
 public final class CHAR {
-    private static void cga2CopyRow(byte cleft, byte cright, byte rold, byte rnew, int _base) {
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
-        int dest = (int) (_base + ((INT10Mode.CurMode.TWidth * rnew) * (cheight / 2) + cleft));
-        int src = (int) (_base + ((INT10Mode.CurMode.TWidth * rold) * (cheight / 2) + cleft));
-        int copy = (int) (cright - cleft);
+    // (Bit8u cleft,Bit8u cright,Bit8u rold,Bit8u rnew,PhysPt base)
+    private static void cga2CopyRow(int cleft, int cright, int rold, int rnew, int _base) {
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int dest = _base + ((INT10Mode.CurMode.TWidth * rnew) * (cheight / 2) + cleft);
+        int src = _base + ((INT10Mode.CurMode.TWidth * rold) * (cheight / 2) + cleft);
+        int copy = cright - cleft;
         int nextline = INT10Mode.CurMode.TWidth;
         for (int i = 0; i < cheight / 2; i++) {
             Memory.blockCopy(dest, src, copy);
@@ -22,11 +23,12 @@ public final class CHAR {
         }
     }
 
-    private static void cga4CopyRow(byte cleft, byte cright, byte rold, byte rnew, int _base) {
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
-        int dest = (int) (_base + ((INT10Mode.CurMode.TWidth * rnew) * (cheight / 2) + cleft) * 2);
-        int src = (int) (_base + ((INT10Mode.CurMode.TWidth * rold) * (cheight / 2) + cleft) * 2);
-        int copy = (int) (cright - cleft) * 2;
+    // (Bit8u cleft,Bit8u cright,Bit8u rold,Bit8u rnew,PhysPt base)
+    private static void cga4CopyRow(int cleft, int cright, int rold, int rnew, int _base) {
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int dest = _base + ((INT10Mode.CurMode.TWidth * rnew) * (cheight / 2) + cleft) * 2;
+        int src = _base + ((INT10Mode.CurMode.TWidth * rold) * (cheight / 2) + cleft) * 2;
+        int copy = (cright - cleft) * 2;
         int nextline = INT10Mode.CurMode.TWidth * 2;
         for (int i = 0; i < cheight / 2; i++) {
             Memory.blockCopy(dest, src, copy);
@@ -36,11 +38,12 @@ public final class CHAR {
         }
     }
 
-    private static void tandy16CopyRow(byte cleft, byte cright, byte rold, byte rnew, int _base) {
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
-        int dest = (int) (_base + ((INT10Mode.CurMode.TWidth * rnew) * (cheight / 4) + cleft) * 4);
-        int src = (int) (_base + ((INT10Mode.CurMode.TWidth * rold) * (cheight / 4) + cleft) * 4);
-        int copy = (int) (cright - cleft) * 4;
+    // (Bit8u cleft,Bit8u cright,Bit8u rold,Bit8u rnew,PhysPt base)
+    private static void tandy16CopyRow(int cleft, int cright, int rold, int rnew, int _base) {
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int dest = _base + ((INT10Mode.CurMode.TWidth * rnew) * (cheight / 4) + cleft) * 4;
+        int src = _base + ((INT10Mode.CurMode.TWidth * rold) * (cheight / 4) + cleft) * 4;
+        int copy = (cright - cleft) * 4;
         int nextline = INT10Mode.CurMode.TWidth * 4;
         for (int i = 0; i < cheight / 4; i++) {
             Memory.blockCopy(dest, src, copy);
@@ -52,10 +55,11 @@ public final class CHAR {
         }
     }
 
-    private static void ega16CopyRow(byte cleft, byte cright, byte rold, byte rnew, int _base) {
+    // (Bit8u cleft,Bit8u cright,Bit8u rold,Bit8u rnew,PhysPt base)
+    private static void ega16CopyRow(int cleft, int cright, int rold, int rnew, int _base) {
         int src, dest;
         int copy;
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
         dest = _base + (INT10Mode.CurMode.TWidth * rnew) * cheight + cleft;
         src = _base + (INT10Mode.CurMode.TWidth * rold) * cheight + cleft;
         int nextline = INT10Mode.CurMode.TWidth;
@@ -65,7 +69,7 @@ public final class CHAR {
         IO.write(0x3c4, 2);
         IO.write(0x3c5, 0xf); /* Enable all Write planes */
         /* Do some copying */
-        int rowsize = (int) (cright - cleft);
+        int rowsize = cright - cleft;
         copy = cheight;
         for (; copy > 0; copy--) {
             for (int x = 0; x < rowsize; x++)
@@ -78,14 +82,15 @@ public final class CHAR {
         IO.write(0x3cf, 0); /* Normal transfer mode */
     }
 
-    private static void vgaCopyRow(byte cleft, byte cright, byte rold, byte rnew, int _base) {
+    // (Bit8u cleft,Bit8u cright,Bit8u rold,Bit8u rnew,PhysPt base)
+    private static void vgaCopyRow(int cleft, int cright, int rold, int rnew, int _base) {
         int src, dest;
         int copy;
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
         dest = _base + 8 * ((INT10Mode.CurMode.TWidth * rnew) * cheight + cleft);
         src = _base + 8 * ((INT10Mode.CurMode.TWidth * rold) * cheight + cleft);
         int nextline = 8 * INT10Mode.CurMode.TWidth;
-        int rowsize = 8 * (int) (cright - cleft);
+        int rowsize = 8 * (cright - cleft);
         copy = cheight;
         for (; copy > 0; copy--) {
             for (int x = 0; x < rowsize; x++)
@@ -95,20 +100,22 @@ public final class CHAR {
         }
     }
 
-    private static void textCopyRow(byte cleft, byte cright, byte rold, byte rnew, int _base) {
+    // (Bit8u cleft,Bit8u cright,Bit8u rold,Bit8u rnew,PhysPt base)
+    private static void textCopyRow(int cleft, int cright, int rold, int rnew, int _base) {
         int src, dest;
         src = _base + (rold * INT10Mode.CurMode.TWidth + cleft) * 2;
         dest = _base + (rnew * INT10Mode.CurMode.TWidth + cleft) * 2;
-        Memory.blockCopy(dest, src, (int) (cright - cleft) * 2);
+        Memory.blockCopy(dest, src, (cright - cleft) * 2);
     }
 
-    private static void cga2FillRow(byte cleft, byte cright, byte row, int _base, byte attr) {
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
-        int dest = (int) (_base + ((INT10Mode.CurMode.TWidth * row) * (cheight / 2) + cleft));
-        int copy = (int) (cright - cleft);
+    // (Bit8u cleft,Bit8u cright,Bit8u row,PhysPt base,Bit8u attr)
+    private static void cga2FillRow(int cleft, int cright, int row, int _base, int attr) {
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int dest = _base + ((INT10Mode.CurMode.TWidth * row) * (cheight / 2) + cleft);
+        int copy = cright - cleft;
         int nextline = INT10Mode.CurMode.TWidth;
-        attr = (byte) ((attr & 0x3) | ((attr & 0x3) << 2) | ((attr & 0x3) << 4)
-                | ((attr & 0x3) << 6));
+        attr = 0xff
+                & ((attr & 0x3) | ((attr & 0x3) << 2) | ((attr & 0x3) << 4) | ((attr & 0x3) << 6));
         for (int i = 0; i < cheight / 2; i++) {
             for (int x = 0; x < copy; x++) {
                 Memory.writeB(dest + x, attr);
@@ -118,13 +125,14 @@ public final class CHAR {
         }
     }
 
-    private static void cga4FillRow(byte cleft, byte cright, byte row, int _base, byte attr) {
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
-        int dest = (int) (_base + ((INT10Mode.CurMode.TWidth * row) * (cheight / 2) + cleft) * 2);
-        int copy = (int) (cright - cleft) * 2;
+    // (Bit8u cleft,Bit8u cright,Bit8u row,PhysPt base,Bit8u attr)
+    private static void cga4FillRow(int cleft, int cright, int row, int _base, int attr) {
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int dest = _base + ((INT10Mode.CurMode.TWidth * row) * (cheight / 2) + cleft) * 2;
+        int copy = (cright - cleft) * 2;
         int nextline = INT10Mode.CurMode.TWidth * 2;
-        attr = (byte) ((attr & 0x3) | ((attr & 0x3) << 2) | ((attr & 0x3) << 4)
-                | ((attr & 0x3) << 6));
+        attr = 0xff
+                & ((attr & 0x3) | ((attr & 0x3) << 2) | ((attr & 0x3) << 4) | ((attr & 0x3) << 6));
         for (int i = 0; i < cheight / 2; i++) {
             for (int x = 0; x < copy; x++) {
                 Memory.writeB(dest + x, attr);
@@ -134,12 +142,13 @@ public final class CHAR {
         }
     }
 
-    private static void tandy16FillRow(byte cleft, byte cright, byte row, int _base, byte attr) {
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
-        int dest = (int) (_base + ((INT10Mode.CurMode.TWidth * row) * (cheight / 4) + cleft) * 4);
-        int copy = (int) (cright - cleft) * 4;
+    // (Bit8u cleft,Bit8u cright,Bit8u row,PhysPt base,Bit8u attr)
+    private static void tandy16FillRow(int cleft, int cright, int row, int _base, int attr) {
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int dest = _base + ((INT10Mode.CurMode.TWidth * row) * (cheight / 4) + cleft) * 4;
+        int copy = (cright - cleft) * 4;
         int nextline = INT10Mode.CurMode.TWidth * 4;
-        attr = (byte) ((attr & 0xf) | (attr & 0xf) << 4);
+        attr = 0xff & ((attr & 0xf) | (attr & 0xf) << 4);
         for (int i = 0; i < cheight / 4; i++) {
             for (int x = 0; x < copy; x++) {
                 Memory.writeB(dest + x, attr);
@@ -151,7 +160,8 @@ public final class CHAR {
         }
     }
 
-    private static void ega16FillRow(byte cleft, byte cright, byte row, int _base, byte attr) {
+    // (Bit8u cleft,Bit8u cright,Bit8u row,PhysPt base,Bit8u attr)
+    private static void ega16FillRow(int cleft, int cright, int row, int _base, int attr) {
         /* Set Bitmask / Color / Full Set Reset */
         IO.write(0x3ce, 0x8);
         IO.write(0x3cf, 0xff);
@@ -160,11 +170,11 @@ public final class CHAR {
         IO.write(0x3ce, 0x1);
         IO.write(0x3cf, 0xf);
         /* Write some bytes */
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
         int dest = _base + (INT10Mode.CurMode.TWidth * row) * cheight + cleft;
         int nextline = INT10Mode.CurMode.TWidth;
         int copy = cheight;
-        int rowsize = (int) (cright - cleft);
+        int rowsize = (cright - cleft);
         for (; copy > 0; copy--) {
             for (int x = 0; x < rowsize; x++)
                 Memory.writeB(dest + x, 0xff);
@@ -173,13 +183,14 @@ public final class CHAR {
         IO.write(0x3cf, 0);
     }
 
-    private static void vgaFillRow(byte cleft, byte cright, byte row, int _base, byte attr) {
+    // (Bit8u cleft,Bit8u cright,Bit8u row,PhysPt base,Bit8u attr)
+    private static void vgaFillRow(int cleft, int cright, int row, int _base, int attr) {
         /* Write some bytes */
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
         int dest = _base + 8 * ((INT10Mode.CurMode.TWidth * row) * cheight + cleft);
         int nextline = 8 * INT10Mode.CurMode.TWidth;
         int copy = cheight;
-        int rowsize = 8 * (int) (cright - cleft);
+        int rowsize = 8 * (cright - cleft);
         for (; copy > 0; copy--) {
             for (int x = 0; x < rowsize; x++)
                 Memory.writeB(dest + x, attr);
@@ -187,12 +198,12 @@ public final class CHAR {
         }
     }
 
-    private static void textFillRow(byte cleft, byte cright, byte row, int _base, byte attr) {
+    private static void textFillRow(int cleft, int cright, int row, int _base, int attr) {
         /* Do some filing */
         int dest;
         dest = _base + (row * INT10Mode.CurMode.TWidth + cleft) * 2;
         int fill = (attr << 8) + (0xff & (byte) ' ');
-        for (byte x = 0; x < (cright - cleft); x++) {
+        for (int x = 0; x < (cright - cleft); x++) {
             Memory.writeW(dest, fill);
             dest += 2;
         }
@@ -200,7 +211,7 @@ public final class CHAR {
 
     // public static void ScrollWindow(byte rul, byte cul, byte rlr, byte clr, sbyte nlines, byte
     // attr, byte page)
-    public static void scrollWindow(byte rul, byte cul, byte rlr, byte clr, byte nlines, byte attr,
+    public static void scrollWindow(int rul, int cul, int rlr, int clr, int nlines, int attr,
             int page) {
         /* Do some range checking */
         if (INT10Mode.CurMode.Type != VGAModes.TEXT)
@@ -212,9 +223,9 @@ public final class CHAR {
         if (cul > clr)
             return;
         if (rlr >= nrows)
-            rlr = (byte) (nrows - 1);
+            rlr = 0xff & (nrows - 1);
         if (clr >= ncols)
-            clr = (byte) (ncols - 1);
+            clr = 0xff & (ncols - 1);
         clr++;
 
         /* Get the correct page */
@@ -224,16 +235,16 @@ public final class CHAR {
                 + page * Memory.realReadW(INT10.BIOSMEM_SEG, INT10.BIOSMEM_PAGE_SIZE);
 
         /* See how much lines need to be copied */
-        byte start = 0, end = 0;
-        int next = 0;
+        int start = 0, end = 0;
+        byte next = 0;// sbyte
         boolean gotoFilling = false;
         /* Copy some lines */
         if (nlines > 0) {
-            start = (byte) (rlr - nlines + 1);
+            start = (rlr - nlines + 1);
             end = rul;
             next = -1;
         } else if (nlines < 0) {
-            start = (byte) (rul - nlines - 1);
+            start = (rul - nlines - 1);
             end = rlr;
             next = 1;
         } else {
@@ -247,29 +258,36 @@ public final class CHAR {
                 start += (byte) next;
                 switch (INT10Mode.CurMode.Type) {
                     case TEXT:
-                        textCopyRow(cul, clr, start, (byte) (start + nlines), _base);
+                        textCopyRow(0xff & cul, 0xff & clr, 0xff & start, 0xff & (start + nlines),
+                                _base);
                         break;
                     case CGA2:
-                        cga2CopyRow(cul, clr, start, (byte) (start + nlines), _base);
+                        cga2CopyRow(0xff & cul, 0xff & clr, 0xff & start, 0xff & (start + nlines),
+                                _base);
                         break;
                     case CGA4:
-                        cga4CopyRow(cul, clr, start, (byte) (start + nlines), _base);
+                        cga4CopyRow(0xff & cul, 0xff & clr, 0xff & start, 0xff & (start + nlines),
+                                _base);
                         break;
                     case TANDY16:
-                        tandy16CopyRow(cul, clr, start, (byte) (start + nlines), _base);
+                        tandy16CopyRow(0xff & cul, 0xff & clr, 0xff & start,
+                                0xff & (start + nlines), _base);
                         break;
                     case EGA:
-                        ega16CopyRow(cul, clr, start, (byte) (start + nlines), _base);
+                        ega16CopyRow(0xff & cul, 0xff & clr, 0xff & start, 0xff & (start + nlines),
+                                _base);
                         break;
                     case VGA:
-                        vgaCopyRow(cul, clr, start, (byte) (start + nlines), _base);
+                        vgaCopyRow(0xff & cul, 0xff & clr, 0xff & start, 0xff & (start + nlines),
+                                _base);
                         break;
                     case LIN4:
                         if ((DOSBox.Machine == DOSBox.MachineType.VGA)
                                 && (DOSBox.SVGACard == DOSBox.SVGACards.TsengET4K)
                                 && (INT10Mode.CurMode.SWidth <= 800)) {
                             // the ET4000 BIOS supports text output in 800x600 SVGA
-                            ega16CopyRow(cul, clr, start, (byte) (start + nlines), _base);
+                            ega16CopyRow(0xff & cul, 0xff & clr, 0xff & start,
+                                    0xff & (start + nlines), _base);
                             break;
                         }
                         // goto Gotodefault;
@@ -293,28 +311,28 @@ public final class CHAR {
         for (; nlines > 0; nlines--) {
             switch (INT10Mode.CurMode.Type) {
                 case TEXT:
-                    textFillRow(cul, clr, start, _base, attr);
+                    textFillRow(0xff & cul, 0xff & clr, 0xff & start, _base, 0xff & attr);
                     break;
                 case CGA2:
-                    cga2FillRow(cul, clr, start, _base, attr);
+                    cga2FillRow(0xff & cul, 0xff & clr, 0xff & start, _base, 0xff & attr);
                     break;
                 case CGA4:
-                    cga4FillRow(cul, clr, start, _base, attr);
+                    cga4FillRow(0xff & cul, 0xff & clr, 0xff & start, _base, 0xff & attr);
                     break;
                 case TANDY16:
-                    tandy16FillRow(cul, clr, start, _base, attr);
+                    tandy16FillRow(0xff & cul, 0xff & clr, 0xff & start, _base, 0xff & attr);
                     break;
                 case EGA:
-                    ega16FillRow(cul, clr, start, _base, attr);
+                    ega16FillRow(0xff & cul, 0xff & clr, 0xff & start, _base, 0xff & attr);
                     break;
                 case VGA:
-                    vgaFillRow(cul, clr, start, _base, attr);
+                    vgaFillRow(0xff & cul, 0xff & clr, 0xff & start, _base, 0xff & attr);
                     break;
                 case LIN4:
                     if ((DOSBox.Machine == DOSBox.MachineType.VGA)
                             && (DOSBox.SVGACard == DOSBox.SVGACards.TsengET4K)
                             && (INT10Mode.CurMode.SWidth <= 800)) {
-                        ega16FillRow(cul, clr, start, _base, attr);
+                        ega16FillRow(0xff & cul, 0xff & clr, 0xff & start, _base, 0xff & attr);
                         break;
                     }
                     // goto Gotodefault;
@@ -327,12 +345,6 @@ public final class CHAR {
             }
             start++;
         }
-    }
-
-    public static void scrollWindow(int rul, int cul, int rlr, int clr, int nlines, int attr,
-            int page) {
-        scrollWindow((byte) rul, (byte) cul, (byte) rlr, (byte) clr, (byte) nlines, (byte) attr,
-                (byte) page);
     }
 
     public static void setActivePage(int page) {
@@ -364,10 +376,10 @@ public final class CHAR {
 
         // And change the BIOS page
         Memory.realWriteB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE, page);
-        byte cur_row = INT10.getCursorPosRow(page);
-        byte cur_col = INT10.getCursorPosCol(page);
+        int curRow = INT10.getCursorPosRow(page);// uint8
+        int curCol = INT10.getCursorPosCol(page);// uint8
         // Display the cursor, now the page is active
-        setCursorPos(cur_row, cur_col, page);
+        setCursorPos(curRow, curCol, page);
     }
 
     // (byte, byte)
@@ -455,7 +467,8 @@ public final class CHAR {
         IO.write(_base + 1, last);
     }
 
-    public static void setCursorPos(byte row, byte col, byte page) {
+    // (uint8,uint8,uint8)
+    public static void setCursorPos(int row, int col, int page) {
         int address;
 
         if (page > 7)
@@ -480,10 +493,6 @@ public final class CHAR {
             IO.write(_base, 0x0f);
             IO.write(_base + 1, 0xff & address);
         }
-    }
-
-    public static void setCursorPos(int row, int col, int page) {
-        setCursorPos((byte) row, (byte) col, (byte) page);
     }
 
     // uint16 ReadCharAttr
@@ -516,14 +525,13 @@ public final class CHAR {
                 // Gotodefault:
                 for (short chr = 0; chr <= 255; chr++) {
                     if (!split_chr || (chr < 128))
-                        fontdata =
-                                (int) (Memory.real2Phys(Memory.realGetVec(0x43)) + chr * cheight);
+                        fontdata = Memory.real2Phys(Memory.realGetVec(0x43)) + chr * cheight;
                     else
-                        fontdata = (int) (Memory.real2Phys(Memory.realGetVec(0x1F))
-                                + (chr - 128) * cheight);
+                        fontdata =
+                                Memory.real2Phys(Memory.realGetVec(0x1F)) + (chr - 128) * cheight;
 
                     x = 8 * col;
-                    y = (int) cheight * row;
+                    y = cheight * row;
                     boolean error = false;
                     for (byte h = 0; h < cheight; h++) {
                         int bitsel = 128;
@@ -533,7 +541,7 @@ public final class CHAR {
                         int tx = x;
                         while (bitsel != 0) {
                             // Construct bitline in memory
-                            res = INT10.getPixel(tx, y, (byte) page);
+                            res = INT10.getPixel(tx, y, page);
                             if (res != 0)
                                 vidline |= bitsel;
                             tx++;
@@ -561,9 +569,9 @@ public final class CHAR {
     public static int readCharAttr(int page) {
         if (page == 0xFF)
             page = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE);
-        byte cur_row = INT10.getCursorPosRow(page);
-        byte cur_col = INT10.getCursorPosCol(page);
-        return readCharAttr(cur_col, cur_row, page);
+        int curRow = INT10.getCursorPosRow(page);
+        int curCol = INT10.getCursorPosCol(page);
+        return readCharAttr(curCol, curRow, page);
     }
 
     private static boolean warned_use = false;
@@ -572,7 +580,7 @@ public final class CHAR {
         /* Externally used by the mouse routine */
         int fontdata;
         int x, y;
-        byte cheight = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
+        int cheight = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CHAR_HEIGHT);
         switch (INT10Mode.CurMode.Type) {
             case TEXT: {
                 // Compute the address
@@ -634,7 +642,7 @@ public final class CHAR {
         // (same fix for 11 fixes vgatest2, but it's not entirely correct according to wd)
 
         x = 8 * col;
-        y = (int) cheight * row;
+        y = cheight * row;
         byte xor_mask = (INT10Mode.CurMode.Type == VGAModes.VGA) ? (byte) 0x0 : (byte) 0x80;
         // TODO Check for out of bounds
         if (INT10Mode.CurMode.Type == VGAModes.EGA) {
@@ -652,7 +660,7 @@ public final class CHAR {
             bitsel = 128;
             bitline = Memory.readB(Memory.real2Phys(fontdata));
             fontdata = Memory.realMake(Memory.realSeg(fontdata), Memory.realOff(fontdata) + 1);
-            short tx = (short) x;
+            int tx = x;
             while (bitsel != 0) {
                 if ((bitline & bitsel) != 0)
                     INT10.putPixel(tx, y, page, (byte) attr);
@@ -665,13 +673,14 @@ public final class CHAR {
         }
     }
 
+    // (Bit8u chr,Bit8u attr,Bit8u page,Bit16u count,bool showattr)
     public static void writeChar2(byte chr, int attr, int page, int count, boolean showattr) {
         if (INT10Mode.CurMode.Type != VGAModes.TEXT) {
             showattr = true; // Use attr in graphics mode always
             switch (DOSBox.Machine) {
                 case EGA:
                 case VGA:
-                    page = (byte) (page % INT10Mode.CurMode.PTotal);
+                    page = 0xff & (page % INT10Mode.CurMode.PTotal);
                     break;
                 case CGA:
                 case PCJR:
@@ -694,92 +703,87 @@ public final class CHAR {
         }
     }
 
-    public static void teletypeOutputAttr(byte chr, byte attr, boolean useattr, int page) {
-        int ncols = Memory.realReadW(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_COLS);;
-        int nrows = (Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_ROWS) + 1);;
-        byte cur_row = INT10.getCursorPosRow(page);
-        byte cur_col = INT10.getCursorPosCol(page);
+    public static void teletypeOutputAttr(byte chr, int attr, boolean useAttr, int page) {
+        int ncols = Memory.realReadW(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_COLS);
+        int nrows = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_ROWS) + 1;
+        int curRow = INT10.getCursorPosRow(page);// uint8
+        int curCol = INT10.getCursorPosCol(page);// uint8
         switch (chr) {
             case 7:
                 // TODO BEEP
                 break;
             case 8:
-                if (cur_col > 0)
-                    cur_col--;
+                if (curCol > 0)
+                    curCol--;
                 break;
             case (byte) '\r':
-                cur_col = 0;
+                curCol = 0;
                 break;
             case (byte) '\n':
                 // cur_col=0; //Seems to break an old chess game
-                cur_row++;
+                curRow++;
                 break;
             case (byte) '\t':
                 do {
-                    teletypeOutputAttr((byte) ' ', attr, useattr, page);
-                    cur_row = INT10.getCursorPosRow(page);
-                    cur_col = INT10.getCursorPosCol(page);
-                } while ((cur_col % 8) != 0);
+                    teletypeOutputAttr((byte) ' ', attr, useAttr, page);
+                    curRow = INT10.getCursorPosRow(page);
+                    curCol = INT10.getCursorPosCol(page);
+                } while ((curCol % 8) != 0);
                 break;
             default:
                 /* Draw the actual Character */
-                writeChar1(cur_col, cur_row, (byte) page, chr, attr, useattr);
-                cur_col++;
+                writeChar1(curCol, curRow, page, chr, attr, useAttr);
+                curCol++;
                 break;
         }
-        if (cur_col == ncols) {
-            cur_col = 0;
-            cur_row++;
+        if (curCol == ncols) {
+            curCol = 0;
+            curRow++;
         }
         // Do we need to scroll ?
-        if (cur_row == nrows) {
+        if (curRow == nrows) {
             // Fill with black on non-text modes and with 0x7 on textmode
-            byte fill = (INT10Mode.CurMode.Type == VGAModes.TEXT) ? (byte) 0x7 : (byte) 0;
-            scrollWindow(0, 0, (byte) (nrows - 1), (byte) (ncols - 1), -1, fill, page);
-            cur_row--;
+            int fill = (INT10Mode.CurMode.Type == VGAModes.TEXT) ? 0x7 : 0;
+            scrollWindow(0, 0, 0xff & (nrows - 1), 0xff & (ncols - 1), -1, fill, page);
+            curRow--;
         }
         // Set the cursor for the page
-        setCursorPos(cur_row, cur_col, page);
+        setCursorPos(curRow, curCol, page);
     }
 
-    public static void teletypeOutputAttr(byte chr, byte attr, boolean useattr, short page) {
-        teletypeOutputAttr(chr, attr, useattr, page);
-
-    }
-
-    public static void teletypeOutputAttr(byte chr, byte attr, boolean useattr) {
-        teletypeOutputAttr(chr, attr, useattr,
+    public static void teletypeOutputAttr(byte chr, int attr, boolean useAttr) {
+        teletypeOutputAttr(chr, attr, useAttr,
                 Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE));
     }
 
-    public static void teletypeOutput(byte chr, byte attr) {
+    public static void teletypeOutput(byte chr, int attr) {
         teletypeOutputAttr(chr, attr, INT10Mode.CurMode.Type != VGAModes.TEXT);
     }
 
-    public static void writeString(int row, int col, int flag, int attr, int _string, int count,
+    public static void writeString(int row, int col, int flag, int attr, int str, int count,
             int page) {
-        byte cur_row = INT10.getCursorPosRow(page);
-        byte cur_col = INT10.getCursorPosCol(page);
+        int curRow = INT10.getCursorPosRow(page);
+        int curCol = INT10.getCursorPosCol(page);
 
         // if row=0xff special case : use current cursor position
         if (row == 0xff) {
-            row = cur_row;
-            col = cur_col;
+            row = curRow;
+            col = curCol;
         }
         setCursorPos(row, col, page);
         byte chr = 0;
         while (count > 0) {
-            chr = (byte) Memory.readB(_string);
-            _string++;
+            chr = (byte) Memory.readB(str);
+            str++;
             if ((flag & 2) != 0) {
-                attr = (byte) Memory.readB(_string);
-                _string++;
+                attr = Memory.readB(str);
+                str++;
             }
-            teletypeOutputAttr(chr, (byte) attr, true, page);
+            teletypeOutputAttr(chr, attr, true, page);
             count--;
         }
         if ((flag & 1) == 0) {
-            setCursorPos(cur_row, cur_col, page);
+            setCursorPos(curRow, curCol, page);
         }
     }
 }

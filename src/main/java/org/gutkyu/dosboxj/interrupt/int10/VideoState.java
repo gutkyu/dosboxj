@@ -235,8 +235,7 @@ final class VideoState {
 
             // sequencer
             for (ct = 1; ct < 5; ct++) {
-                IO.writeW(0x3c4,
-                        ct + (int) (Memory.realReadB(base_seg, (base_dest + 0x04 + ct)) << 8));
+                IO.writeW(0x3c4, ct + Memory.realReadB(base_seg, (base_dest + 0x04 + ct)) << 8);
             }
 
             IO.writeB(0x3c2, Memory.realReadB(base_seg, (base_dest + 0x09)));
@@ -245,8 +244,7 @@ final class VideoState {
 
             // crt controller
             for (ct = 0; ct < 0x19; ct++) {
-                IO.writeW(crt_reg,
-                        ct + (int) (Memory.realReadB(base_seg, (base_dest + 0x0a + ct)) << 8));
+                IO.writeW(crt_reg, ct + Memory.realReadB(base_seg, (base_dest + 0x0a + ct)) << 8);
             }
 
             IO.readB(crt_reg + 6);
@@ -258,8 +256,7 @@ final class VideoState {
 
             // graphics registers
             for (ct = 0; ct < 9; ct++) {
-                IO.writeW(0x3ce,
-                        ct + (int) (Memory.realReadB(base_seg, (base_dest + 0x37 + ct)) << 8));
+                IO.writeW(0x3ce, ct + (Memory.realReadB(base_seg, (base_dest + 0x37 + ct)) << 8));
             }
 
             IO.writeB(crt_reg + 6, Memory.realReadB(base_seg, (base_dest + 0x04)));
@@ -336,8 +333,8 @@ final class VideoState {
 
             // sequencer
             for (ct = 0; ct < 0x13; ct++) {
-                IO.writeW(0x3c4, (0x09 + ct)
-                        + (int) (Memory.realReadB(base_seg, (base_dest + 0x00 + ct)) << 8));
+                IO.writeW(0x3c4,
+                        (0x09 + ct) + Memory.realReadB(base_seg, (base_dest + 0x00 + ct)) << 8);
             }
             IO.writeB(0x3c4, seq_idx);
 
@@ -357,7 +354,7 @@ final class VideoState {
                     IO.writeB(crt_reg, Memory.realReadB(base_seg, (base_dest + (ct_dest++))));
                 } else {
                     IO.writeW(crt_reg, (0x30 + ct)
-                            + (int) (Memory.realReadB(base_seg, (base_dest + (ct_dest++))) << 8));
+                            + Memory.realReadB(base_seg, (base_dest + (ct_dest++))) << 8);
                 }
             }
 

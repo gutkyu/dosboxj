@@ -53,7 +53,7 @@ public final class KeyboardLayout implements Disposable {
     private SeekableByteChannel openDosboxFile(String name) {
         byte drive = 0;
         RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fullname = CStringPt.create((int) DOSSystem.DOS_PATHLENGTH);
+        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
 
         LocalDrive ldp = null;
         // try to build dos name
@@ -246,7 +246,7 @@ public final class KeyboardLayout implements Disposable {
         } else {
             ByteBuffer rb = ByteBuffer.wrap(cpi_buf, 0, 5);
             try {
-                int dr = (int) tempfile.read(rb);
+                int dr = tempfile.read(rb);
                 // check if file is valid
                 if (dr < 5) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -309,13 +309,13 @@ public final class KeyboardLayout implements Disposable {
                         // read in compressed CPX-file
                         tempfile.position(0);
                         rb = ByteBuffer.wrap(cpi_buf, 0, 65536);
-                        size_of_cpxdata = (int) tempfile.read(rb);
+                        size_of_cpxdata = tempfile.read(rb);
                     }
                 } else {
                     // standard uncompressed cpi-file
                     tempfile.position(0);
                     rb = ByteBuffer.wrap(cpi_buf, 0, 65536);
-                    cpi_buf_size = (int) tempfile.read(rb);
+                    cpi_buf_size = tempfile.read(rb);
                 }
             } catch (Exception e) {
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -535,7 +535,7 @@ public final class KeyboardLayout implements Disposable {
                 ByteBuffer rb = ByteBuffer.wrap(read_buf, 0, 65535);
                 try {
                     tempfile.position(start_pos + 2);
-                    read_buf_size = (int) tempfile.read(rb);
+                    read_buf_size = tempfile.read(rb);
                     tempfile.close();
                 } catch (Exception e) {
                     // todo 오류 발생 처리 추가
@@ -550,7 +550,7 @@ public final class KeyboardLayout implements Disposable {
             ByteBuffer rb = ByteBuffer.wrap(read_buf, 0, 4);
 
             try {
-                int dr = (int) tempfile.read(rb);
+                int dr = tempfile.read(rb);
                 if ((dr < 4) || (read_buf[0] != 0x4b) || (read_buf[1] != 0x4c)
                         || (read_buf[2] != 0x46)) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -560,7 +560,7 @@ public final class KeyboardLayout implements Disposable {
 
                 tempfile.position(0);
                 rb = ByteBuffer.wrap(read_buf, 0, 65535);
-                read_buf_size = (int) tempfile.read(rb);
+                read_buf_size = tempfile.read(rb);
                 tempfile.close();
             } catch (Exception e) {
                 // todo 오류 발생 처리 추가
@@ -688,10 +688,10 @@ public final class KeyboardLayout implements Disposable {
                         _diacriticsCharacter = 0;
                         return true;
                     }
-                    short diacritics_start = 0;
+                    int diacritics_start = 0;
                     // search start of subtable
                     for (short i = 0; i < _diacriticsCharacter - 200; i++)
-                        diacritics_start += (short) (diacritics[diacritics_start + 1] * 2 + 2);
+                        diacritics_start += 0xffff & (diacritics[diacritics_start + 1] * 2 + 2);
 
                     BIOSKeyboard
                             .addKeyToBuffer(0xffff & ((key << 8) | diacritics[diacritics_start]));
@@ -734,15 +734,15 @@ public final class KeyboardLayout implements Disposable {
             } else {
                 KeyboardLayout temp_layout = new KeyboardLayout();
                 int req_codepage = temp_layout.extractCodePage(newLayout);
-                refTriedCP.U32 = (int) req_codepage;
-                int kerrcode = temp_layout.ReadKeyboardFile(newLayout, (int) req_codepage);
+                refTriedCP.U32 = req_codepage;
+                int kerrcode = temp_layout.ReadKeyboardFile(newLayout, req_codepage);
                 if (kerrcode != 0) {
                     temp_layout.dispose();
                     temp_layout = null;
                     return kerrcode;
                 }
                 // ...else keyboard layout loaded successfully, change codepage accordingly
-                kerrcode = (int) temp_layout.readCodePageFile("auto", (int) req_codepage);
+                kerrcode = temp_layout.readCodePageFile("auto", req_codepage);
                 if (kerrcode != 0) {
                     temp_layout.dispose();
                     temp_layout = null;
@@ -803,9 +803,9 @@ public final class KeyboardLayout implements Disposable {
 
     // diacritics table
     private byte[] diacritics = new byte[2048];
-    private short _diacriticsEntries;
-    private short _diacriticsCharacter;
-    private short _userKeys;
+    private int _diacriticsEntries;// uint16
+    private int _diacriticsCharacter;// uint16
+    private int _userKeys;// uint16
 
     private String currentKeyboardFileName;
     private boolean _useForeignLayout;
@@ -901,7 +901,7 @@ public final class KeyboardLayout implements Disposable {
                 try {
                     tempfile.position(start_pos + 2);
                     ByteBuffer rb = ByteBuffer.wrap(read_buf, 0, 65535);
-                    read_buf_size = (int) tempfile.read(rb);
+                    read_buf_size = tempfile.read(rb);
                     tempfile.close();
                 } catch (Exception e) {
                     // todo 오류 발생 처리 추가
@@ -915,7 +915,7 @@ public final class KeyboardLayout implements Disposable {
             // check ID-bytes of file
             ByteBuffer rb = ByteBuffer.wrap(read_buf, 0, 4);
             try {
-                int dr = (int) tempfile.read(rb);
+                int dr = tempfile.read(rb);
                 if ((dr < 4) || (read_buf[0] != 0x4b) || (read_buf[1] != 0x4c)
                         || (read_buf[2] != 0x46)) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -925,7 +925,7 @@ public final class KeyboardLayout implements Disposable {
 
                 tempfile.position(0);
                 rb = ByteBuffer.wrap(read_buf, 0, 65535);
-                read_buf_size = (int) tempfile.read(rb);
+                read_buf_size = tempfile.read(rb);
                 tempfile.close();
             }
 
@@ -974,7 +974,7 @@ public final class KeyboardLayout implements Disposable {
         long idx = 0;
         // ByteBuffer bc = ByteBuffer.wrap(read_buf);
         // seek to plane descriptor
-        read_buf_pos = (int) (start_pos + 0x14 + submappings * 8);
+        read_buf_pos = start_pos + 0x14 + submappings * 8;
         for (short cplane = 0; cplane < _additionalPlanes; cplane++) {
             int plane_flags;
 
@@ -1008,11 +1008,11 @@ public final class KeyboardLayout implements Disposable {
 
         boolean found_matching_layout = false;
         // check all submappings and use them if general submapping or same codepage submapping
-        for (short sub_map = 0; (sub_map < submappings) && (!found_matching_layout); sub_map++) {
+        for (int sub_map = 0; (sub_map < submappings) && (!found_matching_layout); sub_map++) {
             int submap_cp, table_offset;
 
             if ((sub_map != 0) && (specific_layout != -1))
-                sub_map = (short) (specific_layout & 0xffff);
+                sub_map = specific_layout & 0xffff;
 
             // read codepage of submapping
             // submap_cp = MEMORY.host_readw(ref read_buf, (int)(start_pos + 0x14 + sub_map * 8));
@@ -1032,12 +1032,12 @@ public final class KeyboardLayout implements Disposable {
             _diacriticsEntries = 0;
             if (table_offset != 0) {
                 // process table
-                short i, j;
+                int i, j;
                 for (i = 0; i < 2048;) {
                     if (read_buf[start_pos + table_offset + i] == 0)
                         break; // end of table
                     _diacriticsEntries++;
-                    i += (short) (read_buf[start_pos + table_offset + i + 1] * 2 + 2);
+                    i += 0xffff & ((read_buf[start_pos + table_offset + i + 1] & 0xff) * 2 + 2);
                 }
                 // copy diacritics table
                 for (j = 0; j <= i; j++)
@@ -1056,27 +1056,27 @@ public final class KeyboardLayout implements Disposable {
 
             // process submapping table
             for (int i = 0; i < bytes_read;) {
-                byte scan = read_buf[read_buf_pos++];
+                int scan = 0xff & read_buf[read_buf_pos++];
                 if (scan == 0)
                     break;
-                byte scan_length = (byte) ((read_buf[read_buf_pos] & 7) + 1);// length of data
-                                                                             // struct
+                int scan_length = 0xff & ((read_buf[read_buf_pos] & 7) + 1);// length of data
+                                                                            // struct
                 read_buf_pos += 2;
                 i += 3;
                 if (((scan & 0x7f) <= BIOS.MAX_SCAN_CODE) && (scan_length > 0)) {
                     // add all available mappings
-                    for (short addmap = 0; addmap < scan_length; addmap++) {
+                    for (int addmap = 0; addmap < scan_length; addmap++) {
                         if (addmap > _additionalPlanes + 2)
                             break;
-                        int charptr = (int) (read_buf_pos
-                                + addmap * ((read_buf[read_buf_pos - 2] & 0x80) != 0 ? 2 : 1));
-                        short kchar = read_buf[charptr];
+                        int charptr = read_buf_pos
+                                + addmap * ((read_buf[read_buf_pos - 2] & 0x80) != 0 ? 2 : 1);
+                        int kchar = 0xff & read_buf[charptr];
 
                         if (kchar != 0) { // key remapped
                             if ((read_buf[read_buf_pos - 2] & 0x80) != 0)
-                                kchar |= (short) (read_buf[charptr + 1] << 8); // scancode/char pair
+                                kchar |= (0xff & read_buf[charptr + 1]) << 8; // scancode/char pair
                             // overwrite mapping
-                            _currentLayout[scan * _layoutPages + addmap] = kchar;
+                            _currentLayout[scan * _layoutPages + addmap] = (short) kchar;
                             // clear command bit
                             _currentLayout[scan * _layoutPages + _layoutPages - 2] &=
                                     (short) (~(1 << addmap));
@@ -1121,7 +1121,7 @@ public final class KeyboardLayout implements Disposable {
 
     private boolean mapKey(int key, short layoutedKey, boolean isCommand, boolean isKeypair) {
         if (isCommand) {
-            byte key_command = (byte) (layoutedKey & 0xff);
+            int key_command = layoutedKey & 0xff;
             // check if diacritics-command
             if ((key_command >= 200) && (key_command < 235)) {
                 // diacritics command
@@ -1135,11 +1135,11 @@ public final class KeyboardLayout implements Disposable {
                 return true;
             } else if ((key_command >= 180) && (key_command < 188)) {
                 // switch user key off
-                _userKeys &= (short) (~(1 << (key_command - 180)));
+                _userKeys &= 0xffff & (~(1 << (key_command - 180)));
                 return true;
             } else if ((key_command >= 188) && (key_command < 196)) {
                 // switch user key on
-                _userKeys |= (short) (1 << (key_command - 188));
+                _userKeys |= 0xffff & (1 << (key_command - 188));
                 return true;
             } else if (key_command == 160)
                 return true; // nop command
@@ -1149,10 +1149,10 @@ public final class KeyboardLayout implements Disposable {
                 if (_diacriticsCharacter - 200 >= _diacriticsEntries)
                     _diacriticsCharacter = 0;
                 else {
-                    short diacritics_start = 0;
+                    int diacritics_start = 0;
                     // search start of subtable
                     for (short i = 0; i < _diacriticsCharacter - 200; i++)
-                        diacritics_start += (short) (diacritics[diacritics_start + 1] * 2 + 2);
+                        diacritics_start += ((0xff & diacritics[diacritics_start + 1]) * 2 + 2);
 
                     byte diacritics_length = diacritics[diacritics_start + 1];
                     diacritics_start += 2;
@@ -1195,7 +1195,7 @@ public final class KeyboardLayout implements Disposable {
         try {
             // check ID-bytes of file
             ByteBuffer rb = ByteBuffer.wrap(rbuf, 0, 7);
-            int dr = (int) tempfile.read(rb);
+            int dr = tempfile.read(rb);
             if ((dr < 7) || (rbuf[0] != 0x4b) || (rbuf[1] != 0x43) || (rbuf[2] != 0x46)) {
                 tempfile.close();
                 return 0;
@@ -1204,9 +1204,9 @@ public final class KeyboardLayout implements Disposable {
             tempfile.position(7 + rbuf[6]);
 
             for (;;) {
-                int cur_pos = (int) (tempfile.position());
+                int cur_pos = (int) tempfile.position();
                 rb = ByteBuffer.wrap(rbuf, 0, 5);
-                dr = (int) tempfile.read(rb);
+                dr = tempfile.read(rb);
                 if (dr < 5)
                     break;
                 int len = Memory.hostReadW(rbuf, 0);

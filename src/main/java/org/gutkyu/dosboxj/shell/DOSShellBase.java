@@ -38,7 +38,7 @@ public abstract class DOSShellBase extends Program {
     @Override
     public void run() {
 
-        CStringPt inputLine = CStringPt.create((int) ShellInner.CMD_MAXLINE);
+        CStringPt inputLine = CStringPt.create(ShellInner.CMD_MAXLINE);
         inputLine.set(0, (char) 0);
         String line = null;
         if ((line = Cmd.findStringRemainS("/C")) != null) {
@@ -94,7 +94,7 @@ public abstract class DOSShellBase extends Program {
 
     protected void runInternal() // for command /C
     {
-        CStringPt inputLine = CStringPt.create((int) ShellInner.CMD_MAXLINE);
+        CStringPt inputLine = CStringPt.create(ShellInner.CMD_MAXLINE);
         inputLine.set(0, (char) 0);
         while (BatFile != null && BatFile.readLine(inputLine)) {
             if (Echo) {
@@ -147,7 +147,7 @@ public abstract class DOSShellBase extends Program {
         if (!inPt.isEmpty()) {
             if (DOSMain.openFile(inPt.toString(), DOSSystem.OPEN_READ)) { // Test if file
                                                                           // exists
-                DOSMain.closeFile(DOSMain.FileEntry);
+                DOSMain.closeFile(DOSMain.CreatedOrOpenedFileEntry);
                 Log.logMsg("SHELL:Redirect input from %s", inPt);
                 if (normalstdin)
                     DOSMain.closeFile(0); // Close stdin
@@ -471,10 +471,10 @@ public abstract class DOSShellBase extends Program {
         /* Set up int 24 and psp (Telarium games) */
         Memory.realWriteB((pspSeg + 16 + 1), 0, 0xea); /* far jmp */
         Memory.realWriteD((pspSeg + 16 + 1), 1, Memory.realReadD(0, 0x24 * 4));
-        Memory.realWriteD(0, 0x24 * 4, ((int) pspSeg << 16) | ((16 + 1) << 4));
+        Memory.realWriteD(0, 0x24 * 4, (pspSeg << 16) | ((16 + 1) << 4));
 
         /* Set up int 23 to "int 20" in the psp. Fixes what.exe */
-        Memory.realWriteD(0, 0x23 * 4, ((int) pspSeg << 16));
+        Memory.realWriteD(0, 0x23 * 4, (pspSeg << 16));
 
         /* Setup MCBs */
         DOSMCB pspmcb = new DOSMCB(pspSeg - 1);

@@ -14,7 +14,7 @@ public final class TSSDescriptor extends Descriptor {
         if (busy)
             Saved.Seg.Type |= 2;
         else
-            Saved.Seg.Type &= ~(int) 2;
+            Saved.Seg.Type &= ~2;
         Saved.updateSDescriptor();// seg의 type을 모두 반영
     }
 }

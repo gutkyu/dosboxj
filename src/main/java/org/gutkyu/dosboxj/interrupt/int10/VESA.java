@@ -138,7 +138,7 @@ final class VESA {
         Memory.writeD(buffer + 0x0a, 0x0); // Capabilities and flags
         Memory.writeD(buffer + 0x0e, INT10.int10.RomVesaModes); // VESA Mode list
         // memory size in 64kb blocks
-        Memory.writeW(buffer + 0x12, 0xffff & ((short) (VGA.instance().VMemSize / (64 * 1024))));
+        Memory.writeW(buffer + 0x12, 0xffff & (VGA.instance().VMemSize / (64 * 1024)));
         return 0x00;
     }
 
@@ -176,8 +176,8 @@ final class VESA {
         switch (mblock.Type) {
             case LIN4:
                 pageSize = mblock.SHeight * mblock.SWidth / 2;
-                pageSize = (int) ((pageSize | 15) & ~15);
-                Memory.hostWriteW(minfo, Off_MODE_INFO_BytesPerScanLine, (int) (mblock.SWidth / 8));
+                pageSize = (pageSize | 15) & ~15;
+                Memory.hostWriteW(minfo, Off_MODE_INFO_BytesPerScanLine, mblock.SWidth / 8);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_NumberOfPlanes, 0x4);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_BitsPerPixel, 4);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_MemoryModel, 3); // ega planar mode
@@ -185,7 +185,7 @@ final class VESA {
                 break;
             case LIN8:
                 pageSize = mblock.SHeight * mblock.SWidth;
-                pageSize = (int) ((pageSize | 15) & ~15);
+                pageSize = (pageSize | 15) & ~15;
                 Memory.hostWriteW(minfo, Off_MODE_INFO_BytesPerScanLine, mblock.SWidth);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_NumberOfPlanes, 0x1);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_BitsPerPixel, 8);
@@ -196,7 +196,7 @@ final class VESA {
                 break;
             case LIN15:
                 pageSize = mblock.SHeight * mblock.SWidth * 2;
-                pageSize = (int) ((pageSize | 15) & ~15);
+                pageSize = (pageSize | 15) & ~15;
                 Memory.hostWriteW(minfo, Off_MODE_INFO_BytesPerScanLine, mblock.SWidth * 2);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_NumberOfPlanes, 0x1);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_BitsPerPixel, 15);
@@ -215,7 +215,7 @@ final class VESA {
                 break;
             case LIN16:
                 pageSize = mblock.SHeight * mblock.SWidth * 2;
-                pageSize = (int) ((pageSize | 15) & ~15);
+                pageSize = (pageSize | 15) & ~15;
                 Memory.hostWriteW(minfo, Off_MODE_INFO_BytesPerScanLine, mblock.SWidth * 2);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_NumberOfPlanes, 0x1);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_BitsPerPixel, 16);
@@ -232,7 +232,7 @@ final class VESA {
                 break;
             case LIN32:
                 pageSize = mblock.SHeight * mblock.SWidth * 4;
-                pageSize = (int) ((pageSize | 15) & ~15);
+                pageSize = (pageSize | 15) & ~15;
                 Memory.hostWriteW(minfo, Off_MODE_INFO_BytesPerScanLine, mblock.SWidth * 4);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_NumberOfPlanes, 0x1);
                 Memory.hostWriteB(minfo, Off_MODE_INFO_BitsPerPixel, 32);
@@ -277,8 +277,8 @@ final class VESA {
             Memory.hostWriteW(minfo, Off_MODE_INFO_WinGranularity, 32);
             Memory.hostWriteW(minfo, Off_MODE_INFO_WinSize, 32);
             Memory.hostWriteW(minfo, Off_MODE_INFO_WinASegment, 0xb800);
-            Memory.hostWriteW(minfo, Off_MODE_INFO_XResolution, (int) (mblock.SWidth / 8));
-            Memory.hostWriteW(minfo, Off_MODE_INFO_YResolution, (int) (mblock.SHeight / 8));
+            Memory.hostWriteW(minfo, Off_MODE_INFO_XResolution, mblock.SWidth / 8);
+            Memory.hostWriteW(minfo, Off_MODE_INFO_YResolution, mblock.SHeight / 8);
         } else {
             Memory.hostWriteW(minfo, Off_MODE_INFO_WinGranularity, 64);
             Memory.hostWriteW(minfo, Off_MODE_INFO_WinSize, 64);
@@ -295,7 +295,7 @@ final class VESA {
         if (!INT10.int10.VesaNoLFB)
             Memory.hostWriteD(minfo, Off_MODE_INFO_PhysBasePtr, INT10.S3_LFB_BASE);
 
-        Memory.blockWrite(buf, minfo, 0, (int) minfo.length);
+        Memory.blockWrite(buf, minfo, 0, minfo.length);
         return 0x00;
     }
 
@@ -309,20 +309,21 @@ final class VESA {
         return 0x01;
     }
 
-    public static short getSVGAMode() {
+    // uint16
+    public static int getSVGAMode() {
         int mode = 0;
         if (INT10.int10.VesaSetMode != 0xffff)
             mode = INT10.int10.VesaSetMode;
         else
             mode = INT10Mode.CurMode.Mode;
-        return (short) mode;
+        return mode;
         // return 0x00;
     }
 
     public static byte setCPUWindow(byte window, byte address) {
         if (window > 0)
             return 0x1;
-        if (((int) (address) * 64 * 1024 < VGA.instance().VMemSize)) {
+        if ((0xff & address) * 64 * 1024 < VGA.instance().VMemSize) {
             IO.write(0x3d4, 0x6a);
             IO.write(0x3d5, 0xff & address);
             return 0x0;
@@ -389,10 +390,10 @@ final class VESA {
         return 0x00;
     }
 
+    public static int LineLengthInfoBytes, LineLengthInfoPixels, LineLengthInfoLines;
 
-    public static byte scanLineLength(int subcall, int val, RefU16Ret refBytes, RefU16Ret refPixels,
-            RefU16Ret refLines) {
-        short bytes, pixels, lines;
+    public static byte scanLineLength(int subcall, int val) {
+        int bytes, pixels, lines;
         byte bpp;
         switch (INT10Mode.CurMode.Type) {
             case LIN4:
@@ -414,20 +415,20 @@ final class VESA {
         switch (subcall) {
             case 0x00: /* Set in pixels */
                 if (INT10Mode.CurMode.Type == VGAModes.LIN4)
-                    VGA.instance().Config.ScanLen = (int) val / 2;
+                    VGA.instance().Config.ScanLen = val / 2;
                 else
-                    VGA.instance().Config.ScanLen = (int) (val * bpp);
+                    VGA.instance().Config.ScanLen = val * bpp;
                 break;
             case 0x02: /* Set in bytes */
                 if (INT10Mode.CurMode.Type == VGAModes.LIN4)
-                    VGA.instance().Config.ScanLen = (int) val * 4;
+                    VGA.instance().Config.ScanLen = val * 4;
                 else
                     VGA.instance().Config.ScanLen = val;
                 break;
             case 0x03: /* Get maximum */
-                refBytes.U16 = bytes = 0x400 * 4;
-                refPixels.U16 = pixels = (short) (bytes / bpp);
-                refLines.U16 = lines = (short) (VGA.instance().VMemSize / bytes);
+                bytes = 0x400 * 4;
+                pixels = 0xffff & (bytes / bpp);
+                lines = 0xffff & (VGA.instance().VMemSize / bytes);
                 return 0x00;
             case 0x01: /* Get lengths */
                 break;
@@ -441,22 +442,23 @@ final class VESA {
             VGA.instance().Config.ScanLen /= 8;
         }
         if (INT10Mode.CurMode.Type == VGAModes.LIN4) {
-            pixels = (short) ((VGA.instance().Config.ScanLen * 16) / bpp);
-            bytes = (short) (VGA.instance().Config.ScanLen * 2);
-            lines = (short) (VGA.instance().VMemSize / (bytes * 4));
+            pixels = 0xffff & ((VGA.instance().Config.ScanLen * 16) / bpp);
+            bytes = 0xffff & (VGA.instance().Config.ScanLen * 2);
+            lines = 0xffff & (VGA.instance().VMemSize / (bytes * 4));
         } else {
-            pixels = (short) ((VGA.instance().Config.ScanLen * 8) / bpp);
-            bytes = (short) (VGA.instance().Config.ScanLen * 8);
-            lines = (short) (VGA.instance().VMemSize / bytes);
+            pixels = 0xffff & ((VGA.instance().Config.ScanLen * 8) / bpp);
+            bytes = 0xffff & (VGA.instance().Config.ScanLen * 8);
+            lines = 0xffff & (VGA.instance().VMemSize / bytes);
         }
-        refBytes.U16 = bytes;
-        refPixels.U16 = pixels;
-        refLines.U16 = lines;
+        LineLengthInfoBytes = bytes;
+        LineLengthInfoPixels = pixels;
+        LineLengthInfoLines = lines;
         VGA.instance().startResize();
         return 0x0;
     }
 
-    public static byte setDisplayStart(short x, short y) {
+    // (uint16,uint16)
+    public static byte setDisplayStart(int x, int y) {
         // TODO Maybe do things differently with lowres double line modes?
         int start;
         switch (INT10Mode.CurMode.Type) {
@@ -465,14 +467,14 @@ final class VESA {
                 VGA.instance().Config.DisplayStart = start / 8;
                 IO.read(0x3da);
                 IO.write(0x3c0, 0x13 + 32);
-                IO.write(0x3c0, 0xff & ((byte) (start % 8)));
+                IO.write(0x3c0, 0xff & (start % 8));
                 break;
             case LIN8:
                 start = VGA.instance().Config.ScanLen * 8 * y + x;
                 VGA.instance().Config.DisplayStart = start / 4;
                 IO.read(0x3da);
                 IO.write(0x3c0, 0x13 + 32);
-                IO.write(0x3c0, 0xff & ((byte) ((start % 4) * 2)));
+                IO.write(0x3c0, 0xff & ((start % 4) * 2));
                 break;
             case LIN16:
             case LIN15:
@@ -489,14 +491,16 @@ final class VESA {
         return 0x00;
     }
 
-    public static byte getDisplayStart(RefU16Ret refX, RefU16Ret refY) {
+    public static int ResponseDisplayStartX, ResponseDisplayStartY;
+
+    public static byte getDisplayStart() {
         int times = (VGA.instance().Config.DisplayStart * 4) / (VGA.instance().Config.ScanLen * 8);
         int rem = (VGA.instance().Config.DisplayStart * 4) % (VGA.instance().Config.ScanLen * 8);
         int pan = VGA.instance().Config.PelPanning;
         switch (INT10Mode.CurMode.Type) {
             case LIN8:
-                refY.U16 = (short) times;
-                refX.U16 = (short) (rem + pan);
+                ResponseDisplayStartY = 0xffff & times;
+                ResponseDisplayStartX = 0xffff & (rem + pan);
                 break;
             default:
                 return 0x1;
@@ -529,7 +533,7 @@ final class VESA {
     }
 
     private static int pmSetStart() {
-        int start = (int) ((Register.getRegDX() << 16) | Register.getRegCX());
+        int start = (Register.getRegDX() << 16) | Register.getRegCX();
         VGA.instance().Config.DisplayStart = start;
         return 0;
     }
@@ -580,35 +584,35 @@ final class VESA {
         INT10.int10.RomUsed += 8; // Skip the byte later used for offsets
         /* PM Set Window call */
         INT10.int10.RomPModeInterfaceWindow =
-                (short) (INT10.int10.RomUsed - Memory.realOff(INT10.int10.RomPModeInterface));
+                0xffff & (INT10.int10.RomUsed - Memory.realOff(INT10.int10.RomPModeInterface));
         Memory.physWriteW(Memory.real2Phys(INT10.int10.RomPModeInterface) + 0,
                 INT10.int10.RomPModeInterfaceWindow);
         _callback.pmWindow = Callback.allocate();
         INT10.int10.RomUsed +=
-                (short) Callback.setup(_callback.pmWindow, VESA::pmSetWindow, Callback.Symbol.RETN,
+                Callback.setup(_callback.pmWindow, VESA::pmSetWindow, Callback.Symbol.RETN,
                         Memory.physMake(0xc000, INT10.int10.RomUsed), "VESA PM Set Window");
         /* PM Set start call */
         INT10.int10.RomPModeInterfaceStart =
-                (short) (INT10.int10.RomUsed - Memory.realOff(INT10.int10.RomPModeInterface));
+                0xffff & (INT10.int10.RomUsed - Memory.realOff(INT10.int10.RomPModeInterface));
         Memory.physWriteW(Memory.real2Phys(INT10.int10.RomPModeInterface) + 2,
                 INT10.int10.RomPModeInterfaceStart);
         _callback.pmStart = Callback.allocate();
         INT10.int10.RomUsed +=
-                (short) Callback.setup(_callback.pmStart, VESA::pmSetStart, Callback.Symbol.RETN,
+                Callback.setup(_callback.pmStart, VESA::pmSetStart, Callback.Symbol.RETN,
                         Memory.physMake(0xc000, INT10.int10.RomUsed), "VESA PM Set Start");
         /* PM Set Palette call */
         INT10.int10.RomPModeInterfacePalette =
-                (short) (INT10.int10.RomUsed - Memory.realOff(INT10.int10.RomPModeInterface));
+                0xffff & (INT10.int10.RomUsed - Memory.realOff(INT10.int10.RomPModeInterface));
         Memory.physWriteW(Memory.real2Phys(INT10.int10.RomPModeInterface) + 4,
                 INT10.int10.RomPModeInterfacePalette);
         _callback.pmPalette = Callback.allocate();
-        INT10.int10.RomUsed += (short) Callback.setup(_callback.pmPalette, VESA::pmSetPalette,
-                Callback.Symbol.RETN, Memory.physMake(0xc000, INT10.int10.RomUsed),
-                "VESA PM Set Palette");
+        INT10.int10.RomUsed +=
+                Callback.setup(_callback.pmPalette, VESA::pmSetPalette, Callback.Symbol.RETN,
+                        Memory.physMake(0xc000, INT10.int10.RomUsed), "VESA PM Set Palette");
         /* Finalize the size and clear the required ports pointer */
         Memory.physWriteW(Memory.real2Phys(INT10.int10.RomPModeInterface) + 6, 0);
         INT10.int10.RomPModeInterfaceSize =
-                (short) (INT10.int10.RomUsed - Memory.realOff(INT10.int10.RomPModeInterface));
+                0xffff & (INT10.int10.RomUsed - Memory.realOff(INT10.int10.RomPModeInterface));
     }
 
 }

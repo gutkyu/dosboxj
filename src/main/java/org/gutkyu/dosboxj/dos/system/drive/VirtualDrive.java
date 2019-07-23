@@ -72,7 +72,7 @@ public final class VirtualDrive extends DOSDrive {
     @Override
     public boolean findFirst(CStringPt _dir, DOSDTA dta, boolean fcbFindFirst) {
         searchFile = VFile.firstFile;
-        CStringPt pattern = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt pattern = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         int attr = dta.getSearchParams(pattern);
         if (attr == DOSSystem.DOS_ATTR_VOLUME) {
             dta.setResult(cstrDOSBOX, 0, 0, 0, DOSSystem.DOS_ATTR_VOLUME);
@@ -93,7 +93,7 @@ public final class VirtualDrive extends DOSDrive {
 
     @Override
     public boolean findNext(DOSDTA dta) {
-        CStringPt pattern = CStringPt.create((int) DOSSystem.DOS_NAMELENGTH_ASCII);
+        CStringPt pattern = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         int attr = dta.getSearchParams(pattern);
         while (searchFile != null) {
             if (Drives.compareWildFile(searchFile.Name.toString(), pattern.toString())) {
@@ -108,17 +108,24 @@ public final class VirtualDrive extends DOSDrive {
         return false;
     }
 
+    public int returnedFileAttr = 0;
+
     @Override
-    public boolean getFileAttr(String name, RefU16Ret refAttr) {
+    public boolean tryFileAttr(String name) {
         VFileBlock curFile = VFile.firstFile;
         while (curFile != null) {
             if (curFile.Name.equalsIgnoreCase(name)) {
-                refAttr.U16 = DOSSystem.DOS_ATTR_ARCHIVE; // Maybe final ?
+                returnedFileAttr = 0xff & DOSSystem.DOS_ATTR_ARCHIVE; // Maybe final ?
                 return true;
             }
             curFile = curFile.Next;
         }
         return false;
+    }
+
+    @Override
+    public int returnFileAttr() {
+        return returnedFileAttr;
     }
 
     @Override

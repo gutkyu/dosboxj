@@ -159,7 +159,7 @@ public final class CPU {
     public static void setFlags(int word, int mask) {
         mask |= FlagIdToggle; // ID-flag can be toggled on cpuid-supporting CPUs
         Register.Flags = (Register.Flags & ~mask) | (word & mask) | 2;
-        Block.Direction = 1 - (int) ((Register.Flags & Register.FlagDF) >>> 9);
+        Block.Direction = 1 - ((Register.Flags & Register.FlagDF) >>> 9);
     }
 
     public static void setFlagsD(int word) {
@@ -1146,13 +1146,13 @@ public final class CPU {
                                 // catch pagefaults
                                 if ((call.Saved.Gate.ParamCount & 31) != 0) {
                                     if (call.type() == Descriptor.DESC_386_CALL_GATE) {
-                                        for (int i = ((int) call.Saved.Gate.ParamCount & 31)
-                                                - 1; i >= 0; i--)
-                                            Memory.readD(o_stack + (int) i * 4);
+                                        for (int i =
+                                                (call.Saved.Gate.ParamCount & 31) - 1; i >= 0; i--)
+                                            Memory.readD(o_stack + i * 4);
                                     } else {
-                                        for (int i = ((int) call.Saved.Gate.ParamCount & 31)
-                                                - 1; i >= 0; i--)
-                                            Memory.readW(o_stack + (int) i * 2);
+                                        for (int i =
+                                                (call.Saved.Gate.ParamCount & 31) - 1; i >= 0; i--)
+                                            Memory.readW(o_stack + i * 2);
                                     }
                                 }
 
@@ -1186,18 +1186,18 @@ public final class CPU {
                                     push32(o_ss); // save old stack
                                     push32(o_esp);
                                     if ((call.Saved.Gate.ParamCount & 31) != 0)
-                                        for (int i = ((int) call.Saved.Gate.ParamCount & 31)
-                                                - 1; i >= 0; i--)
-                                            push32(Memory.readD(o_stack + (int) i * 4));
+                                        for (int i =
+                                                (call.Saved.Gate.ParamCount & 31) - 1; i >= 0; i--)
+                                            push32(Memory.readD(o_stack + i * 4));
                                     push32(oldcs);
                                     push32(oldEIP);
                                 } else {
                                     push16(o_ss); // save old stack
                                     push16(o_esp);
                                     if ((call.Saved.Gate.ParamCount & 31) != 0)
-                                        for (int i = ((int) call.Saved.Gate.ParamCount & 31)
-                                                - 1; i >= 0; i--)
-                                            push16(Memory.readW(o_stack + (int) i * 2));
+                                        for (int i =
+                                                (call.Saved.Gate.ParamCount & 31) - 1; i >= 0; i--)
+                                            push16(Memory.readW(o_stack + i * 2));
                                     push16(oldcs);
                                     push16(oldEIP);
                                 }
@@ -2163,7 +2163,7 @@ public final class CPU {
                 Register.segPhys(Register.SEG_NAME_SS) + (Register.getRegESP() & Block.Stack.Mask));
         if (setSegGeneral(seg, val))
             return true;
-        int addsp = use32 ? (int) 0x04 : (int) 0x02;
+        int addsp = use32 ? 0x04 : 0x02;
         Register.setRegESP((Register.getRegESP() & Block.Stack.NotMask)
                 | ((Register.getRegESP() + addsp) & Block.Stack.Mask));
         return false;
@@ -2360,7 +2360,7 @@ public final class CPU {
 
             bwhere = _cpuTss.BaseAddr + ofs + (port / 8);
             int map = Memory.readW(bwhere);
-            int mask = (int) ((int) 0xffff >>> (int) (16 - size)) << (int) (port & 7);
+            int mask = (0xffff >>> (16 - size)) << (port & 7);
             if ((map & mask) != 0)
                 return doException(port);// goto doexception;
             Block.MPL = 3;
@@ -2429,8 +2429,7 @@ public final class CPU {
             Descriptor gate = new Descriptor();
             if (!Block.IDT.getDescriptor(num << 3, gate)) {
                 // zone66
-                exception(ExceptionGP,
-                        (num * 8 + 2 + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0 : 1);
+                exception(ExceptionGP, (num * 8 + 2 + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
                 return;
             }
 
@@ -2446,20 +2445,20 @@ public final class CPU {
                 case Descriptor.DESC_286_TRAP_GATE:
                 case Descriptor.DESC_386_TRAP_GATE: {
                     checkCPUCond(gate.Saved.Seg.P == 0, "INT:Gate segment not present", ExceptionNP,
-                            (num * 8 + 2 + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0 : 1);
+                            (num * 8 + 2 + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
 
                     Descriptor csDesc = new Descriptor();
                     int gateSel = gate.getSelector();
                     int gateOff = gate.getOffset();
                     checkCPUCond((gateSel & 0xfffc) == 0, "INT:Gate with CS zero selector",
-                            ExceptionGP, (type & CPU_INT_SOFTWARE) != 0 ? (int) 0 : 1);
+                            ExceptionGP, (type & CPU_INT_SOFTWARE) != 0 ? 0 : 1);
                     checkCPUCond(!Block.GDT.getDescriptor(gateSel, csDesc),
                             "INT:Gate with CS beyond limit", ExceptionGP,
-                            ((gateSel & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0 : 1);
+                            ((gateSel & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
 
                     int csDPL = csDesc.dpl();
                     checkCPUCond(csDPL > Block.CPL, "Interrupt to higher privilege", ExceptionGP,
-                            ((gateSel & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0 : 1);
+                            ((gateSel & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
                     switch (csDesc.type()) {
                         case Descriptor.DESC_CODE_N_NC_A:
                         case Descriptor.DESC_CODE_N_NC_NA:
@@ -2469,8 +2468,7 @@ public final class CPU {
                                 /* Prepare for gate to inner level */
                                 checkCPUCond(csDesc.Saved.Seg.P == 0,
                                         "INT:Inner level:CS segment not present", ExceptionNP,
-                                        ((gateSel & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0
-                                                ? (int) 0
+                                        ((gateSel & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? 0
                                                 : 1);
                                 checkCPUCond(
                                         (Register.Flags & Register.FlagVM) != 0 && (csDPL != 0),
@@ -2485,17 +2483,15 @@ public final class CPU {
                                 nSS = _cpuTss.getSSx(where);
                                 nESP = _cpuTss.getESPx(where);
                                 checkCPUCond((nSS & 0xfffc) == 0, "INT:Gate with SS zero selector",
-                                        ExceptionTS, (type & CPU_INT_SOFTWARE) != 0 ? (int) 0 : 1);
+                                        ExceptionTS, (type & CPU_INT_SOFTWARE) != 0 ? 0 : 1);
                                 Descriptor nSSdesc = new Descriptor();
                                 checkCPUCond(!Block.GDT.getDescriptor(nSS, nSSdesc),
                                         "INT:Gate with SS beyond limit", ExceptionTS,
-                                        ((nSS & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0
-                                                : 1);
+                                        ((nSS & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
                                 checkCPUCond(((nSS & 3) != csDPL) || (nSSdesc.dpl() != csDPL),
                                         "INT:Inner level with CS_DPL!=SS_DPL and SS_RPL",
                                         ExceptionTS,
-                                        ((nSS & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0
-                                                : 1);
+                                        ((nSS & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
 
                                 // check if stack segment is a writable data segment
                                 switch (nSSdesc.type()) {
@@ -2512,8 +2508,7 @@ public final class CPU {
                                 }
                                 checkCPUCond(nSSdesc.Saved.Seg.P == 0,
                                         "INT:Inner level with nonpresent SS", ExceptionSS,
-                                        ((nSS & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0
-                                                : 1);
+                                        ((nSS & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
 
                                 // commit point
                                 Register.SegmentPhys[Register.SEG_NAME_SS] = nSSdesc.getBase();
@@ -2620,7 +2615,7 @@ public final class CPU {
                 }
                 case Descriptor.DESC_TASK_GATE:
                     checkCPUCond(gate.Saved.Seg.P == 0, "INT:Gate segment not present", ExceptionNP,
-                            (num * 8 + 2 + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0 : 1);
+                            (num * 8 + 2 + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
 
                     switchTask(gate.getSelector(), TSwitchType.CALL_INT, oldeip);
                     if ((type & CPU_INT_HAS_ERROR) != 0) {
@@ -2663,7 +2658,7 @@ public final class CPU {
             int oldeip, int csDPL, int type) {
         /* Prepare stack for gate to same priviledge */
         checkCPUCond(csDesc.Saved.Seg.P == 0, "INT:Same level:CS segment not present", ExceptionNP,
-                ((gateSel & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? (int) 0 : 1);
+                ((gateSel & 0xfffc) + (type & CPU_INT_SOFTWARE)) != 0 ? 0 : 1);
         if ((Register.Flags & Register.FlagVM) != 0 && (csDPL < Block.CPL))
             Support.exceptionExit("V86 interrupt doesn't change to pl0"); // or #GP(cs_sel)
 

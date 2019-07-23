@@ -115,9 +115,8 @@ public final class AutoexecObject implements Disposable {
             sb.append(autoStringNode);
             sb.append("\r\n");
         }
-        ShellInner.autoexec_data = sb.toString().getBytes(StandardCharsets.US_ASCII);
+        ShellInner.autoexecData = sb.toString().getBytes(StandardCharsets.US_ASCII);
         if (DOSShell.firstShell() != null)
-            VFile.register("AUTOEXEC.BAT", ShellInner.autoexec_data,
-                    ShellInner.autoexec_data.length);
+            VFile.register("AUTOEXEC.BAT", ShellInner.autoexecData, ShellInner.autoexecData.length);
     }
 }

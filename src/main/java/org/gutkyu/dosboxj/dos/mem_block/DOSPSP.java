@@ -23,7 +23,7 @@ public final class DOSPSP extends MemStruct {
             Memory.writeB(pt + i, 0);
         // Set size
         // sSave(sPSP,next_seg,seg+memSize);
-        saveIt(Size_next_seg, Off_next_seg, (int) (seg + memSize));
+        saveIt(Size_next_seg, Off_next_seg, seg + memSize);
 
         /* far call opcode */
         // sSave(sPSP,far_call,0xea);
