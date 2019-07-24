@@ -66,11 +66,10 @@ public class DOSDriveCache implements Disposable {
     }
 
     public void setBaseDir(CStringPt baseDir) {
-        short id = 0;
+        int id = 0;
         CStringPt.copy(baseDir, basePath);
-        RefU16Ret refId = new RefU16Ret(id);
-        if (openDir(baseDir, refId)) {
-            id = refId.U16;
+        if (tryOpenDir(baseDir)) {
+            id = returnedOpenDirId;
             // char* result = 0;
             CStringPt result = CStringPt.create();
             readDir(id, result);
@@ -100,20 +99,19 @@ public class DOSDriveCache implements Disposable {
         sortDirType = sort;
     }
 
-    public boolean openDir(CStringPt path, RefU16Ret refId) {
-        short id = refId.U16;
+    public boolean tryOpenDir(CStringPt path) {
         CStringPt expand = CStringPt.create(Cross.LEN);
         expand.set(0, (char) 0);
         CFileInfo dir = findDirInfo(path, expand);
-        if (openDir(dir, expand, refId)) {
-            id = refId.U16;
-            dirSearch[id].nextEntry = 0;
+        if (openDir(dir, expand)) {
+            dirSearch[returnedOpenDirId].nextEntry = 0;
             return true;
         }
         return false;
     }
 
-    public boolean readDir(short id, CStringPt result) {
+    // (uint16, string)
+    public boolean readDir(int id, CStringPt result) {
         // shouldnt happen...
         if (id > DOSSystem.MAX_OPENDIRS)
             return false;
@@ -132,8 +130,6 @@ public class DOSDriveCache implements Disposable {
 
                 // Read complete directory
                 // ...
-
-                boolean is_directory;
 
                 if (path.getParent() != null) {
                     createEntry(dirSearch[id], ".", true);
@@ -230,10 +226,9 @@ public class DOSDriveCache implements Disposable {
     public int findFirst(CStringPt path) {
         int dirID = 0;
         // Cache directory in
-        RefU16Ret refDirID = new RefU16Ret(dirID);
-        if (!openDir(path, refDirID))
+        if (!tryOpenDir(path))
             return -1;
-        dirID = refDirID.U16;
+        dirID = returnedOpenDirId;
         // Find a free slot.
         // If the next one isn't free, move on to the next, if none is free => reset and assume the
         // worst
@@ -712,7 +707,7 @@ public class DOSDriveCache implements Disposable {
         CStringPt start = path;// path
         CStringPt pos;
         CFileInfo curDir = dirBase;
-        short id = 0;
+        int id = 0;
 
         if (save_dir != null && path.equals(save_path)) {
             CStringPt.copy(save_expanded, expandedPath);
@@ -729,9 +724,8 @@ public class DOSDriveCache implements Disposable {
         // hehe, baseDir should be cached in...
         if (!isCachedIn(curDir)) {
             CStringPt.copy(basePath, work);
-            RefU16Ret refId = new RefU16Ret(id);
-            if (openDir(curDir, work, refId)) {
-                id = refId.U16;
+            if (openDir(curDir, work)) {
+                id = returnedOpenDirId;
                 CStringPt buffer = CStringPt.create(Cross.LEN);
                 CStringPt result = CStringPt.create();
                 CStringPt.copy(dirPath, buffer);
@@ -764,10 +758,9 @@ public class DOSDriveCache implements Disposable {
                 curDir = curDir.fileList.get(nextDir);
                 CStringPt.copy(dir, curDir.orgname);
                 if (!isCachedIn(curDir)) {
-                    RefU16Ret refId = new RefU16Ret(id);
 
-                    if (openDir(curDir, expandedPath, refId)) {
-                        id = refId.U16;
+                    if (openDir(curDir, expandedPath)) {
+                        id = returnedOpenDirId;
                         CStringPt buffer = CStringPt.create(Cross.LEN);
                         CStringPt result = CStringPt.create();
                         CStringPt.copy(dirPath, buffer);
@@ -807,8 +800,10 @@ public class DOSDriveCache implements Disposable {
         return (curpos != chkpos);
     }
 
-    private boolean openDir(CFileInfo dir, CStringPt expand, RefU16Ret refId) {
-        short id = getFreeID(dir);
+    private int returnedOpenDirId = 0;// uint16
+
+    private boolean openDir(CFileInfo dir, CStringPt expand) {
+        int id = returnedOpenDirId = getFreeID(dir);
         dirSearch[id] = dir;
         CStringPt expandcopy = CStringPt.create(Cross.LEN);
         CStringPt.copy(expand, expandcopy);

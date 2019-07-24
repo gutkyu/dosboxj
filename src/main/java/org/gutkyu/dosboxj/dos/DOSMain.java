@@ -871,9 +871,8 @@ public final class DOSMain {
                 }
                 break;
             case 0x45: /* DUP Duplicate file handle */
-                RefU16Ret refNewEntry = new RefU16Ret(Register.Regs[Register.AX].getWord());
-                if (duplicateEntry(Register.getRegBX(), refNewEntry)) {
-                    Register.Regs[Register.AX].setWord(refNewEntry.U16);
+                if (duplicateEntry(Register.getRegBX())) {
+                    Register.Regs[Register.AX].setWord(duplicatedNewEntry);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -3693,7 +3692,7 @@ public final class DOSMain {
         return Drives[drive].allocationInfo(buf);
     }
 
-    private static boolean duplicateEntry(int entry, RefU16Ret refNewEntry) {
+    private static boolean duplicateEntry(int entry) {
         // Dont duplicate console handles
         /*
          * if (entry<=STDPRN) { newentry = entry; return true; };
@@ -3709,16 +3708,18 @@ public final class DOSMain {
             return false;
         }
         DOSPSP psp = new DOSPSP(DOS.getPSP());
-        short newentry = psp.findFreeFileEntry();
-        refNewEntry.U16 = newentry;
-        if (newentry == 0xff) {
+        int newEntry = psp.findFreeFileEntry();
+        duplicatedNewEntry = newEntry;
+        if (newEntry == 0xff) {
             setError(DOSERR_TOO_MANY_OPEN_FILES);
             return false;
         }
         file.addRef();
-        psp.setFileHandle(newentry, handle);
+        psp.setFileHandle(newEntry, handle);
         return true;
     }
+
+    public static int duplicatedNewEntry = 0;
 
     public static boolean forceDuplicateEntry(int entry, int newentry) {
         if (entry == newentry) {
