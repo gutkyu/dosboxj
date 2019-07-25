@@ -101,7 +101,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         return chann;
     }
 
-    public boolean getSystemFilename(CStringPt sysName, CStringPt dosName) {
+    public boolean getSystemFilename(CStringPt sysName, String dosName) {
         CStringPt.copy(basedir, sysName);
         sysName.concat(dosName);
         dirCache.expandName(sysName);
@@ -144,7 +144,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public boolean fileUnlink(CStringPt name) {
+    public boolean fileUnlink(String name) {
         CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
@@ -211,7 +211,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public boolean removeDir(CStringPt dir) {
+    public boolean removeDir(String dir) {
         CStringPt newdir = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newdir);
         newdir.concat(dir);
@@ -227,7 +227,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public boolean makeDir(CStringPt dir) {
+    public boolean makeDir(String dir) {
         CStringPt newdir = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newdir);
         newdir.concat(dir);

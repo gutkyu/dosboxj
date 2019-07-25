@@ -98,7 +98,7 @@ public final class DOSSystem {
                         Memory.writeW(sftptr + sftofs + 0x11, 0); // size
                         Memory.writeW(sftptr + sftofs + 0x15, 0); // current position
                     } else {
-                        byte drive = DOSMain.Files[Register.getRegBX()].getDrive();
+                        int drive = DOSMain.Files[Register.getRegBX()].getDrive();
 
                         Memory.writeW(sftptr + sftofs + 0x02,
                                 DOSMain.Files[Register.getRegBX()].Flags & 3); // file open mode

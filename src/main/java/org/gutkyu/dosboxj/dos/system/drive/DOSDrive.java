@@ -19,11 +19,11 @@ public abstract class DOSDrive {
     // object ( string, uint16 )
     public abstract DOSFile fileCreate(String name, int attributes);
 
-    public abstract boolean fileUnlink(CStringPt name);
+    public abstract boolean fileUnlink(String name);
 
-    public abstract boolean removeDir(CStringPt dir);
+    public abstract boolean removeDir(String dir);
 
-    public abstract boolean makeDir(CStringPt dir);
+    public abstract boolean makeDir(String dir);
 
     public abstract boolean testDir(CStringPt dir);
 

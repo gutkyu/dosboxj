@@ -1092,19 +1092,17 @@ public final class DOSShell extends DOSShellBase {
             mountString.concat(" ");
 
             arg = command.findCommand(2);
-            byte drive = 0;
-            RefU8Ret refDrive = new RefU8Ret(drive);
-            CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-            if (!DOSMain.makeName(arg.toUpperCase(), fulldir, refDrive))
+            if (!DOSMain.makeFullName(arg.toUpperCase(), DOSSystem.DOS_PATHLENGTH))
                 throw new DOSException("0");
-            drive = refDrive.U8;
+            String fullDir = DOSMain.returnedFullName;
+            int drive = DOSMain.returnedFullNameDrive;
             DOSDrive drv = DOSMain.Drives[drive];
             if (!(DOSMain.Drives[drive] instanceof LocalDrive))
                 throw new DOSException("0");
             ldp = (LocalDrive) drv;
             CStringPt newname = CStringPt.create(Cross.LEN);
             CStringPt.copy(ldp.basedir, newname);
-            newname.concat(fulldir);
+            newname.concat(fullDir);
             ldp.dirCache.expandName(newname);
             mountString.concat("\"");
             mountString.concat(newname);

@@ -51,21 +51,19 @@ public final class KeyboardLayout implements Disposable {
     }
 
     private SeekableByteChannel openDosboxFile(String name) {
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
 
         LocalDrive ldp = null;
         // try to build dos name
-        if (DOSMain.makeName(name, fullname, refDrive)) {
-            drive = refDrive.U8;
+        if (DOSMain.makeFullName(name, DOSSystem.DOS_PATHLENGTH)) {
+            String fullName = DOSMain.returnedFullName;
+            int drive = DOSMain.returnedFullNameDrive;
             try {
                 DOSDrive drv = DOSMain.Drives[drive];
                 // try to open file on mounted drive first
                 if (drv instanceof LocalDrive) {
                     ldp = (LocalDrive) drv;
                     SeekableByteChannel tmpfile =
-                            ldp.getSystemFileChannel(fullname.toString(), StandardOpenOption.READ);
+                            ldp.getSystemFileChannel(fullName, StandardOpenOption.READ);
                     if (tmpfile != null)
                         return tmpfile;
                 }

@@ -2378,7 +2378,7 @@ public final class DOSMain {
                 if ((file.getInformation() & 0x8000) != 0) { // Check for device
                     Register.setRegDX(file.getInformation());
                 } else {
-                    byte hdrive = file.getDrive();
+                    int hdrive = file.getDrive();
                     if (hdrive == 0xff) {
                         Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal,
                                 "00:No drive set");
@@ -2613,202 +2613,8 @@ public final class DOSMain {
         }
     }
 
-    // TODO makeFullName로 대체 예정
-    public static boolean makeName(String name, CStringPt fullname, RefU8Ret refDrive) {
-        if (name == null || name == "" || name.charAt(0) == 0 || name.charAt(0) == ' ') {
-            /*
-             * Both \0 and space are seperators and empty filenames report file not found
-             */
-            setError(DOSERR_FILE_NOT_FOUND);
-            return false;
-        }
-        int name_int = 0;
-        CStringPt tempdir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        CStringPt upname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        int r, w;
-        short drive = getDefaultDrive();
-        /* First get the drive */
-        if (name.length() > 1 && name.charAt(name_int + 1) == ':') {
-            drive = (byte) ((name.charAt(name_int + 0) | 0x20) - 0x61);// 'a' 0x61
-            name_int += 2;
-        }
-        refDrive.U8 = (byte) drive;
-        if (drive >= DOS_DRIVES || Drives[drive] == null) {
-            setError(DOSERR_PATH_NOT_FOUND);
-            return false;
-        }
-        r = 0;
-        w = 0;
-        while (name_int + r < name.length() && name.charAt(name_int + r) != 0
-                && (r < DOSSystem.DOS_PATHLENGTH)) {
-            char c = name.charAt(name_int + r++);
-            if ((c >= 'a') && (c <= 'z')) {
-                upname.set(w++, (char) (c - 32));
-                continue;
-            }
-            if ((c >= 'A') && (c <= 'Z')) {
-                upname.set(w++, c);
-                continue;
-            }
-            if ((c >= '0') && (c <= '9')) {
-                upname.set(w++, c);
-                continue;
-            }
-            switch (c) {
-                case '/':
-                    upname.set(w++, '\\');
-                    break;
-                case ' ': /* should be seperator */
-                    break;
-                case '\\':
-                case '$':
-                case '#':
-                case '@':
-                case '(':
-                case ')':
-                case '!':
-                case '%':
-                case '{':
-                case '}':
-                case '`':
-                case '~':
-                case '_':
-                case '-':
-                case '.':
-                case '*':
-                case '?':
-                case '&':
-                case '\'':
-                case '+':
-                case '^':
-                case (char) 246:
-                case (char) 255:
-                case (char) 0xa0:
-                case (char) 0xe5:
-                case (char) 0xbd:
-                    upname.set(w++, c);
-                    break;
-                default:
-                    Log.logging(Log.LogTypes.FILES, Log.LogServerities.Normal,
-                            "Makename encountered an illegal char %c hex:%X in %s!", c, c, name);
-                    setError(DOSERR_PATH_NOT_FOUND);
-                    return false;
-                // break;
-            }
-        }
-        if (r >= DOSSystem.DOS_PATHLENGTH) {
-            setError(DOSERR_PATH_NOT_FOUND);
-            return false;
-        }
-        upname.set(w, (char) 0);
-        /* Now parse the new file name to make the final filename */
-        if (upname.get(0) != '\\')
-            CStringPt.copy(Drives[drive].curdir, fullname);
-        else
-            fullname.set(0, '\0');
-        int lastdir = 0;
-        int t = 0;
-        while (fullname.get(t) != 0) {
-            if ((fullname.get(t) == '\\') && (fullname.get(t + 1) != 0))
-                lastdir = t;
-            t++;
-        }
-        r = 0;
-        w = 0;
-        tempdir.set(0, (char) 0);
-        boolean stop = false;
-        while (!stop) {
-            if (upname.get(r) == 0)
-                stop = true;
-            if ((upname.get(r) == '\\') || (upname.get(r) == 0)) {
-                tempdir.set(w, (char) 0);
-                if (tempdir.get(0) == 0) {
-                    w = 0;
-                    r++;
-                    continue;
-                }
-                if (tempdir.equals(".")) {
-                    tempdir.set(0, (char) 0);
-                    w = 0;
-                    r++;
-                    continue;
-                }
-
-                int iDown;
-                boolean dots = true;
-                int templen = tempdir.length();
-                for (iDown = 0; (iDown < templen) && dots; iDown++)
-                    if (tempdir.get(iDown) != '.')
-                        dots = false;
-
-                // only dots?
-                if (dots && (templen > 1)) {
-                    int cDots = templen - 1;
-                    for (iDown = fullname.length() - 1; iDown >= 0; iDown--) {
-                        if (fullname.get(iDown) == '\\' || iDown == 0) {
-                            lastdir = iDown;
-                            cDots--;
-                            if (cDots == 0)
-                                break;
-                        }
-                    }
-                    fullname.set(lastdir, (char) 0);
-                    t = 0;
-                    lastdir = 0;
-                    while (fullname.get(t) != 0) {
-                        if ((fullname.get(t) == '\\') && (fullname.get(t + 1) != 0))
-                            lastdir = t;
-                        t++;
-                    }
-                    tempdir.set(0, (char) 0);
-                    w = 0;
-                    r++;
-                    continue;
-                }
-
-
-                lastdir = fullname.length();
-
-                if (lastdir != 0)
-                    fullname.concat("\\");
-                CStringPt ext = tempdir.positionOf('.');
-                if (!ext.isEmpty()) {
-                    if (!CStringPt.clone(ext, 1).positionOf('.').isEmpty()) {
-                        // another dot in the extension =>file not found
-                        // Or path not found depending on wether
-                        // we are still in dir check stage or file stage
-                        if (stop)
-                            setError(DOSERR_FILE_NOT_FOUND);
-                        else
-                            setError(DOSERR_PATH_NOT_FOUND);
-                        return false;
-                    }
-
-                    ext.set(4, (char) 0);
-                    // if ((strlen(tempdir) - strlen(ext)) > 8) memmove(tempdir + 8, ext, 5);
-                    if ((tempdir.length() - ext.length()) > 8)
-                        CStringPt.rawMove(ext, CStringPt.clone(tempdir, 8), 5);
-                } else
-                    tempdir.set(8, (char) 0);
-
-                if (fullname.length() + tempdir.length() >= DOSSystem.DOS_PATHLENGTH) {
-                    setError(DOSERR_PATH_NOT_FOUND);
-                    return false;
-                }
-
-                fullname.concat(tempdir);
-                tempdir.set(0, (char) 0);
-                w = 0;
-                r++;
-                continue;
-            }
-            tempdir.set(w++, upname.get(r++));
-        }
-        return true;
-    }
-
-    public static String resultMakeFullName = "";
-    public static int resultMakeFullNameDrive = 0;
+    public static String returnedFullName = "";
+    public static int returnedFullNameDrive = 0;
 
     // TODO makeName 메소드 대체
     // fullname -> resultMakeFullName, drive -> resultMakeFullNameDrive
@@ -2825,13 +2631,13 @@ public final class DOSMain {
         StringBuffer upname = new StringBuffer(DOSSystem.DOS_PATHLENGTH);
         StringBuffer fullname = new StringBuffer(maxNameSize);
         int r;
-        short drive = getDefaultDrive();
+        int drive = getDefaultDrive();
         /* First get the drive */
         if (name.length() > 1 && name.charAt(nameIdx + 1) == ':') {
-            drive = (byte) ((name.charAt(nameIdx + 0) | 0x20) - 0x61);// 'a' 0x61
+            drive = 0xff & ((name.charAt(nameIdx + 0) | 0x20) - 0x61);// 'a' 0x61
             nameIdx += 2;
         }
-        resultMakeFullNameDrive = drive;
+        returnedFullNameDrive = drive;
         if (drive >= DOS_DRIVES || Drives[drive] == null) {
             setError(DOSERR_PATH_NOT_FOUND);
             return false;
@@ -2907,6 +2713,8 @@ public final class DOSMain {
         /* Now parse the new file name to make the final filename */
         if (upname.charAt(0) != '\\') {
             fullname.append(Drives[drive].curdir);
+        } else {
+            fullname.setLength(0);
         }
         int lastdir = 0;
         int t = 0;
@@ -2997,7 +2805,7 @@ public final class DOSMain {
                     }
                 } else {
                     if (tempdir.length() > 8)
-                        tempdir.setLength(8);
+                        tempdir.setLength(8);// tempdir.set(8, (char) 0);
                 }
                 if (fullname.length() + tempdir.length() >= DOSSystem.DOS_PATHLENGTH) {
                     setError(DOSERR_PATH_NOT_FOUND);
@@ -3005,14 +2813,14 @@ public final class DOSMain {
                 }
 
                 fullname.append(tempdir);
-                tempdir.setLength(0);
+                tempdir.setLength(0);// tempdir.set(0, (char) 0);
                 r++;
                 continue;
             }
             // tempdir.setCharAt(w++, upname.charAt(r++));
             tempdir.append(upname.charAt(r++));
         }
-        resultMakeFullName = fullname.toString();
+        returnedFullName = fullname.toString();
         return true;
     }
 
@@ -3051,14 +2859,12 @@ public final class DOSMain {
     }
 
     public static boolean changeDir(String dir) {
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        if (!makeName(dir, fulldir, refDrive))
+        if (!makeFullName(dir, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
-        if (Drives[drive].testDir(fulldir)) {
-            Drives[drive].curdir = fulldir.toString();
+        String fullDir = returnedFullName;
+        int drive = returnedFullNameDrive;
+        if (Drives[drive].testDir(fullDir)) {
+            Drives[drive].curdir = fullDir;
             return true;
         } else {
             setError(DOSERR_PATH_NOT_FOUND);
@@ -3067,22 +2873,20 @@ public final class DOSMain {
     }
 
     public static boolean makeDir(String dir) {
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         int len = dir.length();
         if (len == 0 || dir.charAt(len - 1) == 0x5c) {// '\\' 0x5c
             setError(DOSERR_PATH_NOT_FOUND);
             return false;
         }
-        if (!makeName(dir, fulldir, refDrive))
+        if (!makeFullName(dir, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
-        if (Drives[drive].makeDir(fulldir))
+        String fullDir = returnedFullName;
+        int drive = returnedFullNameDrive;
+        if (Drives[drive].makeDir(fullDir))
             return true;
 
         /* Determine reason for failing */
-        if (Drives[drive].testDir(fulldir))
+        if (Drives[drive].testDir(fullDir))
             setError(DOSERR_ACCESS_DENIED);
         else
             setError(DOSERR_PATH_NOT_FOUND);
@@ -3094,15 +2898,13 @@ public final class DOSMain {
          * We need to do the test before the removal as can not rely on the host to forbid removal
          * of the current directory. We never change directory. Everything happens in the drives.
          */
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        if (!makeName(dir, fulldir, refDrive))
+        if (!makeFullName(dir, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
+        String fullDir = returnedFullName;
+        int drive = returnedFullNameDrive;
 
         /* Check if exists */
-        if (!Drives[drive].testDir(fulldir)) {
+        if (!Drives[drive].testDir(fullDir)) {
             setError(DOSERR_PATH_NOT_FOUND);
             return false;
         }
@@ -3110,12 +2912,12 @@ public final class DOSMain {
         CStringPt currdir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         currdir.set(0, (char) 0);
         getCurrentDir((byte) (drive + 1), currdir);
-        if (currdir.equalsIgnoreCase(fulldir)) {
+        if (currdir.equalsIgnoreCase(fullDir)) {
             setError(DOSERR_REMOVE_CURRENT_DIRECTORY);
             return false;
         }
 
-        if (Drives[drive].removeDir(fulldir))
+        if (Drives[drive].removeDir(fullDir))
             return true;
 
         /* Failed. We know it exists and it's not the current dir */
@@ -3124,45 +2926,41 @@ public final class DOSMain {
         return false;
     }
 
-    public static boolean rename(String oldname, String newname) {
-        byte driveold = 0;
-        RefU8Ret refDriveO = new RefU8Ret(driveold);
-        CStringPt fullold = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        byte drivenew = 0;
-        RefU8Ret refDriveN = new RefU8Ret(drivenew);
-        CStringPt fullnew = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        if (!makeName(oldname, fullold, refDriveO))
+    public static boolean rename(String oldName, String newName) {
+        if (!makeFullName(oldName, DOSSystem.DOS_PATHLENGTH))
             return false;
-        driveold = refDriveO.U8;
-        if (!makeName(newname, fullnew, refDriveN))
+        String fullOld = returnedFullName;
+        int driveOld = returnedFullNameDrive;
+        if (!makeFullName(newName, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drivenew = refDriveN.U8;
+        String fullNew = returnedFullName;
+        int driveNew = returnedFullNameDrive;
         /* No tricks with devices */
-        if ((findDevice(oldname) != DOS_DEVICES) || (findDevice(newname) != DOS_DEVICES)) {
+        if ((findDevice(oldName) != DOS_DEVICES) || (findDevice(newName) != DOS_DEVICES)) {
             setError(DOSERR_FILE_NOT_FOUND);
             return false;
         }
         /* Must be on the same drive */
-        if (driveold != drivenew) {
+        if (driveOld != driveNew) {
             setError(DOSERR_NOT_SAME_DEVICE);
             return false;
         }
         /* Test if target exists => no access */
-        if (Drives[drivenew].tryFileAttr(fullnew.toString())) {
+        if (Drives[driveNew].tryFileAttr(fullNew.toString())) {
             setError(DOSERR_ACCESS_DENIED);
             return false;
         }
         /* Source must exist, check for path ? */
-        if (!Drives[driveold].tryFileAttr(fullold.toString())) {
+        if (!Drives[driveOld].tryFileAttr(fullOld.toString())) {
             setError(DOSERR_FILE_NOT_FOUND);
             return false;
         }
 
-        if (Drives[drivenew].rename(fullold.toString(), fullnew.toString()))
+        if (Drives[driveNew].rename(fullOld.toString(), fullNew.toString()))
             return true;
         /* If it still fails. which error should we give ? PATH NOT FOUND or EACCESS */
         Log.logging(Log.LogTypes.FILES, Log.LogServerities.Normal,
-                "Rename fails for %s to %s, no proper errorcode returned.", oldname, newname);
+                "Rename fails for %s to %s, no proper errorcode returned.", oldName, newName);
         setError(DOSERR_FILE_NOT_FOUND);
         return false;
     }
@@ -3173,9 +2971,6 @@ public final class DOSMain {
 
     public static boolean findFirst(String search, int attr, boolean fcb_findfirst) {
         DOSDTA dta = new DOSDTA(DOS.getDTA());
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fullsearch = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         CStringPt dir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         CStringPt pattern = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         int len = search.length();
@@ -3186,30 +2981,32 @@ public final class DOSMain {
             setError(DOSERR_NO_MORE_FILES);
             return false;
         }
-        if (!makeName(search, fullsearch, refDrive))
+        if (!makeFullName(search, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
+        String fullSearch = returnedFullName;
+        int drive = returnedFullNameDrive;
 
         // Check for devices. FindDevice checks for leading subdir as well
         boolean device = (findDevice(search) != DOS_DEVICES);
 
         /* Split the search in dir and pattern */
-        CStringPt find_last = fullsearch.lastPositionOf('\\');
-        if (find_last.isEmpty()) { /* No dir */
-            CStringPt.copy(fullsearch, pattern);
+        // CStringPt find_last = fullsearch.lastPositionOf('\\');
+        int lastIdx = fullSearch.lastIndexOf('\\');
+        if (lastIdx < 0) { /* No dir */
+            CStringPt.copy(fullSearch, pattern);
             dir.set(0, (char) 0);
         } else {
-            find_last.set((char) 0);
-            CStringPt.copy(CStringPt.clone(find_last, 1), pattern);
-            CStringPt.copy(fullsearch, dir);
+            CStringPt.copy(fullSearch.substring(lastIdx + 1), pattern);
+            fullSearch = fullSearch.substring(0, lastIdx);
+            CStringPt.copy(fullSearch, dir);
         }
 
         dta.setupSearch(drive, 0xff & attr, pattern);
 
         if (device) {
-            find_last = pattern.lastPositionOf('.');
-            if (!find_last.isEmpty())
-                find_last.set((char) 0);
+            CStringPt findLast = pattern.lastPositionOf('.');
+            if (!findLast.isEmpty())
+                findLast.set((char) 0);
             // TODO use current date and time
             dta.setResult(pattern, 0, 0, 0, DOSSystem.DOS_ATTR_DEVICE);
             Log.logging(Log.LogTypes.DOSMISC, Log.LogServerities.Warn, "finding device %s",
@@ -3393,13 +3190,11 @@ public final class DOSMain {
         if (leading_idx < 0 || leading_idx == 0)
             return true;
         String temp = name;
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fulldir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        if (!makeName(temp, fulldir, refDrive))
+        if (!makeFullName(temp, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
-        if (!Drives[drive].testDir(fulldir))
+        String fullDir = returnedFullName;
+        int drive = returnedFullNameDrive;
+        if (!Drives[drive].testDir(fullDir))
             return false;
         return true;
     }
@@ -3417,13 +3212,11 @@ public final class DOSMain {
 
         Log.logging(Log.LogTypes.FILES, Log.LogServerities.Normal,
                 "file create attributes %X file %s", attributes, name);
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
         DOSPSP psp = new DOSPSP(DOS.getPSP());
-        if (!makeName(name, fullname, refDrive))
+        if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
         /* Check for a free file handle */
         int handle = DOS_FILES;
         int i;
@@ -3449,7 +3242,7 @@ public final class DOSMain {
             return false;
         }
         boolean foundit =
-                (Files[handle] = Drives[drive].fileCreate(fullname.toString(), attributes)) != null;
+                (Files[handle] = Drives[drive].fileCreate(fullName.toString(), attributes)) != null;
         if (foundit) {
             Files[handle].setDrive(drive);
             Files[handle].addRef();
@@ -3466,6 +3259,83 @@ public final class DOSMain {
 
     // 오픈한 file handle은 FileEntry에 저장
     // bool(string, uint8 , ref uint16 )
+    public static boolean openFile1(String name, int flags) {
+        flags &= 0xff;
+        /* First check for devices */
+        if (flags > 2)
+            Log.logging(Log.LogTypes.FILES, Log.LogServerities.Error,
+                    "Special file open command %X file %s", flags, name);
+        else
+            Log.logging(Log.LogTypes.FILES, Log.LogServerities.Normal,
+                    "file open command %X file %s", flags, name);
+
+        DOSPSP psp = new DOSPSP(DOS.getPSP());
+        int attr = 0;
+        byte devnum = findDevice(name);
+        boolean device = (devnum != DOS_DEVICES);
+        if (!device && tryFileAttr(name)) {
+            attr = returnFileAttr();
+            // DON'T ALLOW directories to be openened.(skip test if file is device).
+            if ((attr & DOSSystem.DOS_ATTR_DIRECTORY) != 0
+                    || (attr & DOSSystem.DOS_ATTR_VOLUME) != 0) {
+                setError(DOSERR_ACCESS_DENIED);
+                return false;
+            }
+        }
+
+        /* First check if the name is correct */
+        if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
+            return false;
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
+
+        int handle = 255;
+        /* Check for a free file handle */
+        int i;
+        for (i = 0; i < DOS_FILES; i++) {
+            if (Files[i] == null) {
+                handle = i;
+                break;
+            }
+        }
+        if (handle == 255) {
+            setError(DOSERR_TOO_MANY_OPEN_FILES);
+            return false;
+        }
+        /* We have a position in the main table now find one in the psp table */
+        CreatedOrOpenedFileEntry = 0xffff & psp.findFreeFileEntry();
+
+        if (CreatedOrOpenedFileEntry == 0xff) {
+            setError(DOSERR_TOO_MANY_OPEN_FILES);
+            return false;
+        }
+        boolean exists = false;
+        if (device) {
+            Files[handle] = new DOSDevice(Devices[devnum]);
+        } else {
+            exists = (Files[handle] = Drives[drive].fileOpen(fullName.toString(), flags)) != null;
+            if (exists)
+                Files[handle].setDrive(drive);
+        }
+        if (exists || device) {
+            Files[handle].addRef();
+            psp.setFileHandle(CreatedOrOpenedFileEntry, handle);
+            return true;
+        } else {
+            // Test if file exists, but opened in read-write mode (and writeprotected)
+            if (((flags & 3) != DOSSystem.OPEN_READ)
+                    && Drives[drive].fileExists(fullName.toString()))
+                setError(DOSERR_ACCESS_DENIED);
+            else {
+                if (!pathExists(name))
+                    setError(DOSERR_PATH_NOT_FOUND);
+                else
+                    setError(DOSERR_FILE_NOT_FOUND);
+            }
+            return false;
+        }
+    }
+
     public static boolean openFile(String name, int flags) {
         flags &= 0xff;
         /* First check for devices */
@@ -3490,15 +3360,14 @@ public final class DOSMain {
             }
         }
 
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        int i;
-        /* First check if the name is correct */
-        if (!makeName(name, fullname, refDrive))
+        if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH)) {
             return false;
-        drive = refDrive.U8;
+        }
 
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
+
+        int i = 0;
         int handle = 255;
         /* Check for a free file handle */
         for (i = 0; i < DOS_FILES; i++) {
@@ -3522,7 +3391,7 @@ public final class DOSMain {
         if (device) {
             Files[handle] = new DOSDevice(Devices[devnum]);
         } else {
-            exists = (Files[handle] = Drives[drive].fileOpen(fullname.toString(), flags)) != null;
+            exists = (Files[handle] = Drives[drive].fileOpen(fullName, flags)) != null;
             if (exists)
                 Files[handle].setDrive(drive);
         }
@@ -3532,8 +3401,7 @@ public final class DOSMain {
             return true;
         } else {
             // Test if file exists, but opened in read-write mode (and writeprotected)
-            if (((flags & 3) != DOSSystem.OPEN_READ)
-                    && Drives[drive].fileExists(fullname.toString()))
+            if (((flags & 3) != DOSSystem.OPEN_READ) && Drives[drive].fileExists(fullName))
                 setError(DOSERR_ACCESS_DENIED);
             else {
                 if (!pathExists(name))
@@ -3605,14 +3473,12 @@ public final class DOSMain {
 
 
     public static boolean unlinkFile(String name) {
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        if (!makeName(name, fullname, refDrive))
+        if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
 
-        if (Drives[drive].fileUnlink(fullname)) {
+        if (Drives[drive].fileUnlink(fullName)) {
             return true;
         } else {
             setError(DOSERR_FILE_NOT_FOUND);
@@ -3623,14 +3489,12 @@ public final class DOSMain {
     public static int returnedFileAttr;
 
     public static boolean tryFileAttr(String name) {
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        if (!makeName(name, fullname, refDrive))
+        if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
 
-        if (Drives[drive].tryFileAttr(fullname.toString())) {
+        if (Drives[drive].tryFileAttr(fullName.toString())) {
             returnedFileAttr = Drives[drive].returnFileAttr();
             return true;
         } else {
@@ -3648,33 +3512,29 @@ public final class DOSMain {
     // returns false when using on cdrom (stonekeep)
     // public static boolean SetFileAttr(String name, short attr)
     public static boolean setFileAttr(String name, int attr) {
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        if (!makeName(name, fullname, refDrive))
+        if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
 
         if (Drives[drive].getInfo().startsWith("CDRom ")
                 || Drives[drive].getInfo().startsWith("isoDrive ")) {
             setError(DOSERR_ACCESS_DENIED);
             return false;
         }
-        return Drives[drive].tryFileAttr(fullname.toString());
+        return Drives[drive].tryFileAttr(fullName.toString());
     }
 
     public static boolean canonicalize(String name, CStringPt big) {
         // TODO Add Better support for devices and shit but will it be needed i doubt it :)
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        if (!makeName(name, fullname, refDrive))
+        if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
         big.set(0, (char) (drive + 'A'));
         big.set(1, ':');
         big.set(2, '\\');
-        CStringPt.copy(fullname, CStringPt.clone(big, 3));
+        CStringPt.copy(fullName, CStringPt.clone(big, 3));
 
         return true;
     }
@@ -4043,17 +3903,15 @@ public final class DOSMain {
         fcb.getName(shortname);
 
         /* First check if the name is correct */
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        if (!makeName(shortname.toString(), fullname, refDrive))
+        if (!makeFullName(shortname.toString(), DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
 
         /* Check, if file is already opened */
         for (byte i = 0; i < DOS_FILES; i++) {
             DOSPSP psp = new DOSPSP(DOS.getPSP());
-            if (Files[i] != null && Files[i].isOpen() && Files[i].isName(fullname)) {
+            if (Files[i] != null && Files[i].isOpen() && Files[i].isName(fullName)) {
                 handle = psp.findEntryByHandle(i);
                 if (handle == 0xFF) {
                     // This shouldnt happen
@@ -4390,13 +4248,11 @@ public final class DOSMain {
 
 
     public static boolean fileExists(String name) {
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
-        if (!makeName(name, fullname, refDrive))
+        if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
             return false;
-        drive = refDrive.U8;
-        return Drives[drive].fileExists(fullname.toString());
+        String fullName = returnedFullName;
+        int drive = returnedFullNameDrive;
+        return Drives[drive].fileExists(fullName);
     }
 
     private static boolean getAllocationInfo(int drive, DriveAllocationInfo alloc) {
@@ -5092,8 +4948,8 @@ public final class DOSMain {
 
         if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
             return DOS_DEVICES;
-        int drive = (byte) resultMakeFullNameDrive;
-        String fullname = resultMakeFullName;
+        int drive = (byte) returnedFullNameDrive;
+        String fullname = returnedFullName;
 
 
         // CStringPt namePart = fullname.lastPositionOf('\\');

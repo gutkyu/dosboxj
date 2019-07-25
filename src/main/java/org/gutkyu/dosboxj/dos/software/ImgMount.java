@@ -148,17 +148,16 @@ public final class ImgMount extends Program {
                         TempLine = homedir;
                     } catch (Exception e1) {
                         // convert dosbox filename to system filename
-                        CStringPt fullname = CStringPt.create(Cross.LEN);
                         CStringPt tmp = CStringPt.create(Cross.LEN);
                         CStringPt.safeCopy(TempLine, tmp, Cross.LEN);
-                        byte dummy = 0;
-                        RefU8Ret refDrive = new RefU8Ret(dummy);
-                        if (!DOSMain.makeName(tmp.toString(), fullname, refDrive)
-                                || DOSMain.Drives[dummy].getInfo() != "local directory") {
+                        if (!DOSMain.makeFullName(tmp.toString(), Cross.LEN)
+                                || DOSMain.Drives[DOSMain.returnedFullNameDrive]
+                                        .getInfo() != "local directory") {
                             writeOut(Message.get("PROGRAM_IMGMOUNT_NON_LOCAL_DRIVE"));
                             return;
                         }
-                        dummy = refDrive.U8;
+                        String fullName = DOSMain.returnedFullName;
+                        int dummy = DOSMain.returnedFullNameDrive;
 
                         DOSDrive drv = DOSMain.Drives[dummy];
                         if (!(drv instanceof LocalDrive)) {
@@ -166,7 +165,7 @@ public final class ImgMount extends Program {
                             return;
                         }
                         LocalDrive ldp = (LocalDrive) drv;
-                        ldp.getSystemFilename(tmp, fullname);
+                        ldp.getSystemFilename(tmp, fullName);
                         TempLine = tmp.toString();
 
                         path = Paths.get(TempLine);

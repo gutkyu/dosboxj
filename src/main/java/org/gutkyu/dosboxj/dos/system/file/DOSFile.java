@@ -70,7 +70,7 @@ public abstract class DOSFile implements Disposable {
         return Open;
     }
 
-    public boolean isName(CStringPt name) {
+    public boolean isName(String name) {
         return Name != null && Name.equalsIgnoreCase(name);
     }
 
@@ -86,12 +86,12 @@ public abstract class DOSFile implements Disposable {
         return true;
     }
 
-    public void setDrive(byte drv) {
-        hdrive = drv;
+    public void setDrive(int drv) {
+        hdrive = (byte) drv;
     }
 
-    public byte getDrive() {
-        return hdrive;
+    public int getDrive() {
+        return 0xff & hdrive;
     }
 
     public int Flags;

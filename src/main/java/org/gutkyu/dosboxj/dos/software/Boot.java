@@ -50,15 +50,14 @@ public final class Boot extends Program {
         // requested
         boolean tryload = error > 0 ? true : false;
         refErr.U32 = error = 0;
-        byte drive = 0;
-        RefU8Ret refDrive = new RefU8Ret(drive);
+        int drive = 0;
         SeekableByteChannel tmpCh;
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
 
         LocalDrive ldp = null;
-        if (!DOSMain.makeName(fileName, fullname, refDrive))
+        if (!DOSMain.makeFullName(fileName, DOSSystem.DOS_PATHLENGTH))
             return null;
-        drive = refDrive.U8;
+        String fullName = DOSMain.returnedFullName;
+        drive = DOSMain.returnedFullNameDrive;
 
         try {
             DOSDrive drv = DOSMain.Drives[drive];
@@ -66,7 +65,7 @@ public final class Boot extends Program {
                 return null;
             ldp = (LocalDrive) drv;
 
-            tmpCh = ldp.getSystemFileChannel(fullname.toString(), StandardOpenOption.READ);
+            tmpCh = ldp.getSystemFileChannel(fullName, StandardOpenOption.READ);
             if (tmpCh == null) {
                 if (!tryload)
                     refErr.U32 = error = 1;
@@ -83,13 +82,13 @@ public final class Boot extends Program {
             tmpCh.close();
 
             // "rb+"
-            tmpCh = ldp.getSystemFileChannel(fullname.toString(), StandardOpenOption.READ,
+            tmpCh = ldp.getSystemFileChannel(fullName, StandardOpenOption.READ,
                     StandardOpenOption.WRITE);
             if (tmpCh == null) {
                 // if (!tryload) *error=2;
                 // return null;
                 writeOut(Message.get("PROGRAM_BOOT_WRITE_PROTECTED"));
-                tmpCh = ldp.getSystemFileChannel(fullname.toString(), StandardOpenOption.READ);
+                tmpCh = ldp.getSystemFileChannel(fullName, StandardOpenOption.READ);
                 if (tmpCh == null) {
                     if (!tryload)
                         refErr.U32 = error = 1;

@@ -37,17 +37,17 @@ public final class VirtualDrive extends DOSDrive {
     }
 
     @Override
-    public boolean fileUnlink(CStringPt name) {
+    public boolean fileUnlink(String name) {
         return false;
     }
 
     @Override
-    public boolean removeDir(CStringPt dir) {
+    public boolean removeDir(String dir) {
         return false;
     }
 
     @Override
-    public boolean makeDir(CStringPt dir) {
+    public boolean makeDir(String dir) {
         return false;
     }
 

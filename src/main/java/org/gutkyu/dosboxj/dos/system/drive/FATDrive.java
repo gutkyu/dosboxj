@@ -364,7 +364,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public boolean fileUnlink(CStringPt name) {
+    public boolean fileUnlink(String name) {
         byte[] fileEntry = new byte[SIZE_direntry_Total];
         int dirClust = 0, subEntry = 0;
         RefU32Ret refDirClust = new RefU32Ret(dirClust);
@@ -385,7 +385,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public boolean removeDir(CStringPt dir) {
+    public boolean removeDir(String dir) {
         int dummyClust = 0, dirClust = 0;
         byte[] tmpentry = new byte[SIZE_direntry_Total];
         CStringPt dirName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
@@ -457,7 +457,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     }
 
     @Override
-    public boolean makeDir(CStringPt dir) {
+    public boolean makeDir(String dir) {
         int dummyClust = 0, dirClust = 0;
         byte[] tmpentry = new byte[SIZE_direntry_Total];
         CStringPt dirName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
