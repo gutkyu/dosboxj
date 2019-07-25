@@ -36,10 +36,10 @@ final class VGACrtc {
     public int Index;// byte
     public boolean ReadOnly;
 
-    private VGA _vga;
+    private VGA vga;
 
     protected VGACrtc(VGA vga) {
-        this._vga = vga;
+        this.vga = vga;
     }
 
     /*--------------------------- begin VGACrtc -----------------------------*/
@@ -71,7 +71,7 @@ final class VGACrtc {
                     break;
                 if (val != this.HorizontalDisplayEnd) {
                     this.HorizontalDisplayEnd = val;
-                    _vga.startResize();
+                    vga.startResize();
                 }
                 /* 0-7 Number of Character Clocks Displayed -1 */
                 break;
@@ -115,7 +115,7 @@ final class VGACrtc {
                     break;
                 if (val != this.VerticalTotal) {
                     this.VerticalTotal = val;
-                    _vga.startResize();
+                    vga.startResize();
                 }
                 /*
                  * 0-7 Lower 8 bits of the Vertical Total. Bit 8 is found in 3d4h index 7 bit 0. Bit
@@ -125,12 +125,12 @@ final class VGACrtc {
                 break;
             case 0x07: /* Overflow Register */
                 // Line compare bit ignores read only */
-                _vga.Config.LineCompare = (_vga.Config.LineCompare & 0x6ff) | (val & 0x10) << 4;
+                vga.Config.LineCompare = (vga.Config.LineCompare & 0x6ff) | (val & 0x10) << 4;
                 if (this.ReadOnly)
                     break;
                 if (((this.Overflow ^ val) & 0xd6) != 0) {
                     this.Overflow = val;
-                    _vga.startResize();
+                    vga.startResize();
                 } else
                     this.Overflow = val;
                 /*
@@ -143,11 +143,11 @@ final class VGACrtc {
                 break;
             case 0x08: /* Preset Row Scan Register */
                 this.PresetRowScan = val;
-                _vga.Config.HLinesSkip = val & 31;
+                vga.Config.HLinesSkip = val & 31;
                 if (DOSBox.isVGAArch())
-                    _vga.Config.BytesSkip = (val >>> 5) & 3;
+                    vga.Config.BytesSkip = (val >>> 5) & 3;
                 else
-                    _vga.Config.BytesSkip = 0;
+                    vga.Config.BytesSkip = 0;
                 // LOG_DEBUG("Skip lines %d bytes %d",vga.config.hlines_skip,vga.config.bytes_skip);
                 /*
                  * 0-4 Number of lines we have scrolled down in the first character row. Provides
@@ -158,24 +158,24 @@ final class VGACrtc {
                 break;
             case 0x09: /* Maximum Scan Line Register */
                 if (DOSBox.isVGAArch())
-                    _vga.Config.LineCompare = (_vga.Config.LineCompare & 0x5ff) | (val & 0x40) << 3;
+                    vga.Config.LineCompare = (vga.Config.LineCompare & 0x5ff) | (val & 0x40) << 3;
 
                 if (DOSBox.isVGAArch() && (DOSBox.SVGACard == DOSBox.SVGACards.None)
-                        && (_vga.Mode == VGAModes.EGA || _vga.Mode == VGAModes.VGA)) {
+                        && (vga.Mode == VGAModes.EGA || vga.Mode == VGAModes.VGA)) {
                     // in vgaonly mode we take special care of line repeats (excluding CGA modes)
                     if (((this.MaximumScanLine ^ val) & 0x20) != 0) {
                         this.MaximumScanLine = val;
-                        _vga.startResize();
+                        vga.startResize();
                     } else {
                         this.MaximumScanLine = val;
                     }
-                    _vga.Draw.AddressLineTotal = (val & 0x1F) + 1;
+                    vga.Draw.AddressLineTotal = (val & 0x1F) + 1;
                     if ((val & 0x80) != 0)
-                        _vga.Draw.AddressLineTotal *= 2;
+                        vga.Draw.AddressLineTotal *= 2;
                 } else {
                     if (((this.MaximumScanLine ^ val) & 0xbf) != 0) {
                         this.MaximumScanLine = val;
-                        _vga.startResize();
+                        vga.startResize();
                     } else {
                         this.MaximumScanLine = val;
                     }
@@ -191,19 +191,19 @@ final class VGACrtc {
                 break;
             case 0x0A: /* Cursor Start Register */
                 this.CursorStart = val;
-                _vga.Draw.Cursor.SLine = val & 0x1f;
+                vga.Draw.Cursor.SLine = val & 0x1f;
                 if (DOSBox.isVGAArch())
-                    _vga.Draw.Cursor.Enabled = (val & 0x20) == 0 ? 1 : 0;
+                    vga.Draw.Cursor.Enabled = (val & 0x20) == 0 ? 1 : 0;
                 else
-                    _vga.Draw.Cursor.Enabled = 1;
+                    vga.Draw.Cursor.Enabled = 1;
                 /*
                  * 0-4 First scanline of cursor within character. 5 Turns Cursor off if set
                  */
                 break;
             case 0x0B: /* Cursor End Register */
                 this.CursorEnd = val;
-                _vga.Draw.Cursor.ELine = val & 0x1f;
-                _vga.Draw.Cursor.Delay = (val >>> 5) & 0x3;
+                vga.Draw.Cursor.ELine = val & 0x1f;
+                vga.Draw.Cursor.Delay = (val >>> 5) & 0x3;
 
                 /*
                  * 0-4 Last scanline of cursor within character 5-6 Delay of cursor data in
@@ -212,25 +212,25 @@ final class VGACrtc {
                 break;
             case 0x0C: /* Start Address High Register */
                 this.StartAddressHigh = val;
-                _vga.Config.DisplayStart = (_vga.Config.DisplayStart & 0xFF00FF) | (val << 8);
+                vga.Config.DisplayStart = (vga.Config.DisplayStart & 0xFF00FF) | (val << 8);
                 /* 0-7 Upper 8 bits of the start address of the display buffer */
                 break;
             case 0x0D: /* Start Address Low Register */
                 this.StartAddressLow = val;
-                _vga.Config.DisplayStart = (_vga.Config.DisplayStart & 0xFFFF00) | val;
+                vga.Config.DisplayStart = (vga.Config.DisplayStart & 0xFFFF00) | val;
                 /* 0-7 Lower 8 bits of the start address of the display buffer */
                 break;
             case 0x0E: /* Cursor Location High Register */
                 this.CursorLocationHigh = val;
-                _vga.Config.CursorStart &= 0xff00ff;
-                _vga.Config.CursorStart |= val << 8;
+                vga.Config.CursorStart &= 0xff00ff;
+                vga.Config.CursorStart |= val << 8;
                 /* 0-7 Upper 8 bits of the address of the cursor */
                 break;
             case 0x0F: /* Cursor Location Low Register */
                 // TODO update cursor on screen
                 this.CursorLocationLow = val;
-                _vga.Config.CursorStart &= 0xffff00;
-                _vga.Config.CursorStart |= val;
+                vga.Config.CursorStart &= 0xffff00;
+                vga.Config.CursorStart |= val;
                 /* 0-7 Lower 8 bits of the address of the cursor */
                 break;
             case 0x10: /* Vertical Retrace Start Register */
@@ -245,7 +245,7 @@ final class VGACrtc {
                 this.VerticalRetraceEnd = val;
 
                 if (DOSBox.isEGAVGAArch() && (val & 0x10) == 0) {
-                    _vga.Draw.VRetTriggered = false;
+                    vga.Draw.VRetTriggered = false;
                     if (DOSBox.Machine == DOSBox.MachineType.EGA)
                         PIC.deactivateIRQ(9);
                 }
@@ -267,13 +267,13 @@ final class VGACrtc {
                     if (Math.abs(val - this.VerticalDisplayEnd) < 3) {
                         // delay small vde changes a bit to avoid screen resizing
                         // if they are reverted in a short timeframe
-                        PIC.removeEvents(_vga.setupDrawingWrap);
-                        _vga.Draw.Resizing = false;
+                        PIC.removeEvents(vga.setupDrawingWrap);
+                        vga.Draw.Resizing = false;
                         this.VerticalDisplayEnd = val;
-                        _vga.startResize(150);
+                        vga.startResize(150);
                     } else {
                         this.VerticalDisplayEnd = val;
-                        _vga.startResize();
+                        vga.startResize();
                     }
                 }
                 /*
@@ -284,9 +284,9 @@ final class VGACrtc {
                 break;
             case 0x13: /* Offset register */
                 this.Offset = val;
-                _vga.Config.ScanLen &= 0x300;
-                _vga.Config.ScanLen |= val;
-                _vga.checkScanLength();
+                vga.Config.ScanLen &= 0x300;
+                vga.Config.ScanLen |= val;
+                vga.checkScanLength();
                 /*
                  * 0-7 Number of bytes in a scanline / K. Where K is 2 for byte mode, 4 for word
                  * mode and 8 for Double Word mode.
@@ -297,13 +297,13 @@ final class VGACrtc {
                 if (DOSBox.isVGAArch()) {
                     // Byte,word,dword mode
                     if ((this.UnderlineLocation & 0x20) != 0)
-                        _vga.Config.AddrShift = 2;
+                        vga.Config.AddrShift = 2;
                     else if ((this.ModeControl & 0x40) != 0)
-                        _vga.Config.AddrShift = 0;
+                        vga.Config.AddrShift = 0;
                     else
-                        _vga.Config.AddrShift = 1;
+                        vga.Config.AddrShift = 1;
                 } else {
-                    _vga.Config.AddrShift = 1;
+                    vga.Config.AddrShift = 1;
                 }
                 /*
                  * 0-4 Position of underline within Character cell. 5 If set memory address is only
@@ -313,7 +313,7 @@ final class VGACrtc {
             case 0x15: /* Start Vertical Blank Register */
                 if (val != this.StartVerticalBlanking) {
                     this.StartVerticalBlanking = val;
-                    _vga.startResize();
+                    vga.startResize();
                 }
                 /*
                  * 0-7 Lower 8 bits of Vertical Blank Start. Vertical blanking starts when the line
@@ -329,21 +329,21 @@ final class VGACrtc {
                 break;
             case 0x17: /* Mode Control Register */
                 this.ModeControl = val;
-                _vga.Tandy.LineMask = (byte) ((~val) & 3);
+                vga.Tandy.LineMask = (byte) ((~val) & 3);
                 // Byte,word,dword mode
                 if ((this.UnderlineLocation & 0x20) != 0)
-                    _vga.Config.AddrShift = 2;
+                    vga.Config.AddrShift = 2;
                 else if ((this.ModeControl & 0x40) != 0)
-                    _vga.Config.AddrShift = 0;
+                    vga.Config.AddrShift = 0;
                 else
-                    _vga.Config.AddrShift = 1;
+                    vga.Config.AddrShift = 1;
 
-                if (_vga.Tandy.LineMask != 0) {
-                    _vga.Tandy.LineShift = 13;
-                    _vga.Tandy.AddrMask = (1 << 13) - 1;
+                if (vga.Tandy.LineMask != 0) {
+                    vga.Tandy.LineShift = 13;
+                    vga.Tandy.AddrMask = (1 << 13) - 1;
                 } else {
-                    _vga.Tandy.AddrMask = ~0;
-                    _vga.Tandy.LineShift = 0;
+                    vga.Tandy.AddrMask = ~0;
+                    vga.Tandy.LineShift = 0;
                 }
                 // Should we really need to do a determinemode here?
                 // VGA_DetermineMode();
@@ -362,7 +362,7 @@ final class VGACrtc {
                 break;
             case 0x18: /* Line Compare Register */
                 this.LineCompare = val;
-                _vga.Config.LineCompare = (_vga.Config.LineCompare & 0x700) | val;
+                vga.Config.LineCompare = (vga.Config.LineCompare & 0x700) | val;
                 /*
                  * 0-7 Lower 8 bits of the Line Compare. When the Line counter reaches this value,
                  * the display address wraps to 0. Provides Split Screen facilities. Bit 8 is found
@@ -370,8 +370,8 @@ final class VGACrtc {
                  */
                 break;
             default:
-                if (_vga.SVGADrv.WriteP3D5 != null) {
-                    _vga.SVGADrv.WriteP3D5.exec(this.Index, val, iolen);
+                if (vga.SVGADrv.WriteP3D5 != null) {
+                    vga.SVGADrv.WriteP3D5.exec(this.Index, val, iolen);
                 } else {
                     Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
                             "VGA:CRTC:Write to unknown index %X", this.Index);
@@ -436,8 +436,8 @@ final class VGACrtc {
             case 0x18: /* Line Compare Register */
                 return this.LineCompare;
             default:
-                if (_vga.SVGADrv.ReadP3D5 != null) {
-                    return _vga.SVGADrv.ReadP3D5.exec(this.Index, iolen);
+                if (vga.SVGADrv.ReadP3D5 != null) {
+                    return vga.SVGADrv.ReadP3D5.exec(this.Index, iolen);
                 } else {
                     Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
                             "VGA:CRTC:Read from unknown index %X", this.Index);

@@ -31,37 +31,37 @@ public final class TsengET3KSVGADriverProvider {
     public int[] _clockFreq = new int[] {0, 0, 0, 0, 0, 0, 0, 0};
     public int _biosMode = 0;
 
-    VGA _vga = null;
+    VGA vga = null;
 
     public TsengET3KSVGADriverProvider(VGA vga) {
-        _vga = vga;
+        this.vga = vga;
 
-        _vga.SVGADrv.WriteP3D5 = this::writeP3D5;
-        _vga.SVGADrv.ReadP3D5 = this::readP3D5;
-        _vga.SVGADrv.WriteP3C5 = this::writeP3C5;
-        _vga.SVGADrv.ReadP3C5 = this::readP3C5;
-        _vga.SVGADrv.WriteP3C0 = this::writeP3C0;
-        _vga.SVGADrv.ReadP3C1 = this::readP3C1;
+        vga.SVGADrv.WriteP3D5 = this::writeP3D5;
+        vga.SVGADrv.ReadP3D5 = this::readP3D5;
+        vga.SVGADrv.WriteP3C5 = this::writeP3C5;
+        vga.SVGADrv.ReadP3C5 = this::readP3C5;
+        vga.SVGADrv.WriteP3C0 = this::writeP3C0;
+        vga.SVGADrv.ReadP3C1 = this::readP3C1;
 
-        _vga.SVGADrv.SetVideoMode = this::finishSetMode;
-        _vga.SVGADrv.DetermineMode = this::determineMode;
-        _vga.SVGADrv.SetClock = this::setClock;
-        _vga.SVGADrv.GetClock = this::getClock;
-        _vga.SVGADrv.AcceptsMode = this::acceptsMode;
+        vga.SVGADrv.SetVideoMode = this::finishSetMode;
+        vga.SVGADrv.DetermineMode = this::determineMode;
+        vga.SVGADrv.SetClock = this::setClock;
+        vga.SVGADrv.GetClock = this::getClock;
+        vga.SVGADrv.AcceptsMode = this::acceptsMode;
 
-        _vga.setClock(0, VGA.CLK_25);
-        _vga.setClock(1, VGA.CLK_28);
-        _vga.setClock(2, 32400);
-        _vga.setClock(3, 35900);
-        _vga.setClock(4, 39900);
-        _vga.setClock(5, 44700);
-        _vga.setClock(6, 31400);
-        _vga.setClock(7, 37500);
+        vga.setClock(0, VGA.CLK_25);
+        vga.setClock(1, VGA.CLK_28);
+        vga.setClock(2, 32400);
+        vga.setClock(3, 35900);
+        vga.setClock(4, 39900);
+        vga.setClock(5, 44700);
+        vga.setClock(6, 31400);
+        vga.setClock(7, 37500);
 
         IO.registerReadHandler(0x3cd, this::readP3CD, IO.IO_MB);
         IO.registerWriteHandler(0x3cd, this::writeP3CD, IO.IO_MB);
 
-        _vga.VMemSize = 512 * 1024; // Cannot figure how this was supposed to work on the real card
+        vga.VMemSize = 512 * 1024; // Cannot figure how this was supposed to work on the real card
 
         // Tseng ROM signature
         int romBase = Memory.physMake(0xc000, 0);
@@ -117,9 +117,8 @@ public final class TsengET3KSVGADriverProvider {
                 // Only bits 1 and 2 are supported. Bit 2 is related to hardware zoom, bit 7 is too
                 // obscure to be useful
                 _store_3d4_23 = val;
-                _vga.Config.DisplayStart =
-                        (_vga.Config.DisplayStart & 0xffff) | ((val & 0x02) << 15);
-                _vga.Config.CursorStart = (_vga.Config.CursorStart & 0xffff) | ((val & 0x01) << 16);
+                vga.Config.DisplayStart = (vga.Config.DisplayStart & 0xffff) | ((val & 0x02) << 15);
+                vga.Config.CursorStart = (vga.Config.CursorStart & 0xffff) | ((val & 0x01) << 16);
                 break;
 
 
@@ -142,7 +141,7 @@ public final class TsengET3KSVGADriverProvider {
                  * Line Compare bit 10 5-6 Reserved 7 Vertical Interlace if set
                  */
                 _store_3d4_25 = val;
-                _vga.Config.LineCompare = (_vga.Config.LineCompare & 0x3ff) | ((val & 0x10) << 6);
+                vga.Config.LineCompare = (vga.Config.LineCompare & 0x3ff) | ((val & 0x10) << 6);
             // Abusing s3 ex_ver_overflow field. This is to be cleaned up later.
             {
                 byte s3val = (byte) (((val & 0x01) << 2) | // vbstart
@@ -150,11 +149,11 @@ public final class TsengET3KSVGADriverProvider {
                         ((val & 0x04) >>> 1) | // vdispend
                         ((val & 0x08) << 1) | // vsyncstart (?)
                         ((val & 0x10) << 2)); // linecomp
-                if (((s3val ^ _vga.S3.ExVerOverflow) & 0x3) != 0) {
-                    _vga.S3.ExVerOverflow = s3val;
-                    _vga.startResize();
+                if (((s3val ^ vga.S3.ExVerOverflow) & 0x3) != 0) {
+                    vga.S3.ExVerOverflow = s3val;
+                    vga.startResize();
                 } else
-                    _vga.S3.ExVerOverflow = s3val;
+                    vga.S3.ExVerOverflow = s3val;
             }
                 break;
 
@@ -247,15 +246,15 @@ public final class TsengET3KSVGADriverProvider {
      * not supported
      */
     private void writeP3CD(int port, int val, int iolen) {
-        _vga.SVGA.BankWrite = (byte) (val & 0x07);
-        _vga.SVGA.BankRead = (byte) ((val >>> 3) & 0x07);
-        _vga.SVGA.BankSize = (val & 0x40) != 0 ? 64 * 1024 : 128 * 1024;
-        _vga.setupHandlers();
+        vga.SVGA.BankWrite = (byte) (val & 0x07);
+        vga.SVGA.BankRead = (byte) ((val >>> 3) & 0x07);
+        vga.SVGA.BankSize = (val & 0x40) != 0 ? 64 * 1024 : 128 * 1024;
+        vga.setupHandlers();
     }
 
     private int readP3CD(int port, int iolen) {
-        return ((_vga.SVGA.BankRead & 0xff) << 3) | _vga.SVGA.BankWrite
-                | (((_vga.SVGA.BankSize & 0xff) == 128 * 1024) ? 0 : 0x40);
+        return ((vga.SVGA.BankRead & 0xff) << 3) | vga.SVGA.BankWrite
+                | (((vga.SVGA.BankSize & 0xff) == 128 * 1024) ? 0 : 0x40);
     }
 
     private void writeP3C0(int reg, int val, int iolen) {
@@ -301,12 +300,12 @@ public final class TsengET3KSVGADriverProvider {
      */
 
     private int getClockIndex() {
-        return ((_vga.MiscOutput >>> 2) & 3) | ((_store_3d4_24 << 1) & 4);
+        return ((vga.MiscOutput >>> 2) & 3) | ((_store_3d4_24 << 1) & 4);
     }
 
     private void setClockIndex(int index) {
         // Shortwiring register reads/writes for simplicity
-        IO.write(0x3c2, 0xff & (0xff & (_vga.MiscOutput & ~0x0c) | ((index & 3) << 2)));
+        IO.write(0x3c2, 0xff & (0xff & (vga.MiscOutput & ~0x0c) | ((index & 3) << 2)));
         _store_3d4_24 = (_store_3d4_24 & ~0x02) | ((index & 4) >>> 1);
     }
 
@@ -359,38 +358,38 @@ public final class TsengET3KSVGADriverProvider {
             setClockIndex(best);
         }
 
-        if (_vga.SVGADrv.DetermineMode != null)
-            _vga.SVGADrv.DetermineMode.exec();
+        if (vga.SVGADrv.DetermineMode != null)
+            vga.SVGADrv.DetermineMode.exec();
 
         // Verified on functioning (at last!) hardware: Tseng ET3000 is the same as ET4000 when
         // it comes to chain4 architecture
-        _vga.Config.CompatibleChain4 = false;
-        _vga.VMemWrap = _vga.VMemSize;
+        vga.Config.CompatibleChain4 = false;
+        vga.VMemWrap = vga.VMemSize;
 
-        _vga.setupHandlers();
+        vga.setupHandlers();
     }
 
     private void determineMode() {
         // Close replica from the base implementation. It will stay here
         // until I figure a way to either distinguish VGAModes.M_VGA and VGAModes.M_LIN8 or
         // merge them.
-        if ((_vga.Attr.ModeControl & 1) != 0) {
-            if ((_vga.GFX.Mode & 0x40) != 0)
-                _vga.setMode((_biosMode <= 0x13) ? VGAModes.VGA : VGAModes.LIN8); // Ugly...
-            else if ((_vga.GFX.Mode & 0x20) != 0)
-                _vga.setMode(VGAModes.CGA4);
-            else if ((_vga.GFX.Miscellaneous & 0x0c) == 0x0c)
-                _vga.setMode(VGAModes.CGA2);
+        if ((vga.Attr.ModeControl & 1) != 0) {
+            if ((vga.GFX.Mode & 0x40) != 0)
+                vga.setMode((_biosMode <= 0x13) ? VGAModes.VGA : VGAModes.LIN8); // Ugly...
+            else if ((vga.GFX.Mode & 0x20) != 0)
+                vga.setMode(VGAModes.CGA4);
+            else if ((vga.GFX.Miscellaneous & 0x0c) == 0x0c)
+                vga.setMode(VGAModes.CGA2);
             else
-                _vga.setMode((_biosMode <= 0x13) ? VGAModes.EGA : VGAModes.LIN4);
+                vga.setMode((_biosMode <= 0x13) ? VGAModes.EGA : VGAModes.LIN4);
         } else {
-            _vga.setMode(VGAModes.TEXT);
+            vga.setMode(VGAModes.TEXT);
         }
     }
 
     private void setClock(int which, int target) {
         _clockFreq[which] = 1000 * target;
-        _vga.startResize();
+        vga.startResize();
     }
 
     private int getClock() {
@@ -398,6 +397,6 @@ public final class TsengET3KSVGADriverProvider {
     }
 
     private boolean acceptsMode(int mode) {
-        return mode <= 0x37 && mode != 0x2f && INT10Mode.videoModeMemSize(mode) < _vga.VMemSize;
+        return mode <= 0x37 && mode != 0x2f && INT10Mode.videoModeMemSize(mode) < vga.VMemSize;
     }
 }

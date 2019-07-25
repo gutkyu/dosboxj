@@ -12,7 +12,7 @@ public final class VGAAttr {
     public byte OverscanColor;
     public byte ColorPlaneEnable;
     public byte ColorSelect;
-    public int Index;//byte
+    public int Index;// byte
     public byte Disabled; // Used for disabling the screen.
     // Bit0: screen disabled by attribute controller index
     // Bit1: screen disabled by sequencer index 1 bit 5
@@ -20,23 +20,23 @@ public final class VGAAttr {
     // the line drawing function is called maybe 60*480=28800 times/s,
     // and we only need to check one variable for zero this way.
 
-    VGA _vga = null;
+    VGA vga = null;
 
     public VGAAttr(VGA vga) {
         Palette = new byte[16];
 
-        _vga = vga;
+        this.vga = vga;
     }
 
-    //public void setPalette(int index, byte val) {
+    // public void setPalette(int index, byte val) {
     public void setPalette(int index, int val) {
-        Palette[index] = (byte)val;
+        Palette[index] = (byte) val;
         if ((ModeControl & 0x80) != 0)
             val = 0xff & ((val & 0xf) | (ColorSelect << 4));
         val &= 63;
         val |= 0xff & ((ColorSelect & 0xc) << 4);
         if (DOSBox.Machine == DOSBox.MachineType.EGA) {
-            if ((_vga.Crtc.VerticalTotal | ((_vga.Crtc.Overflow & 1) << 8)) == 260) {
+            if ((vga.Crtc.VerticalTotal | ((vga.Crtc.Overflow & 1) << 8)) == 260) {
                 // check for intensity bit
                 if ((val & 0x10) != 0)
                     val |= 0x38;
@@ -48,7 +48,7 @@ public final class VGAAttr {
                 }
             }
         }
-        _vga.Dac.combineColor(index, val);
+        vga.Dac.combineColor(index, val);
     }
 
     private int readP3C0(int port, int iolen) {
@@ -60,9 +60,9 @@ public final class VGAAttr {
     }
 
     private void writeP3C0(int port, int val, int iolen) {
-        if (!_vga.Internal.AttrIndex) {
+        if (!vga.Internal.AttrIndex) {
             Index = val & 0x1F;
-            _vga.Internal.AttrIndex = true;
+            vga.Internal.AttrIndex = true;
             if ((val & 0x20) != 0)
                 Disabled &= 0xff & ~1;
             else
@@ -74,7 +74,7 @@ public final class VGAAttr {
              */
             return;
         } else {
-            _vga.Internal.AttrIndex = false;
+            vga.Internal.AttrIndex = false;
             switch (Index) {
                 /* Palette */
                 case 0x00:
@@ -110,16 +110,16 @@ public final class VGAAttr {
                         }
                     }
                     if (((ModeControl ^ val) & 0x08) != 0) {
-                        _vga.setBlinking(val & 0x8);
+                        vga.setBlinking(val & 0x8);
                     }
                     if (((ModeControl ^ val) & 0x04) != 0) {
                         ModeControl = (byte) val;
-                        _vga.determineMode();
+                        vga.determineMode();
                         if ((DOSBox.isVGAArch()) && (DOSBox.SVGACard == DOSBox.SVGACards.None))
-                            _vga.startResize();
+                            vga.startResize();
                     } else {
                         ModeControl = (byte) val;
-                        _vga.determineMode();
+                        vga.determineMode();
                     }
 
                     /*
@@ -152,22 +152,22 @@ public final class VGAAttr {
                     break;
                 case 0x13: /* Horizontal PEL Panning Register */
                     HorizontalPelPanning = val & 0xF;
-                    switch (_vga.Mode) {
+                    switch (vga.Mode) {
                         case TEXT:
                             if ((val == 0x7) && (DOSBox.SVGACard == DOSBox.SVGACards.None))
-                                _vga.Config.PelPanning = 7;
+                                vga.Config.PelPanning = 7;
                             if (val > 0x7)
-                                _vga.Config.PelPanning = 0;
+                                vga.Config.PelPanning = 0;
                             else
-                                _vga.Config.PelPanning = val + 1;
+                                vga.Config.PelPanning = val + 1;
                             break;
                         case VGA:
                         case LIN8:
-                            _vga.Config.PelPanning = (val & 0x7) / 2;
+                            vga.Config.PelPanning = (val & 0x7) / 2;
                             break;
                         case LIN16:
                         default:
-                            _vga.Config.PelPanning = val & 0x7;
+                            vga.Config.PelPanning = val & 0x7;
                             break;
                     }
                     /*
@@ -195,8 +195,8 @@ public final class VGAAttr {
                      */
                     break;
                 default:
-                    if (_vga.SVGADrv.WriteP3C0 != null) {
-                        _vga.SVGADrv.WriteP3C0.exec(Index, val, iolen);
+                    if (vga.SVGADrv.WriteP3C0 != null) {
+                        vga.SVGADrv.WriteP3C0.exec(Index, val, iolen);
                         break;
                     }
                     Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
@@ -238,8 +238,8 @@ public final class VGAAttr {
             case 0x14: /* Color Select Register */
                 return ColorSelect;
             default:
-                if (_vga.SVGADrv.ReadP3C1 != null)
-                    return _vga.SVGADrv.ReadP3C1.exec(Index, iolen);
+                if (vga.SVGADrv.ReadP3C1 != null)
+                    return vga.SVGADrv.ReadP3C1.exec(Index, iolen);
                 Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
                         "VGA:ATTR:Read from unkown Index %2X", Index);
                 break;

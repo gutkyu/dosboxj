@@ -5,17 +5,17 @@ import org.gutkyu.dosboxj.DOSBox;
 import org.gutkyu.dosboxj.hardware.io.IO;
 
 public final class VGASeq {
-    public int Index;//byte
-    public int Reset;//byte
-    public int ClockingMode;//byte
-    public int MapMask;//byte
-    public int CharacterMapSelect;//byte
-    public int MemoryMode;//byte
+    public int Index;// byte
+    public int Reset;// byte
+    public int ClockingMode;// byte
+    public int MapMask;// byte
+    public int CharacterMapSelect;// byte
+    public int MemoryMode;// byte
 
-    public VGA _vga;
+    public VGA vga;
 
     public VGASeq(VGA vga) {
-        _vga = vga;
+        this.vga = vga;
     }
 
     private int readP3C4(int port, int iolen) {
@@ -37,14 +37,14 @@ public final class VGASeq {
                     // don't resize if only the screen off bit was changed
                     if ((val & (~0x20)) != (ClockingMode & (~0x20))) {
                         ClockingMode = 0xff & val;
-                        _vga.startResize();
+                        vga.startResize();
                     } else {
                         ClockingMode = 0xff & val;
                     }
                     if ((val & 0x20) != 0)
-                        _vga.Attr.Disabled |= 0x2;
+                        vga.Attr.Disabled |= 0x2;
                     else
-                        _vga.Attr.Disabled &= ((byte) ~0x2);
+                        vga.Attr.Disabled &= ((byte) ~0x2);
                 }
                 /*
                  * TODO Figure this out :) 0 If set character clocks are 8 dots wide, else 9. 2 If
@@ -58,8 +58,8 @@ public final class VGASeq {
                 break;
             case 2: /* Map Mask */
                 MapMask = 0xff & (val & 15);
-                _vga.Config.FullMapMask = _vga.FillTable[val & 15];
-                _vga.Config.FullNotMapMask = ~_vga.Config.FullMapMask;
+                vga.Config.FullMapMask = vga.FillTable[val & 15];
+                vga.Config.FullNotMapMask = ~vga.Config.FullMapMask;
                 /*
                  * 0 Enable writes to plane 0 if set 1 Enable writes to plane 1 if set 2 Enable
                  * writes to plane 2 if set 3 Enable writes to plane 3 if set
@@ -70,12 +70,12 @@ public final class VGASeq {
                 CharacterMapSelect = 0xff & val;
                 int font1 = 0xff & ((val & 0x3) << 1);
                 if (DOSBox.isVGAArch())
-                    font1 |= 0xff & ((val & 0x10) >>>4);
-                _vga.Draw.FontTablesIdx[0] = font1 * 8 * 1024;
-                int font2 = 0xff & (((val & 0xc) >>>1));
+                    font1 |= 0xff & ((val & 0x10) >>> 4);
+                vga.Draw.FontTablesIdx[0] = font1 * 8 * 1024;
+                int font2 = 0xff & (((val & 0xc) >>> 1));
                 if (DOSBox.isVGAArch())
-                    font2 |= 0xff & ((val & 0x20) >>>5);
-                _vga.Draw.FontTablesIdx[1] = font2 * 8 * 1024;
+                    font2 |= 0xff & ((val & 0x20) >>> 5);
+                vga.Draw.FontTablesIdx[1] = font2 * 8 * 1024;
             }
                 /*
                  * 0,1,4 Selects VGA Character Map (0..7) if bit 3 of the character attribute is
@@ -96,15 +96,15 @@ public final class VGASeq {
                 if (DOSBox.isVGAArch()) {
                     /* Changing this means changing the VGA Memory Read/Write Handler */
                     if ((val & 0x08) != 0)
-                        _vga.Config.Chained = true;
+                        vga.Config.Chained = true;
                     else
-                        _vga.Config.Chained = false;
-                    _vga.setupHandlers();
+                        vga.Config.Chained = false;
+                    vga.setupHandlers();
                 }
                 break;
             default:
-                if (_vga.SVGADrv.WriteP3C5 != null) {
-                    _vga.SVGADrv.WriteP3C5.exec(Index, val, iolen);
+                if (vga.SVGADrv.WriteP3C5 != null) {
+                    vga.SVGADrv.WriteP3C5.exec(Index, val, iolen);
                 } else {
                     Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
                             "VGA:SEQ:Write to illegal index %2X", Index);
@@ -127,8 +127,8 @@ public final class VGASeq {
             case 4: /* Memory Mode */
                 return MemoryMode;
             default:
-                if (_vga.SVGADrv.ReadP3C5 != null)
-                    return _vga.SVGADrv.ReadP3C5.exec(Index, iolen);
+                if (vga.SVGADrv.ReadP3C5 != null)
+                    return vga.SVGADrv.ReadP3C5.exec(Index, iolen);
                 break;
         }
         return 0;

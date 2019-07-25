@@ -17,10 +17,10 @@ public final class VGAGFX {
     public int BitMask;
 
     private boolean _index9Warned = false;
-    private VGA _vga;
+    private VGA vga;
 
     protected VGAGFX(VGA vga) {
-        _vga = vga;
+        this.vga = vga;
     }
 
     private void writeP3CE(int port, int val, int iolen) {
@@ -35,9 +35,9 @@ public final class VGAGFX {
         switch (Index) {
             case 0: /* Set/Reset Register */
                 SetReset = val & 0x0f;
-                _vga.Config.FullSetReset = _vga.FillTable[val & 0x0f];
-                _vga.Config.FullEnableAndSetReset =
-                        _vga.Config.FullSetReset & _vga.Config.FullEnableSetReset;
+                vga.Config.FullSetReset = vga.FillTable[val & 0x0f];
+                vga.Config.FullEnableAndSetReset =
+                        vga.Config.FullSetReset & vga.Config.FullEnableSetReset;
                 /*
                  * 0 If in Write Mode 0 and bit 0 of 3CEh index 1 is set a write to display memory
                  * will set all the bits in plane 0 of the byte to this bit, if the corresponding
@@ -49,10 +49,10 @@ public final class VGAGFX {
                 break;
             case 1: /* Enable Set/Reset Register */
                 EnableSetReset = val & 0x0f;
-                _vga.Config.FullEnableSetReset = _vga.FillTable[val & 0x0f];
-                _vga.Config.FullNotEnableSetreset = ~_vga.Config.FullEnableSetReset;
-                _vga.Config.FullEnableAndSetReset =
-                        _vga.Config.FullSetReset & _vga.Config.FullEnableSetReset;
+                vga.Config.FullEnableSetReset = vga.FillTable[val & 0x0f];
+                vga.Config.FullNotEnableSetreset = ~vga.Config.FullEnableSetReset;
+                vga.Config.FullEnableAndSetReset =
+                        vga.Config.FullSetReset & vga.Config.FullEnableSetReset;
                 // if (vga.gfx.enable_set_reset) vga.config.mh_mask|=MH_SETRESET else
                 // vga.config.mh_mask&=~MH_SETRESET;
                 break;
@@ -64,14 +64,14 @@ public final class VGAGFX {
                  * The Color Don't Care Register (3CEh index 7) can exclude bitplanes from the
                  * comparison.
                  */
-                _vga.Config.ColorCompare = val & 0xf;
+                vga.Config.ColorCompare = val & 0xf;
                 // LOG_DEBUG("Color Compare = %2X",val);
                 break;
             case 3: /* Data Rotate */
                 DataRotate = 0xff & val;
-                _vga.Config.DataRotate = val & 7;
+                vga.Config.DataRotate = val & 7;
                 // if (val) vga.config.mh_mask|=MH_ROTATEOP else vga.config.mh_mask&=~MH_ROTATEOP;
-                _vga.Config.RasterOp = (val >>> 3) & 3;
+                vga.Config.RasterOp = (val >>> 3) & 3;
                 /*
                  * 0-2 Number of positions to rotate data right before it is written to display
                  * memory. Only active in Write Mode 0. 3-4 In Write Mode 2 this field controls the
@@ -84,17 +84,17 @@ public final class VGAGFX {
             case 4: /* Read Map Select Register */
                 /* 0-1 number of the plane Read Mode 0 will read from */
                 ReadMapSelect = val & 0x03;
-                _vga.Config.ReadMapSelect = val & 0x03;
+                vga.Config.ReadMapSelect = val & 0x03;
                 // LOG_DEBUG("Read Map %2X",val);
                 break;
             case 5: /* Mode Register */
                 if (((Mode ^ val) & 0xf0) != 0) {
                     Mode = 0xff & val;
-                    _vga.determineMode();
+                    vga.determineMode();
                 } else
                     Mode = 0xff & val;
-                _vga.Config.WriteMode = 0xff & (val & 3);
-                _vga.Config.ReadMode = 0xff & ((val >>> 3) & 1);
+                vga.Config.WriteMode = 0xff & (val & 3);
+                vga.Config.ReadMode = 0xff & ((val >>> 3) & 1);
                 // LOG_DEBUG("Write Mode %d Read Mode %d val
                 // %d",vga.config.write_mode,vga.config.read_mode,val);
                 /*
@@ -128,10 +128,10 @@ public final class VGAGFX {
             case 6: /* Miscellaneous Register */
                 if (((Miscellaneous ^ val) & 0x0c) != 0) {
                     Miscellaneous = 0xff & val;
-                    _vga.determineMode();
+                    vga.determineMode();
                 } else
                     Miscellaneous = 0xff & val;
-                _vga.setupHandlers();
+                vga.setupHandlers();
                 /*
                  * 0 Indicates Graphics Mode if set, Alphanumeric mode else. 1 Enables Odd/Even mode
                  * if set. 2-3 Memory Mapping: 0: use A000h-BFFFh 1: use A000h-AFFFh VGA Graphics
@@ -145,12 +145,12 @@ public final class VGAGFX {
                  * if clear. 2 Ignore bit plane 2 in Read mode 1 if clear. 3 Ignore bit plane 3 in
                  * Read mode 1 if clear.
                  */
-                _vga.Config.ColorDontCare = val & 0xf;
+                vga.Config.ColorDontCare = val & 0xf;
                 // LOG_DEBUG("Color don't care = %2X",val);
                 break;
             case 8: /* Bit Mask Register */
                 BitMask = 0xff & val;
-                _vga.Config.FullBitMask = _vga.ExpandTable[val];
+                vga.Config.FullBitMask = vga.ExpandTable[val];
                 // LOG_DEBUG("Bit mask %2X",val);
                 /*
                  * 0-7 Each bit if set enables writing to the corresponding bit of a byte in display
@@ -158,8 +158,8 @@ public final class VGAGFX {
                  */
                 break;
             default:
-                if (_vga.SVGADrv.WriteP3CF != null) {
-                    _vga.SVGADrv.WriteP3CF.exec(Index, val, iolen);
+                if (vga.SVGADrv.WriteP3CF != null) {
+                    vga.SVGADrv.WriteP3CF.exec(Index, val, iolen);
                     break;
                 }
                 if (Index == 9 && !_index9Warned) {
@@ -195,8 +195,8 @@ public final class VGAGFX {
             case 8: /* Bit Mask Register */
                 return BitMask;
             default:
-                if (_vga.SVGADrv.ReadP3CF != null)
-                    return _vga.SVGADrv.ReadP3CF.exec(Index, iolen);
+                if (vga.SVGADrv.ReadP3CF != null)
+                    return vga.SVGADrv.ReadP3CF.exec(Index, iolen);
                 Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
                         "Reading from illegal index %2X in port %4X", Index, port);
                 break;

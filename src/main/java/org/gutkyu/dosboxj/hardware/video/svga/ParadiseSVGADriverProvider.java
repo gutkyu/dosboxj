@@ -24,33 +24,33 @@ public final class ParadiseSVGADriverProvider {
     private int[] _clockFreq = new int[] {0, 0, 0, 0};
     private int _biosMode = 0;
 
-    private VGA _vga = null;
+    private VGA vga = null;
 
     public ParadiseSVGADriverProvider(VGA vga) {
-        _vga = vga;
-        _vga.SVGADrv.WriteP3CF = this::writeP3CF;
-        _vga.SVGADrv.ReadP3CF = this::readP3CF;
+        this.vga = vga;
+        vga.SVGADrv.WriteP3CF = this::writeP3CF;
+        vga.SVGADrv.ReadP3CF = this::readP3CF;
 
-        _vga.SVGADrv.SetVideoMode = this::finishSetMode;
-        _vga.SVGADrv.DetermineMode = this::determineMode;
-        _vga.SVGADrv.SetClock = this::setClock;
-        _vga.SVGADrv.GetClock = this::getClock;
-        _vga.SVGADrv.AcceptsMode = this::acceptsMode;
+        vga.SVGADrv.SetVideoMode = this::finishSetMode;
+        vga.SVGADrv.DetermineMode = this::determineMode;
+        vga.SVGADrv.SetClock = this::setClock;
+        vga.SVGADrv.GetClock = this::getClock;
+        vga.SVGADrv.AcceptsMode = this::acceptsMode;
 
-        _vga.setClock(0, VGA.CLK_25);
-        _vga.setClock(1, VGA.CLK_28);
-        _vga.setClock(2, 32400); // could not find documentation
-        _vga.setClock(3, 35900);
+        vga.setClock(0, VGA.CLK_25);
+        vga.setClock(1, VGA.CLK_28);
+        vga.setClock(2, 32400); // could not find documentation
+        vga.setClock(3, 35900);
 
         // Adjust memory, default to 512K
-        if (_vga.VMemSize == 0)
-            _vga.VMemSize = 512 * 1024;
+        if (vga.VMemSize == 0)
+            vga.VMemSize = 512 * 1024;
 
-        if (_vga.VMemSize < 512 * 1024) {
-            _vga.VMemSize = 256 * 1024;
+        if (vga.VMemSize < 512 * 1024) {
+            vga.VMemSize = 256 * 1024;
             _pr1 = 1 << 6;
-        } else if (_vga.VMemSize > 512 * 1024) {
-            _vga.VMemSize = 1024 * 1024;
+        } else if (vga.VMemSize > 512 * 1024) {
+            vga.VMemSize = 1024 * 1024;
             _pr1 = 3 << 6;
         } else {
             _pr1 = 2 << 6;
@@ -81,9 +81,9 @@ public final class ParadiseSVGADriverProvider {
             // TODO: Requirements are not compatible with vga_memory implementation.
         } else {
             // Single bank config is straightforward
-            _vga.SVGA.BankRead = _vga.SVGA.BankWrite = (byte) _pr0A;
-            _vga.SVGA.BankSize = 4 * 1024;
-            _vga.setupHandlers();
+            vga.SVGA.BankRead = vga.SVGA.BankWrite = (byte) _pr0A;
+            vga.SVGA.BankSize = 4 * 1024;
+            vga.setupHandlers();
         }
     }
 
@@ -122,9 +122,8 @@ public final class ParadiseSVGADriverProvider {
                 // chipsets as well,
                 // but not implemented in DosBox core)
                 _pr3 = val;
-                _vga.Config.DisplayStart =
-                        (_vga.Config.DisplayStart & 0xffff) | ((val & 0x18) << 13);
-                _vga.Config.CursorStart = (_vga.Config.CursorStart & 0xffff) | ((val & 0x18) << 13);
+                vga.Config.DisplayStart = (vga.Config.DisplayStart & 0xffff) | ((val & 0x18) << 13);
+                vga.Config.CursorStart = (vga.Config.CursorStart & 0xffff) | ((val & 0x18) << 13);
                 break;
             case 0x0e:
                 // Video control
@@ -193,51 +192,51 @@ public final class ParadiseSVGADriverProvider {
         IO.write(0x3ce, 0x0f);
         IO.write(0x3cf, oldlock);
 
-        if (_vga.SVGADrv.DetermineMode != null)
-            _vga.SVGADrv.DetermineMode.exec();
+        if (vga.SVGADrv.DetermineMode != null)
+            vga.SVGADrv.DetermineMode.exec();
 
-        if (_vga.Mode != VGAModes.VGA) {
-            _vga.Config.CompatibleChain4 = false;
-            _vga.VMemWrap = _vga.VMemSize;
+        if (vga.Mode != VGAModes.VGA) {
+            vga.Config.CompatibleChain4 = false;
+            vga.VMemWrap = vga.VMemSize;
         } else {
-            _vga.Config.CompatibleChain4 = true;
-            _vga.VMemWrap = 256 * 1024;
+            vga.Config.CompatibleChain4 = true;
+            vga.VMemWrap = 256 * 1024;
         }
 
-        _vga.setupHandlers();
+        vga.setupHandlers();
     }
 
     private void determineMode() {
         // Close replica from the base implementation. It will stay here
         // until I figure a way to either distinguish VGAModes.M_VGA and VGAModes.M_LIN8 or
         // merge them.
-        if ((_vga.Attr.ModeControl & 1) != 0) {
-            if ((_vga.GFX.Mode & 0x40) != 0)
-                _vga.setMode((_biosMode <= 0x13) ? VGAModes.VGA : VGAModes.LIN8);
-            else if ((_vga.GFX.Mode & 0x20) != 0)
-                _vga.setMode(VGAModes.CGA4);
-            else if ((_vga.GFX.Miscellaneous & 0x0c) == 0x0c)
-                _vga.setMode(VGAModes.CGA2);
+        if ((vga.Attr.ModeControl & 1) != 0) {
+            if ((vga.GFX.Mode & 0x40) != 0)
+                vga.setMode((_biosMode <= 0x13) ? VGAModes.VGA : VGAModes.LIN8);
+            else if ((vga.GFX.Mode & 0x20) != 0)
+                vga.setMode(VGAModes.CGA4);
+            else if ((vga.GFX.Miscellaneous & 0x0c) == 0x0c)
+                vga.setMode(VGAModes.CGA2);
             else
-                _vga.setMode((_biosMode <= 0x13) ? VGAModes.EGA : VGAModes.LIN4);
+                vga.setMode((_biosMode <= 0x13) ? VGAModes.EGA : VGAModes.LIN4);
         } else {
-            _vga.setMode(VGAModes.TEXT);
+            vga.setMode(VGAModes.TEXT);
         }
     }
 
     private void setClock(int which, int target) {
         if (which < 4) {
             _clockFreq[which] = 1000 * target;
-            _vga.startResize();
+            vga.startResize();
         }
     }
 
     private int getClock() {
-        return _clockFreq[(_vga.MiscOutput >>> 2) & 3];
+        return _clockFreq[(vga.MiscOutput >>> 2) & 3];
     }
 
     private boolean acceptsMode(int mode) {
-        return INT10Mode.videoModeMemSize(mode) < _vga.VMemSize;
+        return INT10Mode.videoModeMemSize(mode) < vga.VMemSize;
     }
 
 }

@@ -6,7 +6,7 @@ import org.gutkyu.dosboxj.util.*;
 import org.gutkyu.dosboxj.DOSBox;
 import org.gutkyu.dosboxj.gui.*;
 
-public final class VGADac<RGB> {
+public final class VGADac {
     public enum DACState {
         DAC_READ, DAC_WRITE
     }
@@ -25,7 +25,7 @@ public final class VGADac<RGB> {
     // public short xlat16[256];
     public short[] Xlat16;
 
-    private VGA _vga = null;
+    private VGA vga = null;
 
     public VGADac(VGA vga) {
         Combine = new byte[16];
@@ -35,7 +35,7 @@ public final class VGADac<RGB> {
         }
         Xlat16 = new short[256];
 
-        _vga = vga;
+        this.vga = vga;
     }
 
     private void sendColor(int index, int src) {
@@ -109,7 +109,7 @@ public final class VGADac<RGB> {
                 break;
             case 2:
                 RGB[WriteIndex].Blue = (byte) val;
-                switch (_vga.Mode) {
+                switch (vga.Mode) {
                     case VGA:
                     case LIN8:
                         updateColor(WriteIndex);
@@ -174,7 +174,7 @@ public final class VGADac<RGB> {
     public void combineColor(int attr, int pal) {
         /* Check if this is a new color */
         Combine[attr] = (byte) pal;
-        switch (_vga.Mode) {
+        switch (vga.Mode) {
             case LIN8:
                 break;
             case VGA:

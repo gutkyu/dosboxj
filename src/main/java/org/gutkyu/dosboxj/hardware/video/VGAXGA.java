@@ -55,10 +55,10 @@ public final class VGAXGA {
     public XGAWaitCmd WaitCmd = null;
     // -- #endregion
 
-    private VGA _vga;
+    private VGA vga;
 
     public VGAXGA(VGA vga) {
-        _vga = vga;
+        this.vga = vga;
 
         Scissors = new ScissorReg();
         Scissors.x1 = 0;
@@ -188,38 +188,38 @@ public final class VGAXGA {
         if (y > Scissors.y2)
             return;
 
-        byte[] linearAlloc = _vga.Mem.LinearAlloc;
-        int memaddr = (y * _vga.S3.XGAScreenWidth) + x;
+        byte[] linearAlloc = vga.Mem.LinearAlloc;
+        int memaddr = (y * vga.S3.XGAScreenWidth) + x;
         /*
          * Need to zero out all unused bits in modes that have any (15-bit or "32"-bit -- the last
          * one is actually 24-bit. Without this step there may be some graphics corruption (mainly,
          * during windows dragging.
          */
-        switch (_vga.S3.XGAColorMode) {
+        switch (vga.S3.XGAColorMode) {
             case LIN8:
-                if (memaddr >= _vga.VMemSize)
+                if (memaddr >= vga.VMemSize)
                     break;
                 linearAlloc[memaddr] = (byte) c;
                 break;
             case LIN15:
-                if (memaddr * 2 >= _vga.VMemSize)
+                if (memaddr * 2 >= vga.VMemSize)
                     break;
                 // ((Bit16u*)(vga.mem.linear))[memaddr] = (Bit16u)(c&0x7fff);
-                int idx15 = _vga.Mem.LinearBase + memaddr * 2;
+                int idx15 = vga.Mem.LinearBase + memaddr * 2;
                 ByteConv.setShort(linearAlloc, idx15, c & 0x7fff);
                 break;
             case LIN16:
-                if (memaddr * 2 >= _vga.VMemSize)
+                if (memaddr * 2 >= vga.VMemSize)
                     break;
                 // ((Bit16u*)(vga.mem.linear))[memaddr] = (Bit16u)(c&0xffff);
-                int idx16 = _vga.Mem.LinearBase + memaddr * 2;
+                int idx16 = vga.Mem.LinearBase + memaddr * 2;
                 ByteConv.setShort(linearAlloc, idx16, c & 0xffff);
                 break;
             case LIN32:
-                if (memaddr * 4 >= _vga.VMemSize)
+                if (memaddr * 4 >= vga.VMemSize)
                     break;
                 // ((Bit32u*)(vga.mem.linear))[memaddr] = c;
-                int idx32 = _vga.Mem.LinearBase + memaddr * 4;
+                int idx32 = vga.Mem.LinearBase + memaddr * 4;
                 ByteConv.setInt(linearAlloc, idx32, c);
                 break;
             default:
@@ -229,27 +229,27 @@ public final class VGAXGA {
     }
 
     private int getPoint(int x, int y) {
-        int memAddr = (y * _vga.S3.XGAScreenWidth) + x;
+        int memAddr = (y * vga.S3.XGAScreenWidth) + x;
 
 
-        byte[] linearAlloc = _vga.Mem.LinearAlloc;
-        switch (_vga.S3.XGAColorMode) {
+        byte[] linearAlloc = vga.Mem.LinearAlloc;
+        switch (vga.S3.XGAColorMode) {
             case LIN8:
-                if (memAddr >= _vga.VMemSize)
+                if (memAddr >= vga.VMemSize)
                     break;
                 return linearAlloc[memAddr];
             case LIN15:
             case LIN16:
-                if (memAddr * 2 >= _vga.VMemSize)
+                if (memAddr * 2 >= vga.VMemSize)
                     break;
                 // return ((Bit16u*)(vga.mem.linear))[memaddr];
-                int idx2 = _vga.Mem.LinearBase + memAddr * 2;
+                int idx2 = vga.Mem.LinearBase + memAddr * 2;
                 return ByteConv.getShort(linearAlloc, idx2);
             case LIN32:
-                if (memAddr * 4 >= _vga.VMemSize)
+                if (memAddr * 4 >= vga.VMemSize)
                     break;
                 // return ((Bit32u*)(vga.mem.linear))[memaddr];
-                int idx4 = _vga.Mem.LinearBase + memAddr * 4;
+                int idx4 = vga.Mem.LinearBase + memAddr * 4;
                 return ByteConv.getInt(linearAlloc, idx4);
             default:
                 break;
@@ -1074,7 +1074,7 @@ public final class VGAXGA {
                     xgaWaitCmd.SizeX = MAPcount;
                     xgaWaitCmd.SizeY = 0xffff & (MIPcount + 1);
                     xgaWaitCmd.Cmd = 2;
-                    xgaWaitCmd.BusWidth = _vga.Mode.toValue() | ((val & 0x600) >>> 4);
+                    xgaWaitCmd.BusWidth = vga.Mode.toValue() | ((val & 0x600) >>> 4);
                     xgaWaitCmd.Data = 0;
                     xgaWaitCmd.DataSize = 0;
 
@@ -1108,7 +1108,7 @@ public final class VGAXGA {
     }
 
     private int setDualReg(int reg, int val) {
-        switch (_vga.S3.XGAColorMode) {
+        switch (vga.S3.XGAColorMode) {
             case LIN8:
                 reg = val & 0xff;
                 break;
@@ -1130,7 +1130,7 @@ public final class VGAXGA {
     }
 
     private int getDualReg(int reg) {
-        switch (_vga.S3.XGAColorMode) {
+        switch (vga.S3.XGAColorMode) {
             case LIN8:
                 return reg & 0xff;
             case LIN15:
@@ -1290,16 +1290,16 @@ public final class VGAXGA {
                 break;
             case 0x83d4:
                 if (len == 1)
-                    _vga.Crtc.writeP3D4(0, val, 1);
+                    vga.Crtc.writeP3D4(0, val, 1);
                 else if (len == 2) {
-                    _vga.Crtc.writeP3D4(0, val & 0xff, 1);
-                    _vga.Crtc.writeP3D5(0, val >>> 8, 1);
+                    vga.Crtc.writeP3D4(0, val & 0xff, 1);
+                    vga.Crtc.writeP3D5(0, val >>> 8, 1);
                 } else
                     Support.exceptionExit("unimplemented XGA MMIO");
                 break;
             case 0x83d5:
                 if (len == 1)
-                    _vga.Crtc.writeP3D5(0, val, 1);
+                    vga.Crtc.writeP3D5(0, val, 1);
                 else
                     Support.exceptionExit("unimplemented XGA MMIO");
                 break;
@@ -1328,17 +1328,17 @@ public final class VGAXGA {
                     delaycyc = 0;
                 CPU.Cycles -= delaycyc;
                 CPU.IODelayRemoved += delaycyc;
-                return _vga.readP3DA(0, 0);
+                return vga.readP3DA(0, 0);
             }
             case 0x83d4:
                 if (len == 1)
-                    return _vga.Crtc.readP3D4(0, 0);
+                    return vga.Crtc.readP3D4(0, 0);
                 else
                     Support.exceptionExit("unimplemented XGA MMIO");
                 break;
             case 0x83d5:
                 if (len == 1)
-                    return _vga.Crtc.readP3D5(0, 0);
+                    return vga.Crtc.readP3D5(0, 0);
                 else
                     Support.exceptionExit("unimplemented XGA MMIO");
                 break;

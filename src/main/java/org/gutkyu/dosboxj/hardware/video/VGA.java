@@ -125,22 +125,22 @@ public final class VGA {
         Mem = new VGAMemory();
         Lfb = new VGALFB();
 
-        _vgaPageHandler = new VGAPageHandler();
+        vgaPageHandler = new VGAPageHandler();
 
-        _vgaPageHandler.Map = new MapHandler(this);
-        _vgaPageHandler.Changes = new ChangesHandler(this);
-        _vgaPageHandler.Text = new TextPageHandler(this);
-        _vgaPageHandler.Tandy = new TandyPageHandler(this);
-        _vgaPageHandler.ChainedEGA = new ChainedEGAHandler(this);
-        _vgaPageHandler.ChainedVGA = new ChainedVGAHandler(this);
-        _vgaPageHandler.UnchainedEGA = new UnchainedEGAHandler(this);
-        _vgaPageHandler.UnchainedVGA = new UnchainedVGAHandler(this);
-        _vgaPageHandler.PCjr = new PCJrHandler(this);
-        _vgaPageHandler.Lin4 = new LIN4Handler(this);
-        _vgaPageHandler.Lfb = new LFBHandler(this);
-        _vgaPageHandler.LfbChanges = new LFBChangesHandler(this);
-        _vgaPageHandler.MMIO = new MMIOHandler(this);
-        _vgaPageHandler.Empty = new EmptyHandler();
+        vgaPageHandler.Map = new MapHandler(this);
+        vgaPageHandler.Changes = new ChangesHandler(this);
+        vgaPageHandler.Text = new TextPageHandler(this);
+        vgaPageHandler.Tandy = new TandyPageHandler(this);
+        vgaPageHandler.ChainedEGA = new ChainedEGAHandler(this);
+        vgaPageHandler.ChainedVGA = new ChainedVGAHandler(this);
+        vgaPageHandler.UnchainedEGA = new UnchainedEGAHandler(this);
+        vgaPageHandler.UnchainedVGA = new UnchainedVGAHandler(this);
+        vgaPageHandler.PCjr = new PCJrHandler(this);
+        vgaPageHandler.Lin4 = new LIN4Handler(this);
+        vgaPageHandler.Lfb = new LFBHandler(this);
+        vgaPageHandler.LfbChanges = new LFBChangesHandler(this);
+        vgaPageHandler.MMIO = new MMIOHandler(this);
+        vgaPageHandler.Empty = new EmptyHandler();
 
         XGA = new VGAXGA(this);
 
@@ -309,31 +309,31 @@ public final class VGA {
         }
     }
 
-    private static VGA _vga = null;
+    private static VGA vga = null;
 
     public static VGA instance() {
-        return _vga;
+        return vga;
     }
 
     public static void init(Section sec) {
-        _vga = new VGA();
+        vga = new VGA();
         // Section_prop * section=static_cast<Section_prop *>(sec);
-        _vga.Draw.Resizing = false;
-        _vga.Mode = VGAModes.ERROR; // For first init
-        _vga.SVGADrv.setup(_vga);
-        _vga.setupMemory(sec);
-        _vga.setupMisc();
-        _vga.Dac.setup();
-        _vga.GFX.setup();
-        _vga.Seq.setup();
-        _vga.Attr.setup();
-        _vga.setupOther();
-        _vga.XGA.setup();
-        _vga.setClock(0, CLK_25);
-        _vga.setClock(1, CLK_28);
+        vga.Draw.Resizing = false;
+        vga.Mode = VGAModes.ERROR; // For first init
+        vga.SVGADrv.setup(vga);
+        vga.setupMemory(sec);
+        vga.setupMisc();
+        vga.Dac.setup();
+        vga.GFX.setup();
+        vga.Seq.setup();
+        vga.Attr.setup();
+        vga.setupOther();
+        vga.XGA.setup();
+        vga.setClock(0, CLK_25);
+        vga.setClock(1, CLK_28);
         /* Generate tables */
-        _vga.setCGA2Table(0, 1);
-        _vga.setCGA4Table(0, 1, 2, 3);
+        vga.setCGA2Table(0, 1);
+        vga.setCGA4Table(0, 1, 2, 3);
 
     }
 
@@ -2050,7 +2050,7 @@ public final class VGA {
         public EmptyHandler Empty;
     }
 
-    VGAPageHandler _vgaPageHandler = null;
+    VGAPageHandler vgaPageHandler = null;
 
     private void changedBank() {
 
@@ -2065,7 +2065,7 @@ public final class VGA {
         switch (DOSBox.Machine) {
             case CGA:
             case PCJR:
-                Memory.setPageHandler(VGA_PAGE_B8, 8, _vgaPageHandler.PCjr);
+                Memory.setPageHandler(VGA_PAGE_B8, 8, vgaPageHandler.PCjr);
                 // goto range_done;
                 doneRange();
                 return;
@@ -2073,12 +2073,12 @@ public final class VGA {
                 PageBase = VGA_PAGE_B0;
                 if ((Herc.EnableBits & 0x2) != 0) {
                     PageMask = 0xffff;
-                    Memory.setPageHandler(VGA_PAGE_B0, 16, _vgaPageHandler.Map);
+                    Memory.setPageHandler(VGA_PAGE_B0, 16, vgaPageHandler.Map);
                 } else {
                     PageMask = 0x7fff;
                     /* With hercules in 32kb mode it leaves a memory hole on 0xb800 */
-                    Memory.setPageHandler(VGA_PAGE_B0, 8, _vgaPageHandler.Map);
-                    Memory.setPageHandler(VGA_PAGE_B8, 8, _vgaPageHandler.Empty);
+                    Memory.setPageHandler(VGA_PAGE_B0, 8, vgaPageHandler.Map);
+                    Memory.setPageHandler(VGA_PAGE_B8, 8, vgaPageHandler.Empty);
                 }
                 // goto range_done;
                 doneRange();
@@ -2087,7 +2087,7 @@ public final class VGA {
                 /* Always map 0xa000 - 0xbfff, might overwrite 0xb800 */
                 PageBase = VGA_PAGE_A0;
                 PageMask = 0x1ffff;
-                Memory.setPageHandler(VGA_PAGE_A0, 32, _vgaPageHandler.Map);
+                Memory.setPageHandler(VGA_PAGE_A0, 32, vgaPageHandler.Map);
                 if ((Tandy.ExtendedRam & 1) != 0) {
                     // You seem to be able to also map different 64kb banks,
                     // but have to figure that out This seems to work so far though
@@ -2102,7 +2102,7 @@ public final class VGA {
                     // vga.tandy.mem_base = TANDY_VIDBASE( vga.tandy.mem_bank * 16 * 1024);
                     Tandy.MemBase = Memory.MemBase + 0x80000 + Tandy.MemBank * 16 * 1024;
                     Tandy.MemAlloc = Memory.getMemAlloc();
-                    Memory.setPageHandler(0xb8, 8, _vgaPageHandler.Tandy);
+                    Memory.setPageHandler(0xb8, 8, vgaPageHandler.Tandy);
                 }
                 // goto range_done;
                 doneRange();
@@ -2123,44 +2123,44 @@ public final class VGA {
             default:
                 return;
             case LIN4:
-                newHandler = _vgaPageHandler.Lin4;
+                newHandler = vgaPageHandler.Lin4;
                 break;
             case LIN15:
             case LIN16:
             case LIN32:
 
-                newHandler = _vgaPageHandler.Map;
+                newHandler = vgaPageHandler.Map;
 
                 break;
             case LIN8:
             case VGA:
                 if (Config.Chained) {
                     if (Config.CompatibleChain4)
-                        newHandler = _vgaPageHandler.ChainedVGA;
+                        newHandler = vgaPageHandler.ChainedVGA;
                     else
 
-                        newHandler = _vgaPageHandler.Map;
+                        newHandler = vgaPageHandler.Map;
 
                 } else {
-                    newHandler = _vgaPageHandler.UnchainedVGA;
+                    newHandler = vgaPageHandler.UnchainedVGA;
                 }
                 break;
             case EGA:
                 if (Config.Chained)
-                    newHandler = _vgaPageHandler.ChainedEGA;
+                    newHandler = vgaPageHandler.ChainedEGA;
                 else
-                    newHandler = _vgaPageHandler.UnchainedEGA;
+                    newHandler = vgaPageHandler.UnchainedEGA;
                 break;
             case TEXT:
                 /* Check if we're not in odd/even mode */
                 if ((GFX.Miscellaneous & 0x2) != 0)
-                    newHandler = _vgaPageHandler.Map;
+                    newHandler = vgaPageHandler.Map;
                 else
-                    newHandler = _vgaPageHandler.Text;
+                    newHandler = vgaPageHandler.Text;
                 break;
             case CGA4:
             case CGA2:
-                newHandler = _vgaPageHandler.Map;
+                newHandler = vgaPageHandler.Map;
                 break;
         }
         switch ((GFX.Miscellaneous >>> 2) & 3) {
@@ -2200,7 +2200,7 @@ public final class VGA {
                 break;
         }
         if (DOSBox.SVGACard == DOSBox.SVGACards.S3Trio && (S3.ExtMemCtrl & 0x10) != 0)
-            Memory.setPageHandler(VGA_PAGE_A0, 16, _vgaPageHandler.MMIO);
+            Memory.setPageHandler(VGA_PAGE_A0, 16, vgaPageHandler.MMIO);
         doneRange();
         // range_done:
         // Paging.ClearTLB();
@@ -2214,9 +2214,9 @@ public final class VGA {
         Lfb.Page = S3.LaWindow << 4;
         Lfb.Addr = S3.LaWindow << 16;
 
-        Lfb.Handler = _vgaPageHandler.Lfb;
+        Lfb.Handler = vgaPageHandler.Lfb;
 
-        Memory.setLFB(S3.LaWindow << 4, VMemSize / 4096, Lfb.Handler, _vgaPageHandler.MMIO);
+        Memory.setLFB(S3.LaWindow << 4, VMemSize / 4096, Lfb.Handler, vgaPageHandler.MMIO);
     }
 
     private void shutdownMemory(Section sec) {
