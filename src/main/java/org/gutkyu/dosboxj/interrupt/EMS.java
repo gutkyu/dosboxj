@@ -230,10 +230,9 @@ public final class EMS {
             return EMM_INVALID_HANDLE;
         if (EMMHandles[handle].Pages != 0) {
             /* Check for enough pages */
-            RefU32Ret refHandle = new RefU32Ret(EMMHandles[handle].Mem);
-            if (!Memory.reallocatePages(refHandle, pages * 4, false))
+            if (!Memory.tryReallocatePages(EMMHandles[handle].Mem, pages * 4, false))
                 return EMM_OUT_OF_LOG;
-            EMMHandles[handle].Mem = refHandle.U32;
+            EMMHandles[handle].Mem = Memory.returnedReallocatePagesHandle;
         } else {
             int mem = Memory.allocatePages(pages * 4, false);
             if (mem == 0)

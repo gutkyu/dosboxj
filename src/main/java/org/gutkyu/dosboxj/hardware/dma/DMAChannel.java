@@ -1,7 +1,5 @@
 package org.gutkyu.dosboxj.hardware.dma;
 
-import org.gutkyu.dosboxj.util.RefU32Ret;
-
 /*--------------------------- begin DmaChannel -----------------------------*/
 final class DMAChannel {
 
@@ -77,25 +75,27 @@ final class DMAChannel {
         request = false;
     }
 
+    public int returnedReadIdx;
+
     // want = size
     // public int Read(int want, byte* buffer)
-    public int read(int want, byte[] buffer, RefU32Ret refBufIdx) {
-        int bufIdx = refBufIdx.U32;
+    // final read idx -> returnedReadIdx
+    public int read(int want, byte[] buffer, int offset) {
         int done = 0;
         currAddr &= DMAModule.getDMAWapping();
         // again:
         while (true) {
             int left = currCnt + 1;
             if (want < left) {
-                refBufIdx.U32 = bufIdx = DMAModule.instance().readBlock(pageBase, currAddr, buffer,
-                        bufIdx, want, this.dma16);
+                returnedReadIdx = DMAModule.instance().readBlock(pageBase, currAddr, buffer, offset,
+                        want, this.dma16);
                 done += want;
                 currAddr += want;
                 currCnt -= want;
             } else {
-                refBufIdx.U32 = bufIdx = DMAModule.instance().readBlock(pageBase, currAddr, buffer,
-                        bufIdx, want, this.dma16);
-                refBufIdx.U32 = bufIdx += left << this.dma16;
+                returnedReadIdx = DMAModule.instance().readBlock(pageBase, currAddr, buffer, offset,
+                        want, this.dma16);
+                returnedReadIdx += left << this.dma16;
                 want -= left;
                 done += left;
                 reachedTC();
@@ -119,25 +119,27 @@ final class DMAChannel {
         return done;
     }
 
+    public int returnedWrittenIdx;
+
     // want = size
     // public int Write(int want, byte* buffer)
-    public int write(int want, byte[] buffer, RefU32Ret refBufIdx) {
-        int bufIdx = refBufIdx.U32;
+    // final written index -> returnedWrittenIdx
+    public int write(int want, byte[] buffer, int offset) {
         int done = 0;
         currAddr &= DMAModule.getDMAWapping();
         // again:
         while (true) {
             int left = currCnt + 1;
             if (want < left) {
-                refBufIdx.U32 = bufIdx = DMAModule.instance().writeBlock(pageBase, currAddr, buffer,
-                        bufIdx, want, this.dma16);
+                returnedWrittenIdx = DMAModule.instance().writeBlock(pageBase, currAddr, buffer,
+                        offset, want, this.dma16);
                 done += want;
                 currAddr += want;
                 currCnt -= want;
             } else {
-                refBufIdx.U32 = bufIdx = DMAModule.instance().writeBlock(pageBase, currAddr, buffer,
-                        bufIdx, left, this.dma16);
-                refBufIdx.U32 = bufIdx += left << this.dma16;
+                returnedWrittenIdx = DMAModule.instance().writeBlock(pageBase, currAddr, buffer,
+                        offset, left, this.dma16);
+                returnedWrittenIdx += left << this.dma16;
                 want -= left;
                 done += left;
                 reachedTC();

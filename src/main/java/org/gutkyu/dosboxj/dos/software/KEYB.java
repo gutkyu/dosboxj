@@ -19,26 +19,25 @@ public final class KEYB extends Program {
             } else {
                 /* first parameter is layout ID */
                 int keybError = 0;
-                String cp_string = null;
-                int tried_cp = -1;
-                if ((cp_string = Cmd.findCommand(2)) != null) {
+                String cpString = null;
+                int triedCP = -1;
+                if ((cpString = Cmd.findCommand(2)) != null) {
                     /* second parameter is codepage number */
-                    tried_cp = Integer.parseInt(cp_string);
-                    CStringPt cp_file_name = CStringPt.create(256);
-                    if ((cp_string = Cmd.findCommand(3)) != null) {
+                    triedCP = Integer.parseInt(cpString);
+                    CStringPt cpFileName = CStringPt.create(256);
+                    if ((cpString = Cmd.findCommand(3)) != null) {
                         /* third parameter is codepage file */
-                        CStringPt.copy(cp_string, cp_file_name);
+                        CStringPt.copy(cpString, cpFileName);
                     } else {
                         /* no codepage file specified, use automatic selection */
-                        CStringPt.copy("auto", cp_file_name);
+                        CStringPt.copy("auto", cpFileName);
                     }
 
                     keybError =
-                            DOSMain.loadKeyboardLayout(TempLine, tried_cp, cp_file_name.toString());
+                            DOSMain.loadKeyboardLayout(TempLine, triedCP, cpFileName.toString());
                 } else {
-                    RefU32Ret refTriedCP = new RefU32Ret(tried_cp);
-                    keybError = DOSMain.switchKeyboardLayout(TempLine, refTriedCP);
-                    tried_cp = refTriedCP.U32;
+                    keybError = DOSMain.trySwitchKeyboardLayout(TempLine);
+                    triedCP = DOSMain.returnedSwitchKBLTryiedCP;
                 }
                 switch (keybError) {
                     case DOSMain.KEYB_NOERROR:
@@ -53,7 +52,7 @@ public final class KEYB extends Program {
                         writeOut(Message.get("PROGRAM_KEYB_INVALIDFILE"), TempLine);
                         break;
                     case DOSMain.KEYB_LAYOUTNOTFOUND:
-                        writeOut(Message.get("PROGRAM_KEYB_LAYOUTNOTFOUND"), TempLine, tried_cp);
+                        writeOut(Message.get("PROGRAM_KEYB_LAYOUTNOTFOUND"), TempLine, triedCP);
                         break;
                     case DOSMain.KEYB_INVALIDCPFILE:
                         writeOut(Message.get("PROGRAM_KEYB_INVCPFILE"), TempLine);

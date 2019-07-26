@@ -603,17 +603,18 @@ public final class Memory {
         }
     }
 
-    public static boolean reallocatePages(RefU32Ret refHandle, int pages, boolean sequence) {
-        int handle = refHandle.U32;
+    public static int returnedReallocatePagesHandle;
+
+    public static boolean tryReallocatePages(int handle, int pages, boolean sequence) {
         if (handle <= 0) {
             if (pages == 0)
                 return true;
-            refHandle.U32 = handle = allocatePages(pages, sequence);
+            returnedReallocatePagesHandle = handle = allocatePages(pages, sequence);
             return (handle > 0);
         }
         if (pages == 0) {
             releasePages(handle);
-            refHandle.U32 = handle = -1;
+            returnedReallocatePagesHandle = handle = -1;
             return true;
         }
         int index = handle;
@@ -673,7 +674,7 @@ public final class Memory {
                         return false;
                     Memory.blockCopy(newhandle * 4096, handle * 4096, old_pages * 4096);
                     releasePages(handle);
-                    refHandle.U32 = handle = newhandle;
+                    returnedReallocatePagesHandle = handle = newhandle;
                     return true;
                 }
             } else {

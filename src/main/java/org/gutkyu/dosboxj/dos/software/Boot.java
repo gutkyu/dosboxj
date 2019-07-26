@@ -40,16 +40,13 @@ public final class Boot extends Program {
         return new Boot();
     }
 
-    private SeekableByteChannel getFSFileMounted(String fileName, RefU32Ret refKSize,
-            RefU32Ret refBSize, RefU32Ret refErr) {
-        int kSize = refKSize.U32;
-        int bSize = refBSize.U32;
-        int error = refErr.U32;
+    private int returnedFSFileMountedKSize, returnedFSFileMountedBSize, returnedFSFileMountedErr;
 
+    private SeekableByteChannel tryGetFSFileMounted(String fileName, int error) {
         // if return null then put in error the errormessage code if an error was
         // requested
         boolean tryload = error > 0 ? true : false;
-        refErr.U32 = error = 0;
+        returnedFSFileMountedErr = 0;
         int drive = 0;
         SeekableByteChannel tmpCh;
 
@@ -68,7 +65,7 @@ public final class Boot extends Program {
             tmpCh = ldp.getSystemFileChannel(fullName, StandardOpenOption.READ);
             if (tmpCh == null) {
                 if (!tryload)
-                    refErr.U32 = error = 1;
+                    returnedFSFileMountedErr = 1;
                 return null;
             }
 
@@ -77,8 +74,8 @@ public final class Boot extends Program {
             // ksize = (int)(tmpfile.Position / 1024);
             // bsize = (int)tmpfile.Position;
             // tmpfile.Close();
-            refKSize.U32 = kSize = (int) (tmpCh.size() / 1024);
-            refBSize.U32 = bSize = (int) tmpCh.size();
+            returnedFSFileMountedKSize = (int) (tmpCh.size() / 1024);
+            returnedFSFileMountedBSize = (int) tmpCh.size();
             tmpCh.close();
 
             // "rb+"
@@ -91,7 +88,7 @@ public final class Boot extends Program {
                 tmpCh = ldp.getSystemFileChannel(fullName, StandardOpenOption.READ);
                 if (tmpCh == null) {
                     if (!tryload)
-                        refErr.U32 = error = 1;
+                        returnedFSFileMountedErr = 1;
                     return null;
                 }
             }
@@ -102,33 +99,33 @@ public final class Boot extends Program {
         }
     }
 
-    private SeekableByteChannel getFSFile(String fileName, RefU32Ret refKSize, RefU32Ret refBSize,
-            boolean tryLoad) {
+    private int returnedFSFileKSize, returnedFSFileBSize;
 
+    private SeekableByteChannel tryGetFSFile(String fileName, boolean tryLoad) {
         int error = tryLoad ? 1 : 0;
-        RefU32Ret refErr = new RefU32Ret(error);
-        SeekableByteChannel tmpCh = getFSFileMounted(fileName, refKSize, refBSize, refErr);
-        int kSize = refKSize.U32;
-        int bSize = refBSize.U32;
-        error = refErr.U32;
+        SeekableByteChannel tmpCh = tryGetFSFileMounted(fileName, error);
+        returnedFSFileKSize = returnedFSFileMountedKSize;
+        returnedFSFileBSize = returnedFSFileMountedBSize;
+        error = returnedFSFileMountedErr;
         if (tmpCh != null)
             return tmpCh;
         // File not found on mounted filesystem. Try regular filesystem
-        String filename_s = fileName;
-        Path path = Paths.get(Cross.resolveHomedir(filename_s));
+        String filenameS = fileName;
+        Path path = Paths.get(Cross.resolveHomedir(filenameS));
         try {
-            tmpCh = Files.newByteChannel(path, StandardOpenOption.READ, StandardOpenOption.WRITE);;// "rb+"
-
+            // "rb+"
+            tmpCh = Files.newByteChannel(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
             // fseek(tmpfile,0L, SEEK_END);
             // *ksize = (ftell(tmpfile) / 1024);
             // *bsize = ftell(tmpfile);
-            kSize = (int) (tmpCh.size() / 1024);
-            bSize = (int) tmpCh.size();
+            returnedFSFileKSize = (int) (tmpCh.size() / 1024);
+            returnedFSFileBSize = (int) tmpCh.size();
         } catch (Exception e1) {
             try {
                 // "rb"
-
                 tmpCh = Files.newByteChannel(path, StandardOpenOption.READ);
+                returnedFSFileKSize = (int) (tmpCh.size() / 1024);
+                returnedFSFileBSize = (int) tmpCh.size();
             } catch (Exception e2) {
                 // Give the delayed errormessages from the mounted variant (or from above)
                 if (error == 1)
@@ -136,7 +133,6 @@ public final class Boot extends Program {
                 if (error == 2)
                     writeOut(Message.get("PROGRAM_BOOT_NOT_OPEN"));
                 return null;
-
             }
             // File exists; So can't be opened in correct mode => error 2
             // fclose(tmpfile);
@@ -151,8 +147,8 @@ public final class Boot extends Program {
         return tmpCh;
     }
 
-    private SeekableByteChannel getFSFile(String fileName, RefU32Ret refKSize, RefU32Ret refBSize) {
-        return getFSFile(fileName, refKSize, refBSize, false);
+    private SeekableByteChannel tryGetFSFile(String fileName) {
+        return tryGetFSFile(fileName, false);
     }
 
     private void printError() {
@@ -187,11 +183,11 @@ public final class Boot extends Program {
         SeekableByteChannel useFileCh1 = null;
         SeekableByteChannel useFileCh2 = null;
         int i = 0;
-        int floppysize = 0;
-        int rombytesize_1 = 0;
-        int rombytesize_2 = 0;
+        int floppySize = 0;
+        int romByteSize1 = 0;
+        int romByteSize2 = 0;
         byte drive = (byte) 'A';
-        String cart_cmd = "";
+        String cartCmd = "";
 
         if (Cmd.getCount() == 0) {
             printError();
@@ -222,7 +218,7 @@ public final class Boot extends Program {
                     i++;
                     if ((TempLine = Cmd.findCommand(i + 1)) != null) {
                         TempLine = TempLine.toUpperCase();
-                        cart_cmd = TempLine;
+                        cartCmd = TempLine;
                     } else {
                         printError();
                         return;
@@ -232,22 +228,20 @@ public final class Boot extends Program {
                 }
 
                 writeOut(Message.get("PROGRAM_BOOT_IMAGE_OPEN"), TempLine);
-                int rombytesize = 0;
-                RefU32Ret refFloppySize = new RefU32Ret(0);
-                RefU32Ret refRomBytesSize = new RefU32Ret(rombytesize);
-                SeekableByteChannel usefile = getFSFile(TempLine, refFloppySize, refRomBytesSize);
-                floppysize = refFloppySize.U32;
-                rombytesize = refRomBytesSize.U32;
+                int romByteSize = 0;
+                SeekableByteChannel usefile = tryGetFSFile(TempLine);
+                floppySize = returnedFSFileKSize;
+                romByteSize = returnedFSFileBSize;
                 if (usefile != null) {
                     if (BIOSDisk.DiskSwap[i] != null)
                         BIOSDisk.DiskSwap[i] = null;
-                    BIOSDisk.DiskSwap[i] = new ImageDisk(usefile, TempLine, floppysize, false);
+                    BIOSDisk.DiskSwap[i] = new ImageDisk(usefile, TempLine, floppySize, false);
                     if (useFileCh1 == null) {
                         useFileCh1 = usefile;
-                        rombytesize_1 = rombytesize;
+                        romByteSize1 = romByteSize;
                     } else {
                         useFileCh2 = usefile;
-                        rombytesize_2 = rombytesize;
+                        romByteSize2 = romByteSize;
                     }
                 } else {
                     writeOut(Message.get("PROGRAM_BOOT_IMAGE_NOT_OPEN"), TempLine);
@@ -275,11 +269,11 @@ public final class Boot extends Program {
                 writeOut(Message.get("PROGRAM_BOOT_CART_WO_PCJR"));
             else {
                 byte[] tmSpB = new byte[] {(byte) ' ', (byte) '\0'};
-                byte[] rombuf = new byte[65536];
-                int cfound_at = -1;
-                if (cart_cmd != "") {
+                byte[] romBuf = new byte[65536];
+                int cFoundAt = -1;
+                if (cartCmd != "") {
                     /* read cartridge data into buffer */
-                    ByteBuffer rdBuf = ByteBuffer.wrap(rombuf, 0, (rombytesize_1 - 0x200) * 1);
+                    ByteBuffer rdBuf = ByteBuffer.wrap(romBuf, 0, (romByteSize1 - 0x200) * 1);
                     try {
                         useFileCh1.position(0x200L).read(rdBuf);
                     } catch (Exception e) {
@@ -289,11 +283,11 @@ public final class Boot extends Program {
                     byte[] cmdlist = new byte[1024];
                     cmdlist[0] = 0;
                     int ct = 6;
-                    int clen = rombuf[ct];
+                    int clen = romBuf[ct];
                     byte[] buf = new byte[257];
-                    if (cart_cmd == "?") {
+                    if (cartCmd == "?") {
                         while (clen != 0) {
-                            CStringHelper.strncpy(buf, 0, rombuf, ct + 1, clen);
+                            CStringHelper.strncpy(buf, 0, romBuf, ct + 1, clen);
                             buf[clen] = 0;
                             CStringHelper.upcase(buf);
                             CStringHelper.strcat(cmdlist, tmSpB);
@@ -301,7 +295,7 @@ public final class Boot extends Program {
                             ct += 1 + clen + 3;
                             if (ct > cmdlist.length)
                                 break;
-                            clen = rombuf[ct];
+                            clen = romBuf[ct];
                         }
                         if (ct > 6) {
                             writeOut(Message.get("PROGRAM_BOOT_CART_LIST_CMDS"),
@@ -319,24 +313,24 @@ public final class Boot extends Program {
                         return;
                     } else {
                         while (clen != 0) {
-                            CStringHelper.strncpy(buf, 0, rombuf, ct + 1, clen);
+                            CStringHelper.strncpy(buf, 0, romBuf, ct + 1, clen);
                             buf[clen] = 0;
                             CStringHelper.upcase(buf);
                             CStringHelper.strcat(cmdlist, tmSpB);
                             CStringHelper.strcat(cmdlist, buf);
                             ct += 1 + clen;
-                            if (cart_cmd == new String(buf, 0, CStringHelper.strlen(buf),
+                            if (cartCmd == new String(buf, 0, CStringHelper.strlen(buf),
                                     StandardCharsets.US_ASCII)) {
-                                cfound_at = ct;
+                                cFoundAt = ct;
                                 break;
                             }
 
                             ct += 3;
                             if (ct > cmdlist.length)
                                 break;
-                            clen = rombuf[ct];
+                            clen = romBuf[ct];
                         }
-                        if (cfound_at <= 0) {
+                        if (cFoundAt <= 0) {
                             if (ct > 6) {
                                 writeOut(Message.get("PROGRAM_BOOT_CART_LIST_CMDS"),
                                         new String(cmdlist, StandardCharsets.US_ASCII));
@@ -361,19 +355,14 @@ public final class Boot extends Program {
                 if (useFileCh1 == null)
                     return;
 
-                int sz1 = 0, sz2 = 0;
-                RefU32Ret refSize1 = new RefU32Ret(sz1);
-                RefU32Ret refSize2 = new RefU32Ret(sz2);
-                SeekableByteChannel tfile = getFSFile("system.rom", refSize1, refSize2, true);
-                sz1 = refSize1.U32;
-                sz2 = refSize2.U32;
+                SeekableByteChannel tfile = tryGetFSFile("system.rom", true);
                 if (tfile != null) {
-                    ByteBuffer rbBuf = ByteBuffer.wrap(rombuf, 0, 1 * 0xb000);
+                    ByteBuffer rbBuf = ByteBuffer.wrap(romBuf, 0, 1 * 0xb000);
                     try {
                         int drd = tfile.position(0x3000L).read(rbBuf);
                         if (drd == 0xb000) {
                             for (i = 0; i < 0xb000; i++)
-                                Memory.physWriteB(0xf3000 + i, rombuf[i]);
+                                Memory.physWriteB(0xf3000 + i, romBuf[i]);
                         }
                         tfile.close();
                     } catch (Exception e) {
@@ -381,37 +370,37 @@ public final class Boot extends Program {
                 }
 
                 if (useFileCh2 != null) {
-                    ByteBuffer rbBuf = ByteBuffer.wrap(rombuf, 0, 1 * 0x200);
+                    ByteBuffer rbBuf = ByteBuffer.wrap(romBuf, 0, 1 * 0x200);
                     try {
                         useFileCh2.position(0x0L).read(rbBuf);
-                        int romseg_pt = Memory.hostReadW(rombuf, 0x1ce) << 4;
+                        int romsegPt = Memory.hostReadW(romBuf, 0x1ce) << 4;
 
                         /* read cartridge data into buffer */
-                        rbBuf = ByteBuffer.wrap(rombuf, 0, 1 * (rombytesize_2 - 0x200));
+                        rbBuf = ByteBuffer.wrap(romBuf, 0, 1 * (romByteSize2 - 0x200));
                         useFileCh2.position(0x200L).read(rbBuf);
                         // fclose(usefile_2); //usefile_2 is in diskSwap structure which should be
                         // deleted to close the file
 
                         /* write cartridge data into ROM */
-                        for (i = 0; i < rombytesize_2 - 0x200; i++)
-                            Memory.physWriteB(romseg_pt + i, rombuf[i]);
+                        for (i = 0; i < romByteSize2 - 0x200; i++)
+                            Memory.physWriteB(romsegPt + i, romBuf[i]);
                     } catch (Exception e) {
                     }
                 }
-                ByteBuffer rbBuf = ByteBuffer.wrap(rombuf, 0, 1 * 0x200);
+                ByteBuffer rbBuf = ByteBuffer.wrap(romBuf, 0, 1 * 0x200);
                 try {
                     useFileCh1.position(0x0L).read(rbBuf);
-                    int romseg = Memory.hostReadW(rombuf, 0x1ce);
+                    int romseg = Memory.hostReadW(romBuf, 0x1ce);
 
                     /* read cartridge data into buffer */
-                    rbBuf = ByteBuffer.wrap(rombuf, 0, 1 * (rombytesize_1 - 0x200));
+                    rbBuf = ByteBuffer.wrap(romBuf, 0, 1 * (romByteSize1 - 0x200));
                     useFileCh1.position(0x200L).read(rbBuf);
                     // fclose(usefile_1); //usefile_1 is in diskSwap structure which should be
                     // deleted to close the file
 
                     /* write cartridge data into ROM */
-                    for (i = 0; i < rombytesize_1 - 0x200; i++)
-                        Memory.physWriteB((romseg << 4) + i, rombuf[i]);
+                    for (i = 0; i < romByteSize1 - 0x200; i++)
+                        Memory.physWriteB((romseg << 4) + i, romBuf[i]);
 
                     // Close cardridges
                     for (int dct = 0; dct < BIOSDisk.MAX_SWAPPABLE_DISKS; dct++) {
@@ -422,7 +411,7 @@ public final class Boot extends Program {
                     }
 
 
-                    if (cart_cmd == "") {
+                    if (cartCmd == "") {
                         int old_int18 = Memory.readD(0x60);
                         /* run cartridge setup */
                         Register.segSet16(Register.SEG_NAME_DS, romseg);
@@ -438,11 +427,11 @@ public final class Boot extends Program {
                             Register.setRegIP(Memory.realOff(new_int18));
                         }
                     } else {
-                        if (cfound_at > 0) {
+                        if (cFoundAt > 0) {
                             /* run cartridge setup */
                             Register.segSet16(Register.SEG_NAME_DS, DOSMain.DOS.getPSP());
                             Register.segSet16(Register.SEG_NAME_ES, DOSMain.DOS.getPSP());
-                            Callback.runRealFar(romseg, cfound_at);
+                            Callback.runRealFar(romseg, cFoundAt);
                         }
                     }
                 } catch (Exception e) {

@@ -147,7 +147,7 @@ public abstract class DOSShellBase extends Program {
         if (!inPt.isEmpty()) {
             if (DOSMain.openFile(inPt.toString(), DOSSystem.OPEN_READ)) { // Test if file
                                                                           // exists
-                DOSMain.closeFile(DOSMain.CreatedOrOpenedFileEntry);
+                DOSMain.closeFile(DOSMain.returnFileHandle);
                 Log.logMsg("SHELL:Redirect input from %s", inPt);
                 if (normalstdin)
                     DOSMain.closeFile(0); // Close stdin

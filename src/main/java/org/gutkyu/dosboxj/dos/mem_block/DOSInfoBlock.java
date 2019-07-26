@@ -120,8 +120,9 @@ public final class DOSInfoBlock extends MemStruct {
         return getIt(Size_sDIB_startOfUMBChain, Off_sDIB_startOfUMBChain);
     }
 
-    public byte getUMBChainState() {
-        return (byte) getIt(Size_sDIB_chainingUMB, Off_sDIB_chainingUMB);
+    // uint8()
+    public int getUMBChainState() {
+        return 0xff & getIt(Size_sDIB_chainingUMB, Off_sDIB_chainingUMB);
     }
 
     public int getPointer() {

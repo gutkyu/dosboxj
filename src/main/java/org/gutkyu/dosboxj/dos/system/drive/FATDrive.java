@@ -278,13 +278,10 @@ public final class FATDrive extends DOSDrive implements Disposable {
     public DOSFile fileOpen(String name, int flags) {
         DOSFile file = null;
         byte[] fileEntry = new byte[SIZE_direntry_Total];
-        int dirClust = 0, subEntry = 0;
-        RefU32Ret refDirClust = new RefU32Ret(dirClust);
-        RefU32Ret refSubEntry = new RefU32Ret(subEntry);
-        if (!getFileDirEntry(name, fileEntry, refDirClust, refSubEntry))
+        if (!getFileDirEntry(name, fileEntry))
             return null;
-        dirClust = refDirClust.U32;
-        subEntry = refSubEntry.U32;
+        int dirClust = returnedDirClust;
+        int subEntry = returnedSubEntry;
         /* TODO: check for read-only flag and requested write access */
         file = new FATFile(name, ByteConv.getInt(fileEntry, OFF_direntry_loFirstClust),
                 ByteConv.getInt(fileEntry, OFF_direntry_entrysize), this);
@@ -308,11 +305,9 @@ public final class FATDrive extends DOSDrive implements Disposable {
         int save_errorcode = DOSMain.DOS.ErrorCode;
 
         /* Check if file already exists */
-        RefU32Ret refDirClust = new RefU32Ret(dirClust);
-        RefU32Ret refSubEntry = new RefU32Ret(subEntry);
-        if (getFileDirEntry(name, fileEntry, refDirClust, refSubEntry)) {
-            dirClust = refDirClust.U32;
-            subEntry = refSubEntry.U32;
+        if (getFileDirEntry(name, fileEntry)) {
+            dirClust = returnedDirClust;
+            subEntry = returnedSubEntry;
             /* Truncate file */
             // fileEntry.entrysize=0;
             fileEntry[OFF_direntry_entrysize] = 0;
@@ -328,10 +323,9 @@ public final class FATDrive extends DOSDrive implements Disposable {
             convToDirFile(dirName, pathName);
 
             /* Can we find the base directory? */
-            refDirClust.set(dirClust);
-            if (!getDirClustNum(name, refDirClust, true))
+            if (!tryGetDirClustNum(name, true))
                 return file;
-            dirClust = refDirClust.U32;
+            dirClust = returnedDirCustNum;
             Arrays.fill(fileEntry, 0, fileEntry.length, (byte) 0);
             for (int i = 0; i < 11; i++) {
                 fileEntry[OFF_direntry_entryname + i] = (byte) pathName.get(i);
@@ -342,10 +336,10 @@ public final class FATDrive extends DOSDrive implements Disposable {
             addDirectoryEntry(dirClust, fileEntry);
 
             /* Check if file exists now */
-            refDirClust.set(dirClust);
-            refSubEntry.set(subEntry);
-            if (!getFileDirEntry(name, fileEntry, refDirClust, refSubEntry))
+            if (!getFileDirEntry(name, fileEntry))
                 return file;
+            dirClust = returnedDirClust;
+            subEntry = returnedSubEntry;
         }
 
         /* Empty file created, now lets open it */
@@ -367,12 +361,10 @@ public final class FATDrive extends DOSDrive implements Disposable {
     public boolean fileUnlink(String name) {
         byte[] fileEntry = new byte[SIZE_direntry_Total];
         int dirClust = 0, subEntry = 0;
-        RefU32Ret refDirClust = new RefU32Ret(dirClust);
-        RefU32Ret refSubEntry = new RefU32Ret(subEntry);
-        if (!getFileDirEntry(name.toString(), fileEntry, refDirClust, refSubEntry))
+        if (!getFileDirEntry(name.toString(), fileEntry))
             return false;
-        dirClust = refDirClust.U32;
-        subEntry = refSubEntry.U32;
+        dirClust = returnedDirClust;
+        subEntry = returnedSubEntry;
         // fileEntry.entryname[0] = 0xe5;
         fileEntry[OFF_direntry_entryname] = (byte) 0xe5;
 
@@ -397,19 +389,17 @@ public final class FATDrive extends DOSDrive implements Disposable {
         convToDirFile(dirName, pathName);
 
         /* Get directory starting cluster */
-        RefU32Ret refDummyClust = new RefU32Ret(dummyClust);
-        if (!getDirClustNum(dir.toString(), refDummyClust, false))
+        if (!tryGetDirClustNum(dir.toString(), false))
             return false;
-        dummyClust = refDummyClust.U32;
+        dummyClust = returnedDirCustNum;
         /* Can't remove root directory */
         if (dummyClust == 0)
             return false;
 
         /* Get parent directory starting cluster */
-        RefU32Ret refDirClust = new RefU32Ret(dirClust);
-        if (!getDirClustNum(dir.toString(), refDirClust, true))
+        if (!tryGetDirClustNum(dir.toString(), true))
             return false;
-        dirClust = refDirClust.U32;
+        dirClust = returnedDirCustNum;
 
         /* Check to make sure directory is empty */
         int filecount = 0;
@@ -470,8 +460,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
         convToDirFile(dirName, pathName);
 
         /* Fail to make directory if already exists */
-        RefU32Ret refDummyClust = new RefU32Ret(dummyClust);
-        if (getDirClustNum(dir.toString(), refDummyClust, false))
+        if (tryGetDirClustNum(dir.toString(), false))
             return false;
 
         dummyClust = getFirstFreeClust();
@@ -485,10 +474,9 @@ public final class FATDrive extends DOSDrive implements Disposable {
         zeroOutCluster(dummyClust);
 
         /* Can we find the base directory? */
-        RefU32Ret refDirClust = new RefU32Ret(dirClust);
-        if (!getDirClustNum(dir.toString(), refDirClust, true))
+        if (!tryGetDirClustNum(dir.toString(), true))
             return false;
-        dirClust = refDirClust.U32;
+        dirClust = returnedDirCustNum;
 
         /* Add the new directory to the base directory */
         Arrays.fill(tmpentry, 0, SIZE_direntry_Total, (byte) 0);
@@ -532,17 +520,13 @@ public final class FATDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean testDir(CStringPt dir) {
-        int dummyClust = 0;
-        RefU32Ret refDummyClust = new RefU32Ret(dummyClust);
-        return getDirClustNum(dir.toString(), refDummyClust, false);
+        return tryGetDirClustNum(dir.toString(), false);
     }
 
 
     @Override
     public boolean testDir(String dir) {
-        int dummyClust = 0;
-        RefU32Ret refDummyClust = new RefU32Ret(dummyClust);
-        return getDirClustNum(dir, refDummyClust, false);
+        return tryGetDirClustNum(dir, false);
     }
 
     @Override
@@ -562,12 +546,11 @@ public final class FATDrive extends DOSDrive implements Disposable {
         if ((attr & DOSSystem.DOS_ATTR_VOLUME) != 0) // check for root dir or fcb_findfirst
             Log.logging(Log.LogTypes.DOSMISC, Log.LogServerities.Warn,
                     "findfirst for volumelabel used on fatDrive. Unhandled!!!!!");
-        RefU32Ret refDirClust = new RefU32Ret(_cwdDirCluster);
-        if (!getDirClustNum(dir.toString(), refDirClust, false)) {
+        if (!tryGetDirClustNum(dir.toString(), false)) {
             DOSMain.setError(DOSMain.DOSERR_PATH_NOT_FOUND);
             return false;
         }
-        _cwdDirCluster = refDirClust.U32;
+        _cwdDirCluster = returnedDirCustNum;
         dta.setDirID(0);
         dta.setDirIDCluster(_cwdDirCluster & 0xffff);
         return findNextInternal(_cwdDirCluster, dta, dummyClust);
@@ -591,9 +574,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     public boolean tryFileAttr(String name) {
         byte[] fileEntry = new byte[SIZE_direntry_Total];
         int dirClust = 0, subEntry = 0;
-        RefU32Ret refDirClust = new RefU32Ret(dirClust);
-        RefU32Ret refSubEntry = new RefU32Ret(subEntry);
-        if (!getFileDirEntry(name, fileEntry, refDirClust, refSubEntry)) {
+        if (!getFileDirEntry(name, fileEntry)) {
             CStringPt dirName = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
             CStringPt pathName = CStringPt.create(11);
 
@@ -603,8 +584,9 @@ public final class FATDrive extends DOSDrive implements Disposable {
             convToDirFile(dirName, pathName);
 
             /* Get parent directory starting cluster */
-            if (!getDirClustNum(name, refDirClust, true))
+            if (!tryGetDirClustNum(name, true))
                 return false;
+            dirClust = returnedDirCustNum;
 
             /* Find directory entry in parent directory */
             int fileidx = 2;
@@ -638,21 +620,17 @@ public final class FATDrive extends DOSDrive implements Disposable {
     public boolean rename(String oldName, String newName) {
         byte[] fileEntry1 = new byte[SIZE_direntry_Total];
         int dirClust1 = 0, subEntry1 = 0;
-        RefU32Ret refDirClust1 = new RefU32Ret(dirClust1);
-        RefU32Ret refSubEntry1 = new RefU32Ret(subEntry1);
-        if (!getFileDirEntry(oldName, fileEntry1, refDirClust1, refSubEntry1))
+        if (!getFileDirEntry(oldName, fileEntry1))
             return false;
-        dirClust1 = refDirClust1.U32;
-        subEntry1 = refSubEntry1.U32;
+        dirClust1 = returnedDirClust;
+        subEntry1 = returnedSubEntry;
         /* File to be renamed really exists */
 
         byte[] fileEntry2 = new byte[SIZE_direntry_Total];
         int dirClust2 = 0, subEntry2 = 0;
 
         /* Check if file already exists */
-        RefU32Ret refDirClust2 = new RefU32Ret(dirClust2);
-        RefU32Ret refSubEntry2 = new RefU32Ret(subEntry2);
-        if (!getFileDirEntry(newName, fileEntry2, refDirClust2, refSubEntry2)) {
+        if (!getFileDirEntry(newName, fileEntry2)) {
             /* Target doesn't exist, can rename */
 
             CStringPt dirName2 = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
@@ -664,10 +642,9 @@ public final class FATDrive extends DOSDrive implements Disposable {
             convToDirFile(dirName2, pathName2);
 
             /* Can we find the base directory? */
-            refDirClust2.set(dirClust2);
-            if (!getDirClustNum(newName, refDirClust2, true))
+            if (!tryGetDirClustNum(newName, true))
                 return false;
-            dirClust2 = refDirClust2.U32;
+            dirClust2 = returnedDirClust;
             ArrayHelper.copy(fileEntry1, fileEntry2, SIZE_direntry_Total);
             for (int i = 0; i < 11; i++) {
                 fileEntry2[OFF_direntry_entryname + i] = (byte) pathName2.get(i);
@@ -675,12 +652,10 @@ public final class FATDrive extends DOSDrive implements Disposable {
             addDirectoryEntry(dirClust2, fileEntry2);
 
             /* Check if file exists now */
-            refDirClust2.set(dirClust2);
-            refSubEntry2.set(subEntry2);
-            if (!getFileDirEntry(newName, fileEntry2, refDirClust2, refSubEntry2))
+            if (!getFileDirEntry(newName, fileEntry2))
                 return false;
-            dirClust2 = refDirClust2.U32;
-            subEntry2 = refSubEntry2.U32;
+            dirClust2 = returnedDirClust;
+            subEntry2 = returnedSubEntry;
             /* Remove old entry */
             fileEntry1[OFF_direntry_entryname] = (byte) 0xe5;
             directoryChange(dirClust1, fileEntry1, subEntry1);
@@ -726,7 +701,7 @@ public final class FATDrive extends DOSDrive implements Disposable {
     public boolean fileExists(String name) {
         byte[] fileEntry = new byte[SIZE_direntry_Total];
         // int dummy1=0,dummy2=0;
-        if (!getFileDirEntry(name, fileEntry, new RefU32Ret(0), new RefU32Ret(0)))
+        if (!getFileDirEntry(name, fileEntry))
             return false;
         return true;
     }
@@ -1215,7 +1190,9 @@ public final class FATDrive extends DOSDrive implements Disposable {
         }
     }
 
-    private boolean getDirClustNum(String dir, RefU32Ret refClustNum, boolean parDir) {
+    private int returnedDirCustNum;
+
+    private boolean tryGetDirClustNum(String dir, boolean parDir) {
         int len = dir.length();
         int currentClust = 0;
         byte[] foundEntry = null;
@@ -1257,16 +1234,17 @@ public final class FATDrive extends DOSDrive implements Disposable {
                 currentClust = ByteConv.getShort(foundEntry, OFF_direntry_loFirstClust);
 
             }
-            refClustNum.U32 = currentClust;
+            returnedDirCustNum = currentClust;
         } else {
             /* Set to root directory */
-            refClustNum.U32 = 0;
+            returnedDirCustNum = 0;
         }
         return true;
     }
 
-    private boolean getFileDirEntry(String fileName, byte[] useEntry, RefU32Ret refDirClust,
-            RefU32Ret refSubEntry) {
+    private int returnedDirClust, returnedSubEntry;
+
+    private boolean getFileDirEntry(String fileName, byte[] useEntry) {
         int len = fileName.length();
 
         int currentClust = 0;
@@ -1323,8 +1301,8 @@ public final class FATDrive extends DOSDrive implements Disposable {
         for (int i = 0; i < SIZE_direntry_Total; i++) {
             useEntry[i] = foundEntry[i];
         }
-        refDirClust.U32 = currentClust;
-        refSubEntry.U32 = imgDTA.getDirID() - 1;
+        returnedDirClust = currentClust;
+        returnedSubEntry = imgDTA.getDirID() - 1;
         return true;
     }
 

@@ -35,11 +35,9 @@ public final class LoadFix extends Program {
         // Allocate Memory
         int segment = 0;
         int blocks = (kb * 1024 / 16);
-        RefU32Ret refSize = new RefU32Ret(blocks);
-        RefU32Ret refSeg = new RefU32Ret(segment);
-        if (DOSMain.allocateMemory(refSeg, refSize)) {
-            segment = refSeg.U32;
-            blocks = refSize.U32;
+        if (DOSMain.tryAllocateMemory(blocks)) {
+            segment = DOSMain.returnedAllocateMemorySeg;
+            blocks = DOSMain.returnedAllocateMemoryBlock;
 
             DOSMCB mcb = new DOSMCB(segment - 1);
             mcb.setPSPSeg(0x40); // use fake segment

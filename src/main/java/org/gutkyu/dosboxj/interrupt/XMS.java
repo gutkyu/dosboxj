@@ -56,8 +56,8 @@ public final class XMS {
     private static final int UMB_NO_BLOCKS_AVAILABLE = 0xb1;
 
     private XMS() {
-        for (int i = 0; i < _xmsHandles.length; i++)
-            _xmsHandles[i] = new XMSBlock();
+        for (int i = 0; i < xmsHandles.length; i++)
+            xmsHandles[i] = new XMSBlock();
     }
 
     private class XMSBlock {
@@ -93,10 +93,10 @@ public final class XMS {
     private static int xmsCallback;
     private static boolean umbAvailable;
 
-    private static XMSBlock[] _xmsHandles = new XMSBlock[XMS_HANDLES];
+    private static XMSBlock[] xmsHandles = new XMSBlock[XMS_HANDLES];
 
     private static boolean invalidHandle(int handle) {
-        return (handle == 0 || (handle >= XMS_HANDLES) || _xmsHandles[handle].Free);
+        return (handle == 0 || (handle >= XMS_HANDLES) || xmsHandles[handle].Free);
     }
 
     private static int totalFreeMemory = 0;
@@ -116,7 +116,7 @@ public final class XMS {
     private static int allocateMemory(int size) { // size = kb
         /* Find free handle */
         int index = 1;
-        while (!_xmsHandles[index].Free) {
+        while (!xmsHandles[index].Free) {
             if (++index >= XMS_HANDLES)
                 return XMS_OUT_OF_HANDLES;
         }
@@ -132,10 +132,10 @@ public final class XMS {
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                         "XMS:Allocate zero pages with no memory left");
         }
-        _xmsHandles[index].Free = false;
-        _xmsHandles[index].Mem = mem;
-        _xmsHandles[index].Locked = 0;
-        _xmsHandles[index].Size = size;
+        xmsHandles[index].Free = false;
+        xmsHandles[index].Mem = mem;
+        xmsHandles[index].Locked = 0;
+        xmsHandles[index].Size = size;
         allocatedMemoryHandle = index;
         return 0;
     }
@@ -143,10 +143,10 @@ public final class XMS {
     private static int freeMemory(int handle) {
         if (invalidHandle(handle))
             return XMS_INVALID_HANDLE;
-        Memory.releasePages(_xmsHandles[handle].Mem);
-        _xmsHandles[handle].Mem = -1;
-        _xmsHandles[handle].Size = 0;
-        _xmsHandles[handle].Free = true;
+        Memory.releasePages(xmsHandles[handle].Mem);
+        xmsHandles[handle].Mem = -1;
+        xmsHandles[handle].Size = 0;
+        xmsHandles[handle].Free = true;
         return 0;
     }
 
@@ -168,13 +168,13 @@ public final class XMS {
             if (invalidHandle(srcHandle)) {
                 return XMS_INVALID_SOURCE_HANDLE;
             }
-            if (src.Offset >= (_xmsHandles[srcHandle].Size * 1024)) {
+            if (src.Offset >= (xmsHandles[srcHandle].Size * 1024)) {
                 return XMS_INVALID_SOURCE_OFFSET;
             }
-            if (length > _xmsHandles[srcHandle].Size * 1024 - src.Offset) {
+            if (length > xmsHandles[srcHandle].Size * 1024 - src.Offset) {
                 return XMS_INVALID_LENGTH;
             }
-            srcPt = (_xmsHandles[srcHandle].Mem * 4096) + src.Offset;
+            srcPt = (xmsHandles[srcHandle].Mem * 4096) + src.Offset;
         } else {
             srcPt = Memory.real2Phys(src.RealPt);
         }
@@ -182,13 +182,13 @@ public final class XMS {
             if (invalidHandle(destHandle)) {
                 return XMS_INVALID_DEST_HANDLE;
             }
-            if (dest.Offset >= (_xmsHandles[destHandle].Size * 1024)) {
+            if (dest.Offset >= (xmsHandles[destHandle].Size * 1024)) {
                 return XMS_INVALID_DEST_OFFSET;
             }
-            if (length > _xmsHandles[destHandle].Size * 1024 - dest.Offset) {
+            if (length > xmsHandles[destHandle].Size * 1024 - dest.Offset) {
                 return XMS_INVALID_LENGTH;
             }
-            destPt = (_xmsHandles[destHandle].Mem * 4096) + dest.Offset;
+            destPt = (xmsHandles[destHandle].Mem * 4096) + dest.Offset;
         } else {
             destPt = Memory.real2Phys(dest.RealPt);
         }
@@ -197,20 +197,22 @@ public final class XMS {
         return 0;
     }
 
-    private static int lockMemory(int handle, RefU32Ret refAddr) {
+    private static int returnedLockMemory;
+
+    private static int tryLockMemory(int handle) {
         if (invalidHandle(handle))
             return XMS_INVALID_HANDLE;
-        if (_xmsHandles[handle].Locked < 255)
-            _xmsHandles[handle].Locked++;
-        refAddr.U32 = _xmsHandles[handle].Mem * 4096;
+        if (xmsHandles[handle].Locked < 255)
+            xmsHandles[handle].Locked++;
+        returnedLockMemory = xmsHandles[handle].Mem * 4096;
         return 0;
     }
 
     private static int unlockMemory(int handle) {
         if (invalidHandle(handle))
             return XMS_INVALID_HANDLE;
-        if (_xmsHandles[handle].Locked != 0) {
-            _xmsHandles[handle].Locked--;
+        if (xmsHandles[handle].Locked != 0) {
+            xmsHandles[handle].Locked--;
             return 0;
         }
         return XMS_BLOCK_NOT_LOCKED;
@@ -223,14 +225,14 @@ public final class XMS {
     }
 
     private static byte getHandleLockCount(int handle) {
-        return _xmsHandles[handle].Locked;
+        return xmsHandles[handle].Locked;
     }
 
     private static byte getHandleAvailBlocks(int handle) {
         /* Find available blocks */
         byte numFree = 0;
         for (int i = 1; i < XMS_HANDLES; i++) {
-            if (_xmsHandles[i].Free)
+            if (xmsHandles[i].Free)
                 numFree++;
         }
         return numFree;
@@ -238,20 +240,19 @@ public final class XMS {
 
     // uint16(int)
     private static int getHandleSize(int handle) {
-        return _xmsHandles[handle].Size;
+        return xmsHandles[handle].Size;
     }
 
     private static int resizeMemory(int handle, int newSize) {
         if (invalidHandle(handle))
             return XMS_INVALID_HANDLE;
         // Block has to be unlocked
-        if (_xmsHandles[handle].Locked > 0)
+        if (xmsHandles[handle].Locked > 0)
             return XMS_BLOCK_LOCKED;
         int pages = newSize / 4 + ((newSize & 3) != 0 ? 1 : 0);
-        RefU32Ret refHandle = new RefU32Ret(_xmsHandles[handle].Mem);
-        if (Memory.reallocatePages(refHandle, pages, true)) {
-            _xmsHandles[handle].Mem = refHandle.U32;
-            _xmsHandles[handle].Size = newSize;
+        if (Memory.tryReallocatePages(xmsHandles[handle].Mem, pages, true)) {
+            xmsHandles[handle].Mem = Memory.returnedReallocatePagesHandle;
+            xmsHandles[handle].Size = newSize;
             return 0;
         } else
             return XMS_OUT_OF_SPACE;
@@ -338,10 +339,8 @@ public final class XMS {
                         false);
                 break;
             case XMS_LOCK_EXTENDED_MEMORY_BLOCK: { /* 0c */
-                int address = 0;
-                RefU32Ret refAddr = new RefU32Ret(address);
-                int res = lockMemory(Register.getRegDX(), refAddr);
-                address = refAddr.U32;
+                int res = tryLockMemory(Register.getRegDX());
+                int address = returnedLockMemory;
                 if (res != 0)
                     Register.setRegBL(res);
                 Register.setRegAX(res == 0 ? 1 : 0);
@@ -386,8 +385,8 @@ public final class XMS {
                     Register.setRegBL(XMS_FUNCTION_NOT_IMPLEMENTED);
                     break;
                 }
-                int umb_start = DOSMain.DOSInfoBlock.getStartOfUMBChain();
-                if (umb_start == 0xffff) {
+                int umbStart = DOSMain.DOSInfoBlock.getStartOfUMBChain();
+                if (umbStart == 0xffff) {
                     Register.setRegAX(0);
                     Register.setRegBL(UMB_NO_BLOCKS_AVAILABLE);
                     Register.setRegDX(0); // no upper memory available
@@ -397,19 +396,17 @@ public final class XMS {
                  * Save status and linkage of upper UMB chain and link upper memory to the regular
                  * MCB chain
                  */
-                byte umb_flag = DOSMain.DOSInfoBlock.getUMBChainState();
-                if ((umb_flag & 1) == 0)
+                int umbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
+                if ((umbFlag & 1) == 0)
                     DOSMain.linkUMBsToMemChain(1);
                 int oldMemstrat = DOSMain.getMemAllocStrategy() & 0xff;
                 DOSMain.setMemAllocStrategy(0x40); // search in UMBs only
 
                 int size = Register.getRegDX();
                 int seg = 0;
-                RefU32Ret refSize = new RefU32Ret(size);
-                RefU32Ret refSeg = new RefU32Ret(seg);
-                if (DOSMain.allocateMemory(refSeg, refSize)) {
-                    seg = refSeg.U32;
-                    size = refSize.U32;
+                if (DOSMain.tryAllocateMemory(size)) {
+                    seg = DOSMain.returnedAllocateMemorySeg;
+                    size = DOSMain.returnedAllocateMemoryBlock;
                     Register.setRegAX(1);
                     Register.setRegBX(seg);
                 } else {
@@ -422,9 +419,9 @@ public final class XMS {
                 }
 
                 /* Restore status and linkage of upper UMB chain */
-                byte current_umb_flag = DOSMain.DOSInfoBlock.getUMBChainState();
-                if ((current_umb_flag & 1) != (umb_flag & 1))
-                    DOSMain.linkUMBsToMemChain(umb_flag);
+                int currentUMBFlag = DOSMain.DOSInfoBlock.getUMBChainState();
+                if ((currentUMBFlag & 1) != (umbFlag & 1))
+                    DOSMain.linkUMBsToMemChain(umbFlag);
                 DOSMain.setMemAllocStrategy(oldMemstrat);
             }
                 break;
@@ -527,13 +524,13 @@ public final class XMS {
             // retf
 
             for (i = 0; i < XMS_HANDLES; i++) {
-                _xmsHandles[i].Free = true;
-                _xmsHandles[i].Mem = -1;
-                _xmsHandles[i].Size = 0;
-                _xmsHandles[i].Locked = 0;
+                xmsHandles[i].Free = true;
+                xmsHandles[i].Mem = -1;
+                xmsHandles[i].Size = 0;
+                xmsHandles[i].Locked = 0;
             }
             /* Disable the 0 handle */
-            _xmsHandles[0].Free = false;
+            xmsHandles[0].Free = false;
 
             /* Set up UMB chain */
             umbAvailable = section.getBool("umb");
@@ -564,7 +561,7 @@ public final class XMS {
 
             /* Free used memory while skipping the 0 handle */
             for (int i = 1; i < XMS_HANDLES; i++)
-                if (!_xmsHandles[i].Free)
+                if (!xmsHandles[i].Free)
                     freeMemory(i);
 
             super.dispose(disposing);

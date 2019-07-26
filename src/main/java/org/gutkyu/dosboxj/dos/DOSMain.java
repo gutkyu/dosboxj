@@ -14,7 +14,6 @@ import org.gutkyu.dosboxj.dos.system.file.*;
 import java.util.Random;
 import org.gutkyu.dosboxj.*;
 import org.gutkyu.dosboxj.dos.keyboardlayout.*;
-import org.gutkyu.dosboxj.dos.keyboardlayout.KeyboardLayout.RefKeyboardLayout;
 import org.gutkyu.dosboxj.dos.software.*;
 
 
@@ -570,9 +569,8 @@ public final class DOSMain {
                 break;
             case 0x31: /* Terminate and stay resident */
                 // Important: This service does not set the carry flag!
-                RefU32Ret refRegDX = new RefU32Ret(Register.getRegDX());
-                resizeMemory(DOS.getPSP(), refRegDX);
-                Register.setRegDX(refRegDX.U32);
+                tryResizeMemory(DOS.getPSP(), Register.getRegDX());
+                Register.setRegDX(returnedResizedMemoryBlocks);
                 terminate(DOS.getPSP(), true, Register.getRegAL());
                 break;
             case 0x1f: /* Get drive parameter block for default drive */
@@ -735,7 +733,7 @@ public final class DOSMain {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         DOSNAMEBUF);
                 if (createFile(name1, Register.getRegCX())) {
-                    Register.Regs[Register.AX].setWord(CreatedOrOpenedFileEntry);
+                    Register.Regs[Register.AX].setWord(returnFileHandle);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -748,7 +746,7 @@ public final class DOSMain {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         DOSNAMEBUF);
                 if (openFile(name1, Register.getRegAL())) {
-                    Register.Regs[Register.AX].setWord(CreatedOrOpenedFileEntry);
+                    Register.Regs[Register.AX].setWord(returnFileHandle);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -901,16 +899,12 @@ public final class DOSMain {
                 break;
             case 0x48: /* Allocate memory */
             {
-                int size = Register.getRegBX();
-                RefU32Ret refSize = new RefU32Ret(size);
-                short seg = 0;
-                RefU32Ret refSeg = new RefU32Ret(seg);
-                if (allocateMemory(refSeg, refSize)) {
-                    Register.setRegAX(refSeg.U32);
+                if (tryAllocateMemory(Register.getRegBX())) {
+                    Register.setRegAX(returnedAllocateMemorySeg);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
-                    Register.setRegBX(refSize.U32);
+                    Register.setRegBX(returnedAllocateMemoryBlock);
                     Callback.scf(true);
                 }
                 break;
@@ -925,14 +919,12 @@ public final class DOSMain {
                 break;
             case 0x4a: /* Resize memory block */
             {
-                RefU32Ret refSize = new RefU32Ret(Register.getRegBX());
-
-                if (resizeMemory(Register.segValue(Register.SEG_NAME_ES), refSize)) {
+                if (tryResizeMemory(Register.segValue(Register.SEG_NAME_ES), Register.getRegBX())) {
                     Register.setRegAX(Register.segValue(Register.SEG_NAME_ES));
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
-                    Register.setRegBX(refSize.U32);
+                    Register.setRegBX(returnedResizedMemoryBlocks);
                     Callback.scf(true);
                 }
                 break;
@@ -1020,11 +1012,9 @@ public final class DOSMain {
                 break;
             case 0x57: /* Get/Set File's Date and Time */
                 if (Register.getRegAL() == 0x00) {
-                    RefU32Ret refOTime = new RefU32Ret(Register.Regs[Register.CX].getWord());
-                    RefU32Ret refODate = new RefU32Ret(Register.Regs[Register.DX].getWord());
-                    if (getFileDate(Register.getRegBX(), refOTime, refODate)) {
-                        Register.Regs[Register.CX].setWord(refOTime.U32);
-                        Register.Regs[Register.DX].setWord(refODate.U32);
+                    if (tryGetFileDate(Register.getRegBX())) {
+                        Register.setRegCX(returnedGetFileOTime);
+                        Register.setRegDX(returnedGetFileODate);
 
                         Callback.scf(false);
                     } else {
@@ -1090,7 +1080,7 @@ public final class DOSMain {
                 Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         name1pt, DOSNAMEBUF);
                 if (createTempFile(name1pt)) {
-                    handle = CreatedOrOpenedFileEntry;
+                    handle = returnFileHandle;
                     Register.setRegAX(handle);
                     Memory.blockWrite(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                             name1pt);
@@ -1107,7 +1097,7 @@ public final class DOSMain {
                         DOSNAMEBUF);
                 int handle = 0;
                 if (openFile(name1, 0)) {
-                    handle = CreatedOrOpenedFileEntry;
+                    handle = returnFileHandle;
                     closeFile(handle);
                     setError(DOSERR_FILE_ALREADY_EXISTS);
                     Register.setRegAX(DOS.ErrorCode);
@@ -1115,7 +1105,7 @@ public final class DOSMain {
                     break;
                 }
                 if (createFile(name1, Register.getRegCX())) {
-                    Register.setRegAX(CreatedOrOpenedFileEntry);
+                    Register.setRegAX(returnFileHandle);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -1319,8 +1309,8 @@ public final class DOSMain {
                         DOSNAMEBUF);
                 if (openFileExtended(name1, Register.getRegBX(), Register.getRegCX(),
                         Register.getRegDX())) {
-                    Register.Regs[Register.AX].setWord(FileExtendedEntry);
-                    Register.Regs[Register.CX].setWord(FileExtendedStatus);
+                    Register.Regs[Register.AX].setWord(returnedFileExtendedHandle);
+                    Register.Regs[Register.CX].setWord(returnedFileExtendedStatus);
                     Callback.scf(false);
                 } else {
                     Register.setRegAX(DOS.ErrorCode);
@@ -1363,10 +1353,9 @@ public final class DOSMain {
 
     public static int INT27Handler() {
         int blocks = (Register.getRegDX() / 16) + Convert.toShort((Register.getRegDX() % 16) > 0);
-        RefU32Ret refBlocks = new RefU32Ret(blocks);
         // Terminate & stay resident
         int psp = DOS.getPSP(); // MemModule.mem_readw(SegPhys(ss)+regsModule.reg_sp+2);
-        if (resizeMemory(psp, refBlocks))
+        if (tryResizeMemory(psp, blocks))
             terminate(psp, true, 0);
         return Callback.ReturnTypeNone;
     }
@@ -1862,11 +1851,11 @@ public final class DOSMain {
         return false;
     }
 
-    public static boolean allocateMemory(RefU32Ret refSegment, RefU32Ret refBlocks) {
-        int blocks = refBlocks.U32;
+    public static int returnedAllocateMemorySeg, returnedAllocateMemoryBlock;
 
+    public static boolean tryAllocateMemory(int blocks) {
         compressMemory();
-        int bigsize = 0;
+        int bigSize = 0;
         int memStrat = memAllocStrategy;
         int mcbSegment = DOS.FirstMCB;
 
@@ -1884,24 +1873,24 @@ public final class DOSMain {
         DOSMCB pspMCB = new DOSMCB(DOS.getPSP() - 1);
         CStringPt pspName = CStringPt.create(9);
         pspMCB.getFileName(pspName);
-        int foundSeg = 0, found_seg_size = 0;
+        int foundSeg = 0, foundSegSize = 0;
         for (;;) {
             mcb.setSegPt(mcbSegment);
             if (mcb.getPSPSeg() == 0) {
                 /* Check for enough free memory in current block */
                 int blockSize = mcb.getSize();
                 if (blockSize < blocks) {
-                    if (bigsize < blockSize) {
+                    if (bigSize < blockSize) {
                         /*
                          * current block is largest block that was found, but still not as big as
                          * requested
                          */
-                        bigsize = blockSize;
+                        bigSize = blockSize;
                     }
                 } else if ((blockSize == blocks) && ((memStrat & 0x3f) < 2)) {
                     /* MCB fits precisely, use it if search strategy is firstfit or bestfit */
                     mcb.setPSPSeg(DOS.getPSP());
-                    refSegment.U32 = mcbSegment + 1;
+                    returnedAllocateMemorySeg = mcbSegment + 1;
                     return true;
                 } else {
                     switch (memStrat & 0x3f) {
@@ -1915,19 +1904,19 @@ public final class DOSMain {
                             mcb.setPSPSeg(DOS.getPSP());
                             mcb.setFileName(pspName);
                             // TODO Filename
-                            refSegment.U32 = mcbSegment + 1;
+                            returnedAllocateMemorySeg = mcbSegment + 1;
                             return true;
                         case 1: /* bestfit */
-                            if ((found_seg_size == 0) || (blockSize < found_seg_size)) {
+                            if ((foundSegSize == 0) || (blockSize < foundSegSize)) {
                                 /* first fitting MCB, or smaller than the last that was found */
                                 foundSeg = mcbSegment;
-                                found_seg_size = blockSize;
+                                foundSegSize = blockSize;
                             }
                             break;
                         default: /* everything else is handled as lastfit by dos */
                             /* MCB is large enough, note it down */
                             foundSeg = mcbSegment;
-                            found_seg_size = blockSize;
+                            foundSegSize = blockSize;
                             break;
                     }
                 }
@@ -1949,42 +1938,41 @@ public final class DOSMain {
                             mcbNext.setSegPt(foundSeg + blocks + 1);
                             mcbNext.setPSPSeg(DOSMCB.MCB_FREE);
                             mcbNext.setType(mcb.getType());
-                            mcbNext.setSize(found_seg_size - blocks - 1);
+                            mcbNext.setSize(foundSegSize - blocks - 1);
 
                             mcb.setSize(blocks);
                             mcb.setType((byte) 0x4d);
                             mcb.setPSPSeg(DOS.getPSP());
                             mcb.setFileName(pspName);
                             // TODO Filename
-                            refSegment.U32 = foundSeg + 1;
+                            returnedAllocateMemorySeg = foundSeg + 1;
                         } else {
                             /* lastfit, allocate block at the end of the MCB */
                             mcb.setSegPt(foundSeg);
-                            if (found_seg_size == blocks) {
+                            if (foundSegSize == blocks) {
                                 /* use the whole block */
                                 mcb.setPSPSeg(DOS.getPSP());
                                 // Not consistent with line 124. But how many application will use
                                 // this information ?
                                 mcb.setFileName(pspName);
-                                refSegment.U32 = foundSeg + 1;
+                                returnedAllocateMemorySeg = foundSeg + 1;
                                 return true;
                             }
-                            refSegment.U32 = foundSeg + 1 + found_seg_size - blocks;
-                            mcbNext.setSegPt(refSegment.U32 - 1);
+                            returnedAllocateMemorySeg = foundSeg + 1 + foundSegSize - blocks;
+                            mcbNext.setSegPt(returnedAllocateMemorySeg - 1);
                             mcbNext.setSize(blocks);
                             mcbNext.setType(mcb.getType());
                             mcbNext.setPSPSeg(DOS.getPSP());
                             mcbNext.setFileName(pspName);
                             // Old Block
-                            mcb.setSize(found_seg_size - blocks - 1);
+                            mcb.setSize(foundSegSize - blocks - 1);
                             mcb.setPSPSeg(DOSMCB.MCB_FREE);
                             mcb.setType((byte) 0x4D);
                         }
                         return true;
                     }
                     /* no fitting MCB found, return size of largest block */
-                    blocks = bigsize;
-                    refBlocks.U32 = blocks;
+                    returnedAllocateMemoryBlock = blocks = bigSize;
                     setError(DOSERR_INSUFFICIENT_MEMORY);
                     return false;
                 }
@@ -1995,7 +1983,9 @@ public final class DOSMain {
     }
 
 
-    public static boolean resizeMemory(int segment, RefU32Ret refBlocks) {
+    public static int returnedResizedMemoryBlocks;
+
+    public static boolean tryResizeMemory(int segment, int blocks) {
         if (segment < DOS_MEM_START + 1) {
             Log.logging(Log.LogTypes.DOSMISC, Log.LogServerities.Error,
                     "Program resizes %X, take care", segment);
@@ -2009,43 +1999,42 @@ public final class DOSMain {
 
         compressMemory();
         int total = mcb.getSize();
-        DOSMCB mcb_next = new DOSMCB(segment + total);
-        int blocks = refBlocks.U32;
+        DOSMCB mcbNext = new DOSMCB(segment + total);
         if (blocks <= total) {
             if (blocks == total) {
                 /* Nothing to do */
                 return true;
             }
             /* Shrinking MCB */
-            DOSMCB mcb_new_next = new DOSMCB(segment + blocks);
+            DOSMCB mcbNewNext = new DOSMCB(segment + blocks);
             mcb.setSize(blocks);
-            mcb_new_next.setType(mcb.getType());
+            mcbNewNext.setType(mcb.getType());
             if (mcb.getType() == 0x5a) {
                 /* Further blocks follow */
                 mcb.setType((byte) 0x4d);
             }
 
-            mcb_new_next.setSize(total - blocks - 1);
-            mcb_new_next.setPSPSeg(DOSMCB.MCB_FREE);
+            mcbNewNext.setSize(total - blocks - 1);
+            mcbNewNext.setPSPSeg(DOSMCB.MCB_FREE);
             mcb.setPSPSeg(DOS.getPSP());
             return true;
         }
         /* MCB will grow, try to join with following MCB */
         if (mcb.getType() != 0x5a) {
-            if (mcb_next.getPSPSeg() == DOSMCB.MCB_FREE) {
-                total += mcb_next.getSize() + 1;
+            if (mcbNext.getPSPSeg() == DOSMCB.MCB_FREE) {
+                total += mcbNext.getSize() + 1;
             }
         }
         if (blocks < total) {
             if (mcb.getType() != 0x5a) {
                 /* save type of following MCB */
-                mcb.setType(mcb_next.getType());
+                mcb.setType(mcbNext.getType());
             }
             mcb.setSize(blocks);
-            mcb_next.setSegPt(segment + blocks);
-            mcb_next.setSize(total - blocks - 1);
-            mcb_next.setType(mcb.getType());
-            mcb_next.setPSPSeg(DOSMCB.MCB_FREE);
+            mcbNext.setSegPt(segment + blocks);
+            mcbNext.setSize(total - blocks - 1);
+            mcbNext.setType(mcb.getType());
+            mcbNext.setPSPSeg(DOSMCB.MCB_FREE);
             mcb.setType((byte) 0x4d);
             mcb.setPSPSeg(DOS.getPSP());
             return true;
@@ -2056,16 +2045,16 @@ public final class DOSMain {
          * maximum
          */
 
-        if ((mcb_next.getPSPSeg() == DOSMCB.MCB_FREE) && (mcb.getType() != 0x5a)) {
+        if ((mcbNext.getPSPSeg() == DOSMCB.MCB_FREE) && (mcb.getType() != 0x5a)) {
             /* adjust type of joined MCB */
-            mcb.setType(mcb_next.getType());
+            mcb.setType(mcbNext.getType());
         }
         mcb.setSize(total);
         mcb.setPSPSeg(DOS.getPSP());
         if (blocks == total)
             return true; /* block fit exactly */
 
-        refBlocks.U32 = total; /* return maximum */
+        returnedResizedMemoryBlocks = total; /* return maximum */
         setError(DOSERR_INSUFFICIENT_MEMORY);
         return false;
     }
@@ -2134,11 +2123,11 @@ public final class DOSMain {
     // boolean(short linkState)
     public static boolean linkUMBsToMemChain(int linkState) {
         /* Get start of UMB-chain */
-        int umb_start = DOSInfoBlock.getStartOfUMBChain();
-        if (umb_start != UMB_START_SEG) {
-            if (umb_start != 0xffff)
+        int umbStart = DOSInfoBlock.getStartOfUMBChain();
+        if (umbStart != UMB_START_SEG) {
+            if (umbStart != 0xffff)
                 Log.logging(Log.LogTypes.DOSMISC, Log.LogServerities.Error, "Corrupt UMB chain: %x",
-                        umb_start);
+                        umbStart);
             return false;
         }
 
@@ -2149,7 +2138,7 @@ public final class DOSMain {
         int mcb_segment = DOS.FirstMCB;
         int prev_mcb_segment = DOS.FirstMCB;
         DOSMCB mcb = new DOSMCB(mcb_segment);
-        while ((mcb_segment != umb_start) && (mcb.getType() != 0x5a)) {
+        while ((mcb_segment != umbStart) && (mcb.getType() != 0x5a)) {
             prev_mcb_segment = mcb_segment;
             mcb_segment += mcb.getSize() + 1;
             mcb.setSegPt(mcb_segment);
@@ -2158,7 +2147,7 @@ public final class DOSMain {
 
         switch (linkState) {
             case 0x0000: // unlink
-                if ((prev_mcb.getType() == 0x4d) && (mcb_segment == umb_start)) {
+                if ((prev_mcb.getType() == 0x4d) && (mcb_segment == umbStart)) {
                     prev_mcb.setType((byte) 0x5a);
                 }
                 DOSInfoBlock.setUMBChainState(0);
@@ -2306,20 +2295,21 @@ public final class DOSMain {
     }
 
 
-    public static int switchKeyboardLayout(String newLayout, RefU32Ret refTriedCP) {
+    public static int returnedSwitchKBLTryiedCP;
+
+    public static int trySwitchKeyboardLayout(String newLayout) {
         if (LoadedLayout != null) {
-            KeyboardLayout changed_layout = null;
-            RefKeyboardLayout refChgLayout = new RefKeyboardLayout();
-            refChgLayout.KBLayout = changed_layout;
-            int ret_code = LoadedLayout.switchKeyboardLayout(newLayout, refChgLayout, refTriedCP);
-            changed_layout = refChgLayout.KBLayout;
-            if (changed_layout != null) {
+            KeyboardLayout changedLayout = null;
+            int retCode = LoadedLayout.trySwitchKeyboardLayout(newLayout);
+            changedLayout = LoadedLayout.returnedSwitchKBLCreatedLayout;
+            returnedSwitchKBLTryiedCP = LoadedLayout.returnedSwitchKBLTriedCP;
+            if (changedLayout != null) {
                 // Remove old layout, activate new layout
                 LoadedLayout.dispose();
                 LoadedLayout = null;
-                LoadedLayout = changed_layout;
+                LoadedLayout = changedLayout;
             }
-            return ret_code;
+            return retCode;
         } else
             return 0xff;
     }
@@ -3199,10 +3189,11 @@ public final class DOSMain {
         return true;
     }
 
-    public static int CreatedOrOpenedFileEntry;
+    public static int returnFileHandle;
 
     // 생성한 file handle은 FileEntry에 저장
     // bool(string, uint16 , ref uint16)
+    // created file handle -> returnFileHandle
     public static boolean createFile(String name, int attributes) {
         attributes &= 0xffff;
         // Creation of a device is the same as opening it
@@ -3231,8 +3222,8 @@ public final class DOSMain {
             return false;
         }
         /* We have a position in the main table now find one in the psp table */
-        CreatedOrOpenedFileEntry = 0xffff & psp.findFreeFileEntry();
-        if (CreatedOrOpenedFileEntry == 0xff) {
+        returnFileHandle = 0xffff & psp.findFreeFileEntry();
+        if (returnFileHandle == 0xff) {
             setError(DOSERR_TOO_MANY_OPEN_FILES);
             return false;
         }
@@ -3246,7 +3237,7 @@ public final class DOSMain {
         if (foundit) {
             Files[handle].setDrive(drive);
             Files[handle].addRef();
-            psp.setFileHandle(CreatedOrOpenedFileEntry, handle);
+            psp.setFileHandle(returnFileHandle, handle);
             return true;
         } else {
             if (!pathExists(name))
@@ -3303,9 +3294,9 @@ public final class DOSMain {
             return false;
         }
         /* We have a position in the main table now find one in the psp table */
-        CreatedOrOpenedFileEntry = 0xffff & psp.findFreeFileEntry();
+        returnFileHandle = 0xffff & psp.findFreeFileEntry();
 
-        if (CreatedOrOpenedFileEntry == 0xff) {
+        if (returnFileHandle == 0xff) {
             setError(DOSERR_TOO_MANY_OPEN_FILES);
             return false;
         }
@@ -3319,7 +3310,7 @@ public final class DOSMain {
         }
         if (exists || device) {
             Files[handle].addRef();
-            psp.setFileHandle(CreatedOrOpenedFileEntry, handle);
+            psp.setFileHandle(returnFileHandle, handle);
             return true;
         } else {
             // Test if file exists, but opened in read-write mode (and writeprotected)
@@ -3336,6 +3327,7 @@ public final class DOSMain {
         }
     }
 
+    // opened file handle -> returnfileHandle
     public static boolean openFile(String name, int flags) {
         flags &= 0xff;
         /* First check for devices */
@@ -3381,9 +3373,9 @@ public final class DOSMain {
             return false;
         }
         /* We have a position in the main table now find one in the psp table */
-        CreatedOrOpenedFileEntry = 0xffff & psp.findFreeFileEntry();
+        returnFileHandle = 0xffff & psp.findFreeFileEntry();
 
-        if (CreatedOrOpenedFileEntry == 0xff) {
+        if (returnFileHandle == 0xff) {
             setError(DOSERR_TOO_MANY_OPEN_FILES);
             return false;
         }
@@ -3397,7 +3389,7 @@ public final class DOSMain {
         }
         if (exists || device) {
             Files[handle].addRef();
-            psp.setFileHandle(CreatedOrOpenedFileEntry, handle);
+            psp.setFileHandle(returnFileHandle, handle);
             return true;
         } else {
             // Test if file exists, but opened in read-write mode (and writeprotected)
@@ -3413,9 +3405,11 @@ public final class DOSMain {
         }
     }
 
-    public static int FileExtendedStatus;
-    public static int FileExtendedEntry;
+    public static int returnedFileExtendedStatus;
+    public static int returnedFileExtendedHandle;
 
+    // opened file handle -> returnedFileExtendedHandle
+    // file open status -> returnedFileExtendedStatus
     public static boolean openFileExtended(String name, int flags, int createAttr, int action) {
         // FIXME: Not yet supported : Bit 13 of flags (int 0x24 on critical error)
         short result = 0;
@@ -3431,7 +3425,7 @@ public final class DOSMain {
             }
         }
         if (openFile(name, flags & 0xff)) {
-            FileExtendedEntry = CreatedOrOpenedFileEntry;
+            returnedFileExtendedHandle = returnFileHandle;
             // File already exists
             switch (action & 0x0f) {
                 case 0x00: // failed
@@ -3441,11 +3435,11 @@ public final class DOSMain {
                     result = 1;
                     break;
                 case 0x02: // replace
-                    closeFile(CreatedOrOpenedFileEntry);
+                    closeFile(returnFileHandle);
                     if (!createFile(name, createAttr))
                         return false;
                     result = 3;
-                    FileExtendedEntry = CreatedOrOpenedFileEntry;
+                    returnedFileExtendedHandle = returnFileHandle;
                     break;
                 default:
                     setError(DOSERR_FUNCTION_NUMBER_INVALID);
@@ -3463,11 +3457,11 @@ public final class DOSMain {
                 // uses error code from failed create
                 return false;
             }
-            FileExtendedEntry = CreatedOrOpenedFileEntry;
+            returnedFileExtendedHandle = returnFileHandle;
             result = 2;
         }
         // success
-        FileExtendedStatus = result;
+        returnedFileExtendedStatus = result;
         return true;
     }
 
@@ -3891,7 +3885,7 @@ public final class DOSMain {
         fcb.getName(shortname);
         if (!createFile(shortname.toString(), DOSSystem.DOS_ATTR_ARCHIVE))
             return false;
-        fcb.openFile((byte) CreatedOrOpenedFileEntry);
+        fcb.openFile((byte) returnFileHandle);
         return true;
     }
 
@@ -3925,7 +3919,7 @@ public final class DOSMain {
         }
         if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READWRITE))
             return false;
-        handle = CreatedOrOpenedFileEntry;
+        handle = returnFileHandle;
         fcb.openFile((byte) handle);
         return true;
     }
@@ -4186,7 +4180,7 @@ public final class DOSMain {
         fcb.getName(shortname);
         if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READ))
             return false;
-        entry = 0xffff & CreatedOrOpenedFileEntry;
+        entry = 0xffff & returnFileHandle;
         handle = realHandle(entry);
         long size = 0;
         size = Files[handle].seek(size, DOSSystem.DOS_SEEK_END);
@@ -4278,8 +4272,10 @@ public final class DOSMain {
         }
     }
 
+    private static int returnedGetFileOTime, returnedGetFileODate;
+
     // (short, ref uint16, ref uint16)
-    private static boolean getFileDate(int entry, RefU32Ret refOTime, RefU32Ret refODate) {
+    private static boolean tryGetFileDate(int entry) {
         int handle = realHandle(entry);
         if (handle >= DOS_FILES) {
             setError(DOSERR_INVALID_HANDLE);
@@ -4294,8 +4290,8 @@ public final class DOSMain {
             setError(DOSERR_INVALID_HANDLE);
             return false;
         }
-        refOTime.U32 = file.Time;
-        refODate.U32 = file.Date;
+        returnedGetFileOTime = file.Time;
+        returnedGetFileODate = file.Date;
         return true;
     }
 
@@ -4479,8 +4475,9 @@ public final class DOSMain {
         return;
     }
 
-    private static boolean makeEnv(String name, RefU32Ret refSegment) {
-        int segment = refSegment.U32;
+    private static int returnedMakeEnvSeg;
+
+    private static boolean makeEnv(String name, int segment) {
         /* If segment to copy environment is 0 copy the caller's environment */
         DOSPSP psp = new DOSPSP(DOS.getPSP());
         int envRead, envWrite;
@@ -4509,11 +4506,10 @@ public final class DOSMain {
             envSize += 2; /* account for trailing \0\0 */
         }
         int size = doLong2Para(envSize + ENV_KEEPFREE);
-        RefU32Ret refSize = new RefU32Ret(size);
-        if (!allocateMemory(refSegment, refSize))
+        if (!tryAllocateMemory(size))
             return false;
-        segment = refSegment.U32;
-        size = refSize.U32;
+        returnedMakeEnvSeg = segment = returnedAllocateMemorySeg;
+        size = returnedAllocateMemoryBlock;
         envWrite = Memory.physMake(segment, 0);
         if (parentEnv) {
             Memory.blockCopy(envWrite, envRead, envSize);
@@ -4613,7 +4609,7 @@ public final class DOSMain {
             setError(DOSERR_FILE_NOT_FOUND);
             return false;
         }
-        fHandle = CreatedOrOpenedFileEntry;
+        fHandle = returnFileHandle;
         len = Size_EXE_Header;
         if (!readFile(fHandle, head, 0, len)) {
             closeFile(fHandle);
@@ -4660,44 +4656,42 @@ public final class DOSMain {
         if (flags != OVERLAY) {
             /* Create an environment block */
             envSeg = block.Exec.EnvSeg;
-            RefU32Ret refEnvSeg = new RefU32Ret(envSeg);
-            if (!makeEnv(name, refEnvSeg)) {
+            if (!makeEnv(name, envSeg)) {
                 closeFile(fHandle);
                 return false;
             }
+            envSeg = returnedMakeEnvSeg;
             /* Get Memory */
-            int minsize, maxsize;
-            int maxfree = 0xffff;
-            RefU32Ret refSize = new RefU32Ret(maxfree);
-            RefU32Ret refSeg = new RefU32Ret(pspSeg);
-            allocateMemory(refSeg, refSize);
-            maxfree = refSize.U32;
-            pspSeg = refSeg.U32;
+            int minSize, maxSize;
+            int maxFree = 0xffff;
+            tryAllocateMemory(maxFree);
+            maxFree = returnedAllocateMemoryBlock;
+            pspSeg = returnedAllocateMemorySeg;
             if (isCom) {
-                minsize = 0x1000;
-                maxsize = 0xffff;
+                minSize = 0x1000;
+                maxSize = 0xffff;
                 if (DOSBox.Machine == DOSBox.MachineType.PCJR) {
                     /* try to load file into memory below 96k */
                     pos = 0;
                     pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
-                    int dataread = 0x1800;
-                    readFile(fHandle, loadBuf, 0, dataread);
-                    dataread = ReadSize;
-                    if (dataread < 0x1800)
-                        maxsize = dataread;
-                    if (minsize > maxsize)
-                        minsize = maxsize;
+                    int dataRead = 0x1800;
+                    readFile(fHandle, loadBuf, 0, dataRead);
+                    dataRead = ReadSize;
+                    if (dataRead < 0x1800)
+                        maxSize = dataRead;
+                    if (minSize > maxSize)
+                        minSize = maxSize;
                 }
             } else { /* Exe size calculated from header */
                 headMinMemory = ByteConv.getShort(head, Off_EXE_Header_minmemory);
-                minsize = doLong2Para(imagesize + (headMinMemory << 4) + 256);
+                minSize = doLong2Para(imagesize + (headMinMemory << 4) + 256);
                 headMaxMemory = ByteConv.getShort(head, Off_EXE_Header_maxmemory);
                 if (headMaxMemory != 0)
-                    maxsize = doLong2Para(imagesize + (headMaxMemory << 4) + 256);
+                    maxSize = doLong2Para(imagesize + (headMaxMemory << 4) + 256);
                 else
-                    maxsize = 0xffff;
+                    maxSize = 0xffff;
             }
-            if (maxfree < minsize) {
+            if (maxFree < minSize) {
                 if (isCom) {
                     /* Reduce minimum of needed memory size to filesize */
                     pos = 0;
@@ -4706,37 +4700,34 @@ public final class DOSMain {
                     readFile(fHandle, loadBuf, 0, dataread);
                     dataread = ReadSize;
                     if (dataread < 0xf800)
-                        minsize = 0xffff & (((dataread + 0x10) >>> 4) + 0x20);
+                        minSize = 0xffff & (((dataread + 0x10) >>> 4) + 0x20);
                 }
-                if (maxfree < minsize) {
+                if (maxFree < minSize) {
                     closeFile(fHandle);
                     setError(DOSERR_INSUFFICIENT_MEMORY);
                     freeMemory(envSeg);
                     return false;
                 }
             }
-            if (maxfree < maxsize)
-                memSize = maxfree;
+            if (maxFree < maxSize)
+                memSize = maxFree;
             else
-                memSize = maxsize;
-            refSize.set(memSize);
-            refSeg.set(pspSeg);
-            if (!allocateMemory(refSeg, refSize))
+                memSize = maxSize;
+            if (!tryAllocateMemory(memSize))
                 Support.exceptionExit("DOS:Exec error in memory");
-            pspSeg = refSeg.U32;
-            memSize = refSize.U32;
+            pspSeg = returnedAllocateMemorySeg;
+            memSize = returnedAllocateMemoryBlock;
 
             if (isCom && (DOSBox.Machine == DOSBox.MachineType.PCJR) && (pspSeg < 0x2000)) {
-                maxsize = 0xffff;
-                RefU32Ret refMaxSize = new RefU32Ret(maxsize);
+                maxSize = 0xffff;
                 /* resize to full extent of memory block */
-                resizeMemory(pspSeg, refMaxSize);
-                maxsize = refMaxSize.U32;
+                tryResizeMemory(pspSeg, maxSize);
+                maxSize = returnedResizedMemoryBlocks;
                 /* now try to lock out memory above segment 0x2000 */
                 if ((Memory.realReadB(0x2000, 0) == 0x5a) && (Memory.realReadW(0x2000, 1) == 0)
                         && (Memory.realReadW(0x2000, 3) == 0x7ffe)) {
                     /* MCB after PCJr graphics memory region is still free */
-                    if (pspSeg + refMaxSize.U32 == 0x17ff) {
+                    if (pspSeg + maxSize == 0x17ff) {
                         DOSMCB cmcb = new DOSMCB(pspSeg - 1);
                         cmcb.setType((byte) 0x5a); // last block
                     }

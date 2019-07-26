@@ -334,7 +334,7 @@ public final class DOSShell extends DOSShellBase {
                     nameSource.concat(name);
                     // Open Source
                     if (DOSMain.openFile(nameSource.toString(), 0)) {
-                        sourceHandle = DOSMain.CreatedOrOpenedFileEntry;
+                        sourceHandle = DOSMain.returnFileHandle;
                         // Create Target or open it if in concat mode
                         CStringPt.copy(pathTarget, nameTarget);
                         if (nameTarget.get(nameTarget.length() - 1) == '\\')
@@ -342,14 +342,14 @@ public final class DOSShell extends DOSShellBase {
 
                         // Don't create a newfile when in concat mode
                         if (oldSource.concat || DOSMain.createFile(nameTarget.toString(), 0)) {
-                            targetHandle = DOSMain.CreatedOrOpenedFileEntry;
+                            targetHandle = DOSMain.returnFileHandle;
                             long dummy = 0;
                             // In concat mode. Open the target and seek to the eof
                             if (!oldSource.concat || (DOSMain.openFile(nameTarget.toString(),
                                     DOSSystem.OPEN_READWRITE)
                                     && (dummy = DOSMain.seekFile(0xffff & targetHandle, dummy,
                                             DOSSystem.DOS_SEEK_END)) >= 0)) {
-                                targetHandle = DOSMain.CreatedOrOpenedFileEntry;
+                                targetHandle = DOSMain.returnFileHandle;
 
                                 // Copy
                                 // buffer = new byte[0x8000];// static, otherwise stack overflow
@@ -972,7 +972,7 @@ public final class DOSShell extends DOSShellBase {
                 writeOut(Message.get("SHELL_CMD_FILE_NOT_FOUND"), word);
                 return;
             }
-            handle = DOSMain.CreatedOrOpenedFileEntry;
+            handle = DOSMain.returnFileHandle;
             int n;
             byte c = 0;
             do {
@@ -1127,14 +1127,14 @@ public final class DOSShell extends DOSShellBase {
         if (help(args, "LOADHIGH"))
             return;
         int umbStart = DOSMain.DOSInfoBlock.getStartOfUMBChain();
-        byte umbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
+        int umbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
         byte oldMemstrat = (byte) (DOSMain.getMemAllocStrategy() & 0xff);
         if (umbStart == 0x9fff) {
             if ((umbFlag & 1) == 0)
                 DOSMain.linkUMBsToMemChain(1);
             DOSMain.setMemAllocStrategy(0x80); // search in UMBs first
             this.parseLine(args);
-            byte currentUmbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
+            int currentUmbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
             if ((currentUmbFlag & 1) != (umbFlag & 1))
                 DOSMain.linkUMBsToMemChain(umbFlag);
             DOSMain.setMemAllocStrategy(oldMemstrat); // restore strategy
@@ -1300,7 +1300,7 @@ public final class DOSShell extends DOSShellBase {
                 int dummy = 0;
                 DOSMain.closeFile(InputHandle);
                 DOSMain.openFile("con", 2);
-                dummy = DOSMain.CreatedOrOpenedFileEntry;
+                dummy = DOSMain.returnFileHandle;
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                         "Reopening the input handle.This is a bug!");
             }

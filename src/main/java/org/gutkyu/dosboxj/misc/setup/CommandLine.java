@@ -1,6 +1,5 @@
 package org.gutkyu.dosboxj.misc.setup;
 
-import org.gutkyu.dosboxj.util.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -136,12 +135,15 @@ public final class CommandLine {
         return findExist(name, false);
     }
 
+    public int returnedHex;
+
     // public boolean FindHex(String name, ref int value, boolean remove = false)
-    public boolean findHex(String name, RefU32Ret refValue, boolean remove) {
+    // hex value -> returnedHex
+    public boolean findHex(String name, boolean remove) {
         int i = 0;
         if ((i = findEntry(name, true)) < 0)
             return false;
-        refValue.U32 = Integer.parseInt(cmds.get(i), 16);
+        returnedHex = Integer.parseInt(cmds.get(i), 16);
         if (remove) {
             cmds.remove(i + 1);
             cmds.remove(i);
@@ -149,16 +151,19 @@ public final class CommandLine {
         return true;
     }
 
-    public boolean findHex(String name, RefU32Ret refValue) {
-        return findHex(name, refValue, false);
+    public boolean findHex(String name) {
+        return findHex(name, false);
     }
+
+    public int returnedInt;
 
     // public boolean FindInt(String name, ref int value, boolean remove = false)
-    public boolean findInt(String name, RefU32Ret refValue, boolean remove) {
+    // Int value -> returnedInt
+    public boolean findInt(String name, boolean remove) {
         int i = 0;
         if ((i = findEntry(name, true)) < 0)
             return false;
-        refValue.U32 = Integer.parseInt(cmds.get(i));
+        returnedInt = Integer.parseInt(cmds.get(i));
         if (remove) {
             cmds.remove(i + 1);
             cmds.remove(i);
@@ -166,8 +171,8 @@ public final class CommandLine {
         return true;
     }
 
-    public boolean findInt(String name, RefU32Ret refValue) {
-        return findInt(name, refValue, false);
+    public boolean findInt(String name) {
+        return findInt(name, false);
     }
 
     public String findString(String name, boolean remove) {

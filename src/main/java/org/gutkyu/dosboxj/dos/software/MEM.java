@@ -18,7 +18,7 @@ public final class MEM extends Program {
         writeOut("\n");
 
         int umbStart = DOSMain.DOSInfoBlock.getStartOfUMBChain();
-        byte umbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
+        int umbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
         byte oldMemstrat = (byte) (DOSMain.getMemAllocStrategy() & 0xff);
         if (umbStart != 0xffff) {
             if ((umbFlag & 1) == 1)
@@ -28,11 +28,9 @@ public final class MEM extends Program {
 
         int seg = 0, blocks;
         blocks = 0xffff;
-        RefU32Ret refSize = new RefU32Ret(blocks);
-        RefU32Ret refSeg = new RefU32Ret(seg);
-        DOSMain.allocateMemory(refSeg, refSize);
-        seg = refSeg.U32;
-        blocks = refSize.U32;
+        DOSMain.tryAllocateMemory(blocks);
+        seg = DOSMain.returnedAllocateMemorySeg;
+        blocks = DOSMain.returnedAllocateMemoryBlock;
 
         if ((DOSBox.Machine == DOSBox.MachineType.PCJR) && (Memory.realReadB(0x2000, 0) == 0x5a)
                 && (Memory.realReadW(0x2000, 1) == 0) && (Memory.realReadW(0x2000, 3) == 0x7ffe)) {
@@ -47,27 +45,23 @@ public final class MEM extends Program {
             int largestBlock = 0, total_blocks = 0, block_count = 0;
             for (;; block_count++) {
                 blocks = 0xffff;
-                refSize.set(blocks);
-                refSeg.set(seg);
-                DOSMain.allocateMemory(refSeg, refSize);
-                seg = refSeg.U32;
-                blocks = refSize.U32;
+                DOSMain.tryAllocateMemory(blocks);
+                seg = DOSMain.returnedAllocateMemorySeg;
+                blocks = DOSMain.returnedAllocateMemoryBlock;
 
                 if (blocks == 0)
                     break;
                 total_blocks += blocks;
                 if (blocks > largestBlock)
                     largestBlock = blocks;
-                refSize.U32 = blocks;
-                refSeg.U32 = seg;
-                DOSMain.allocateMemory(refSeg, refSize);
-                seg = refSeg.U32;
-                blocks = refSize.U32;
+                DOSMain.tryAllocateMemory(blocks);
+                seg = DOSMain.returnedAllocateMemorySeg;
+                blocks = DOSMain.returnedAllocateMemoryBlock;
 
             }
 
-            byte current_umb_flag = DOSMain.DOSInfoBlock.getUMBChainState();
-            if ((current_umb_flag & 1) != (umbFlag & 1))
+            int currentUMBFlag = DOSMain.DOSInfoBlock.getUMBChainState();
+            if ((currentUMBFlag & 1) != (umbFlag & 1))
                 DOSMain.linkUMBsToMemChain(umbFlag);
             DOSMain.setMemAllocStrategy(oldMemstrat); // restore strategy
 
@@ -94,7 +88,7 @@ public final class MEM extends Program {
         int handle = 0;
         String emm = "EMMXXXX0";
         if (DOSMain.openFile(emm, 0)) {
-            handle = DOSMain.CreatedOrOpenedFileEntry;
+            handle = DOSMain.returnFileHandle;
             DOSMain.closeFile(handle);
             Register.setRegAH(0x42);
             Callback.runRealInt(0x67);
