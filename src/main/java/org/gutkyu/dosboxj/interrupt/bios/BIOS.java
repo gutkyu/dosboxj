@@ -851,18 +851,18 @@ public final class BIOS {
                 Register.setRegDL(IO.read(0x71));
                 Callback.scf(false);
                 break;
-            case (byte) 0x80: /* Pcjr Setup Sound Multiplexer */
+            case 0x80: /* Pcjr Setup Sound Multiplexer */
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
                         "INT1A:80:Setup tandy sound multiplexer to %d", Register.getRegAL());
                 break;
-            case (byte) 0x81: /* Tandy sound system check */
-            case (byte) 0x82: /* Tandy sound system start recording */
-            case (byte) 0x83: /* Tandy sound system start playback */
-            case (byte) 0x84: /* Tandy sound system stop playing */
-            case (byte) 0x85: /* Tandy sound system reset */
+            case 0x81: /* Tandy sound system check */
+            case 0x82: /* Tandy sound system start recording */
+            case 0x83: /* Tandy sound system start playback */
+            case 0x84: /* Tandy sound system stop playing */
+            case 0x85: /* Tandy sound system reset */
                 TandyDACHandler(Register.getRegAH());
                 break;
-            case (byte) 0xb1: /* PCI Bios Calls */
+            case 0xb1: /* PCI Bios Calls */
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error, "INT1A:PCI bios call %2X",
                         Register.getRegAL());
                 Callback.scf(true);
@@ -1056,7 +1056,7 @@ public final class BIOS {
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Normal,
                         "INT15 Unkown Function 6");
                 break;
-            case (byte) 0xC0: /* Get Configuration */
+            case 0xC0: /* Get Configuration */
             {
                 if (_biosConfigSeg == 0)
                     _biosConfigSeg = DOSMain.getMemory(1); // We have 16 bytes
@@ -1094,7 +1094,7 @@ public final class BIOS {
                 /* Carry should be set but let's just set it just in case */
                 Callback.scf(true);
                 break;
-            case (byte) 0x83: /* BIOS - SET EVENT WAIT INTERVAL */
+            case 0x83: /* BIOS - SET EVENT WAIT INTERVAL */
             {
                 if (Register.getRegAL() == 0x01) { /* Cancel it */
                     Memory.writeB(BIOS_WAIT_FLAG_ACTIVE, 0);
@@ -1119,7 +1119,7 @@ public final class BIOS {
                 Callback.scf(false);
             }
                 break;
-            case (byte) 0x84: /* BIOS - JOYSTICK SUPPORT (XT after 11/8/82,AT,XT286,PS) */
+            case 0x84: /* BIOS - JOYSTICK SUPPORT (XT after 11/8/82,AT,XT286,PS) */
                 if (Register.getRegDX() == 0x0000) {
                     // Get Joystick button status
                     if (JoysticModule.isEnabled(0) || JoysticModule.isEnabled(1)) {
@@ -1161,7 +1161,7 @@ public final class BIOS {
                             "INT15:84:Unknown Bios Joystick functionality.");
                 }
                 break;
-            case (byte) 0x86: /* BIOS - WAIT (AT,PS) */
+            case 0x86: /* BIOS - WAIT (AT,PS) */
             {
 
                 if (Memory.readB(BIOS_WAIT_FLAG_ACTIVE) != 0) {
@@ -1182,7 +1182,7 @@ public final class BIOS {
                 Callback.scf(false);
             }
             // goto GotoCase_0x87;
-            case (byte) 0x87: /* Copy extended memory */
+            case 0x87: /* Copy extended memory */
             // GotoCase_0x87:
             {
                 boolean enabled = Memory.A20Enabled();
@@ -1199,13 +1199,13 @@ public final class BIOS {
                 Callback.scf(false);
                 break;
             }
-            case (byte) 0x88: /* SYSTEM - GET EXTENDED MEMORY SIZE (286+) */
+            case 0x88: /* SYSTEM - GET EXTENDED MEMORY SIZE (286+) */
                 Register.setRegAX(_otherMemSystems != 0 ? 0 : _sizeExtended);
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Normal,
                         "INT15:Function 0x88 Remaining %04X kb", Register.getRegAX());
                 Callback.scf(false);
                 break;
-            case (byte) 0x89: /* SYSTEM - SWITCH TO PROTECTED MODE */
+            case 0x89: /* SYSTEM - SWITCH TO PROTECTED MODE */
             {
                 IO.write(0x20, 0x10);
                 IO.write(0x21, Register.getRegBH());
@@ -1227,15 +1227,15 @@ public final class BIOS {
                 CPU.jmp(false, 0x30, Register.getRegCX(), 0);
             }
                 break;
-            case (byte) 0x90: /* OS HOOK - DEVICE BUSY */
+            case 0x90: /* OS HOOK - DEVICE BUSY */
                 Callback.scf(false);
                 Register.setRegAH(0);
                 break;
-            case (byte) 0x91: /* OS HOOK - DEVICE POST */
+            case 0x91: /* OS HOOK - DEVICE POST */
                 Callback.scf(false);
                 Register.setRegAH(0);
                 break;
-            case (byte) 0xc2: /* BIOS PS2 Pointing Device Support */
+            case 0xc2: /* BIOS PS2 Pointing Device Support */
                 switch (Register.getRegAL()) {
                     case 0x00: // enable/disable
                         if (Register.getRegBH() == 0) { // disable
@@ -1295,11 +1295,11 @@ public final class BIOS {
                         break;
                 }
                 break;
-            case (byte) 0xc3: /* set carry flag so BorlandRTM doesn't assume a VECTRA/PS2 */
+            case 0xc3: /* set carry flag so BorlandRTM doesn't assume a VECTRA/PS2 */
                 Register.setRegAH(0x86);
                 Callback.scf(true);
                 break;
-            case (byte) 0xc4: /* BIOS POS Programm option Select */
+            case 0xc4: /* BIOS POS Programm option Select */
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Normal,
                         "INT15:Function %X called, bios mouse not supported", Register.getRegAH());
                 Callback.scf(true);

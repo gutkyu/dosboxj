@@ -893,7 +893,7 @@ public final class EMS {
                     Register.setRegAH(EMM_INVALID_SUB);
                 }
                 break;
-            case (byte) 0xDE: /* VCPI Functions */
+            case 0xDE: /* VCPI Functions */
                 if (!vcpi.Enabled) {
                     Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                             "EMS:VCPI Call %2X not supported", Register.getRegAL());
@@ -1293,69 +1293,69 @@ public final class EMS {
                             break;
                     }
                     break;
-                case (byte) 0xe4: // IN AL,Ib
+                case 0xe4: // IN AL,Ib
                     Register.setRegAL(IO.readB(Memory.readB((v86CS << 4) + v86IP + 1)) & 0xff);
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 2);
                     break;
-                case (byte) 0xe5: // IN AX,Ib
+                case 0xe5: // IN AX,Ib
                     Register.setRegAX(IO.readW(Memory.readB((v86CS << 4) + v86IP + 1)) & 0xffff);
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 2);
                     break;
-                case (byte) 0xe6: // OUT Ib,AL
+                case 0xe6: // OUT Ib,AL
                     IO.writeB(Memory.readB((v86CS << 4) + v86IP + 1), Register.getRegAL());
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 2);
                     break;
-                case (byte) 0xe7: // OUT Ib,AX
+                case 0xe7: // OUT Ib,AX
                     IO.writeW(Memory.readB((v86CS << 4) + v86IP + 1), Register.getRegAX());
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 2);
                     break;
-                case (byte) 0xec: // IN AL,DX
+                case 0xec: // IN AL,DX
                     Register.setRegAL(IO.readB(Register.getRegDX() & 0xff));
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 1);
                     break;
-                case (byte) 0xed: // IN AX,DX
+                case 0xed: // IN AX,DX
                     Register.setRegAX(IO.readW(Register.getRegDX() & 0xffff));
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 1);
                     break;
-                case (byte) 0xee: // OUT DX,AL
+                case 0xee: // OUT DX,AL
                     IO.writeB(Register.getRegDX(), Register.getRegAL());
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 1);
                     break;
-                case (byte) 0xef: // OUT DX,AX
+                case 0xef: // OUT DX,AX
                     IO.writeW(Register.getRegDX(), Register.getRegAX());
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 1);
                     break;
-                case (byte) 0xf0: // LOCK prefix
+                case 0xf0: // LOCK prefix
                     Memory.writeW(
                             Register.segPhys(Register.SEG_NAME_SS)
                                     + ((Register.getRegESP() + 0) & CPU.Block.Stack.Mask),
                             v86IP + 1);
                     break;
-                case (byte) 0xf4: // HLT
+                case 0xf4: // HLT
                     Register.Flags |= Register.FlagIF;
                     CPU.hlt(Register.getRegEIP());
                     Memory.writeW(
@@ -1487,7 +1487,7 @@ public final class EMS {
 
     public static int INT4BHandler() {
         switch (Register.getRegAH()) {
-            case (byte) 0x81:
+            case 0x81:
                 Callback.scf(true);
                 Register.setRegAX(0x1);
                 break;

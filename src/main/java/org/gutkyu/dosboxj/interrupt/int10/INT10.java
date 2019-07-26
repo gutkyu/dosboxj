@@ -107,17 +107,17 @@ public final class INT10 {
                 if ((Register.getRegAL() & 0x80) != 0 && DOSBox.isTANDYArch()) {
                     byte crtcpu = (byte) Memory.realReadB(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE);
                     switch (Register.getRegAL()) {
-                        case (byte) 0x80:
+                        case 0x80:
                             Register.setRegBH((byte) (crtcpu & 7));
                             Register.setRegBL((byte) ((crtcpu >>> 3) & 0x7));
                             break;
-                        case (byte) 0x81:
+                        case 0x81:
                             crtcpu = (byte) ((crtcpu & 0xc7) | ((Register.getRegBL() & 7) << 3));
                             break;
-                        case (byte) 0x82:
+                        case 0x82:
                             crtcpu = (byte) ((crtcpu & 0xf8) | (Register.getRegBH() & 7));
                             break;
-                        case (byte) 0x83:
+                        case 0x83:
                             crtcpu = (byte) ((crtcpu & 0xc0) | (Register.getRegBH() & 7)
                                     | ((Register.getRegBL() & 7) << 3));
                             break;
@@ -786,7 +786,7 @@ public final class INT10 {
                     }
                     case 0x07:
                         switch (Register.getRegBL()) {
-                            case (byte) 0x80: /* Set Display Start during retrace ?? */
+                            case 0x80: /* Set Display Start during retrace ?? */
                             case 0x00: /* Set display Start */
                                 Register.setRegAL(0x4f);
                                 Register.setRegAH(VESA.setDisplayStart(Register.getRegCX(),
@@ -813,7 +813,7 @@ public final class INT10 {
                         break;
                     case 0x09:
                         switch (Register.getRegBL()) {
-                            case (byte) 0x80: /* Set Palette during retrace */
+                            case 0x80: /* Set Palette during retrace */
                                 // TODO
                             case 0x00: /* Set Palette */
                                 Register.setRegAH(VESA.setPalette(
@@ -887,43 +887,43 @@ public final class INT10 {
                         break;
                 }
                 break;
-            case (byte) 0xf0: {
+            case 0xf0: {
                 int bl = 0;
                 bl = EGARIL.readRegister(bl, Register.getRegDX());
                 Register.setRegBL(bl);
                 break;
             }
-            case (byte) 0xf1: {
+            case 0xf1: {
                 int bl = 0;
                 bl = EGARIL.writeRegister(bl, Register.getRegBH(), Register.getRegDX());
                 Register.setRegBL(bl);
                 break;
             }
-            case (byte) 0xf2:
+            case 0xf2:
                 EGARIL.readRegisterRange(Register.getRegCH(), Register.getRegCL(),
                         Register.getRegDX(),
                         Register.segPhys(Register.SEG_NAME_ES) + Register.getRegBX());
                 break;
-            case (byte) 0xf3:
+            case 0xf3:
                 EGARIL.writeRegisterRange(Register.getRegCH(), Register.getRegCL(),
                         Register.getRegDX(),
                         Register.segPhys(Register.SEG_NAME_ES) + Register.getRegBX());
                 break;
-            case (byte) 0xf4:
+            case 0xf4:
                 EGARIL.readRegisterSet(Register.getRegCX(),
                         Register.segPhys(Register.SEG_NAME_ES) + Register.getRegBX());
                 break;
-            case (byte) 0xf5:
+            case 0xf5:
                 EGARIL.writeRegisterSet(Register.getRegCX(),
                         Register.segPhys(Register.SEG_NAME_ES) + Register.getRegBX());
                 break;
-            case (byte) 0xfa: {
+            case 0xfa: {
                 int pt = EGARIL.getVersionPt();
                 Register.segSet16(Register.SEG_NAME_ES, Memory.realSeg(pt));
                 Register.setRegBX(Memory.realOff(pt));
             }
                 break;
-            case (byte) 0xff:
+            case 0xff:
                 if (!warnedFF)
                     Log.logging(Log.LogTypes.INT10, Log.LogServerities.Normal,
                             "INT10:FF:Weird NC call");

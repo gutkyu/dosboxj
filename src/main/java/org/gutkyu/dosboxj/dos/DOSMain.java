@@ -409,7 +409,7 @@ public final class DOSMain {
                 DriveAllocationInfo alloc = new DriveAllocationInfo(
                         Register.Regs[Register.CX].getWord(), Register.Regs[Register.AX].getByteL(),
                         Register.Regs[Register.DX].getWord());
-                if (getAllocationInfo((byte) 0, alloc)) {
+                if (getAllocationInfo(0, alloc)) {
                     Register.Regs[Register.CX].setWord(alloc.bytesSector);
                     Register.Regs[Register.AX].setByteL(alloc.sectorsCluster);
                     Register.Regs[Register.DX].setWord(alloc.totalClusters);
@@ -1325,14 +1325,14 @@ public final class DOSMain {
                         "DOS:Windows long file name support call %2X", Register.getRegAL());
                 break;
 
-            case (byte) 0xE0:
+            case 0xE0:
             case 0x18: /* NULL Function for CP/M compatibility or Extended rename FCB */
             case 0x1d: /* NULL Function for CP/M compatibility or Extended rename FCB */
             case 0x1e: /* NULL Function for CP/M compatibility or Extended rename FCB */
             case 0x20: /* NULL Function for CP/M compatibility or Extended rename FCB */
             case 0x6b: /* NULL Function */
             case 0x61: /* UNUSED */
-            case (byte) 0xEF: /* Used in Ancient Art Of War CGA */
+            case 0xEF: /* Used in Ancient Art Of War CGA */
             case 0x5e: /* More Network Functions */
             default:
                 Log.logging(Log.LogTypes.DOSMISC, Log.LogServerities.Error,
@@ -2091,23 +2091,23 @@ public final class DOSMain {
             DOSInfoBlock.setStartOfUMBChain(UMB_START_SEG);
             DOSInfoBlock.setUMBChainState(0); // UMBs not linked yet
 
-            DOSMCB umb_mcb = new DOSMCB(first_umb_seg);
-            umb_mcb.setPSPSeg(0); // currently free
-            umb_mcb.setSize(first_umb_size - 1);
-            umb_mcb.setType((byte) 0x5a);
+            DOSMCB umbMCB = new DOSMCB(first_umb_seg);
+            umbMCB.setPSPSeg(0); // currently free
+            umbMCB.setSize(first_umb_size - 1);
+            umbMCB.setType((byte) 0x5a);
 
             /* Scan MCB-chain for last block */
-            int mcb_segment = DOS.FirstMCB;
-            DOSMCB mcb = new DOSMCB(mcb_segment);
+            int mcbSegment = DOS.FirstMCB;
+            DOSMCB mcb = new DOSMCB(mcbSegment);
             while (mcb.getType() != 0x5a) {
-                mcb_segment += mcb.getSize() + 1;
-                mcb.setSegPt(mcb_segment);
+                mcbSegment += mcb.getSize() + 1;
+                mcb.setSegPt(mcbSegment);
             }
 
             /*
              * A system MCB has to cover the space between the regular MCB-chain and the UMBs
              */
-            int cover_mcb = mcb_segment + mcb.getSize() + 1;
+            int cover_mcb = mcbSegment + mcb.getSize() + 1;
             mcb.setSegPt(cover_mcb);
             mcb.setType((byte) 0x4d);
             mcb.setPSPSeg(0x0008);
@@ -4939,7 +4939,7 @@ public final class DOSMain {
 
         if (!makeFullName(name, DOSSystem.DOS_PATHLENGTH))
             return DOS_DEVICES;
-        int drive = (byte) returnedFullNameDrive;
+        int drive = 0xff & returnedFullNameDrive;
         String fullname = returnedFullName;
 
 
