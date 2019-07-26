@@ -47,7 +47,7 @@ public final class DOSBlock {
 
     public int ReturnCode, ReturnMode;
 
-    public byte CurrentDrive;
+    public int CurrentDrive;
     public boolean Verify;
     public boolean BreakCheck;
     public boolean Echo; // if set to true dev_con::read will echo input

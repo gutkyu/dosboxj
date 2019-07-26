@@ -44,7 +44,7 @@ public final class VGASeq {
                     if ((val & 0x20) != 0)
                         vga.Attr.Disabled |= 0x2;
                     else
-                        vga.Attr.Disabled &= ((byte) ~0x2);
+                        vga.Attr.Disabled &= (byte) ~0x2;
                 }
                 /*
                  * TODO Figure this out :) 0 If set character clocks are 8 dots wide, else 9. 2 If

@@ -22,7 +22,7 @@ public final class DOSMCB extends MemStruct {
         name.set(8, (char) 0);
     }
 
-    public void setType(byte type) {
+    public void setType(int type) {
         saveIt(Size_sMCB_type, Off_sMCB_type, type);
     }
 
@@ -35,8 +35,8 @@ public final class DOSMCB extends MemStruct {
         saveIt(Size_sMCB_psp_segment, Off_sMCB_psp_segment, pspSeg);
     }
 
-    public byte getType() {
-        return (byte) getIt(Size_sMCB_type, Off_sMCB_type);
+    public int getType() {
+        return 0xff& getIt(Size_sMCB_type, Off_sMCB_type);
     }
 
     // uint16

@@ -895,9 +895,9 @@ public final class VGA {
                 if (line > Draw.Cursor.ELine)
                     break;// goto skip_cursor;
                 drawIdx = fontAddr * 16;
-                byte att =
-                        (byte) (TXTFGTable[Tandy.DrawAlloc[Tandy.DrawBase + Draw.Cursor.Address + 1]
-                                & 0xf] & 0xff);
+                int att =
+                        TXTFGTable[Tandy.DrawAlloc[Tandy.DrawBase + Draw.Cursor.Address + 1] & 0xf]
+                                & 0xff;
                 for (int i = 0; i < 8; i++) {
                     ByteConv.setShort(TempLine, drawIdx, Dac.Xlat16[att]);
                     drawIdx += 2;
@@ -918,7 +918,7 @@ public final class VGA {
         int fontAddr;
         int drawIdx = 0;
         boolean underline = (Crtc.UnderlineLocation & 0x1f) == line;
-        byte pelPan = (byte) Draw.Panning;
+        int pelPan = Draw.Panning;
         if ((Attr.ModeControl & 0x20) == 0 && (Draw.LinesDone >= Draw.SplitLine))
             pelPan = 0;
         wrapTextMem(vidStart);
@@ -929,8 +929,8 @@ public final class VGA {
         int col = 0xff & vidmem[1];
         // byte font = (byte)((vga.draw.font_tables[(col >>>3) & 1][chr * 32 + line]) <<
         // pel_pan);
-        int font = 0xff
-                & ((Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32 + line]) << pelPan);
+        int font =
+                0xff & (Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32 + line] << pelPan);
         if (underline && ((col & 0x07) == 0x01))
             font = 0xff;
         int fg = col & 0xf;
@@ -1088,8 +1088,8 @@ public final class VGA {
         } else {
             b = 8;
             Draw.Blinking = 0;
-            Attr.ModeControl &= (byte) ~0x08;
-            Tandy.ModeControl &= (byte) ~0x20;
+            Attr.ModeControl &= 0xff & (~0x08);
+            Tandy.ModeControl &= 0xff & (~0x20);
         }
         for (int i = 0; i < 8; i++)
             TXTBGTable[i + 8] = (b + i) | ((b + i) << 8) | ((b + i) << 16) | ((b + i) << 24);
@@ -1782,7 +1782,7 @@ public final class VGA {
                 aspectRatio = 1.2;
                 doubleheight = true;
                 if (DOSBox.Machine == DOSBox.MachineType.PCJR)
-                    doublewidth = (Tandy.GfxControl & 0x8) == 0x00;
+                    doublewidth = (Tandy.GFXControl & 0x8) == 0x00;
                 else
                     doublewidth = (Tandy.ModeControl & 0x10) == 0;
                 Draw.Blocks = width * (doublewidth ? 4 : 8);
@@ -1798,7 +1798,7 @@ public final class VGA {
                     doublewidth = (Tandy.ModeControl & 0x01) == 0x00;
                 Draw.Blocks = width * 2;
                 width = Draw.Blocks * 4;
-                if ((DOSBox.Machine == DOSBox.MachineType.TANDY && (Tandy.GfxControl & 0x8) != 0)
+                if ((DOSBox.Machine == DOSBox.MachineType.TANDY && (Tandy.GFXControl & 0x8) != 0)
                         || (DOSBox.Machine == DOSBox.MachineType.PCJR
                                 && (Tandy.ModeControl == 0x0b)))
                     VGADrawLine = this::draw2BPPHiResLine;
@@ -2532,12 +2532,12 @@ public final class VGA {
         return ~0;
     }
 
-    private double _hueOffset = 0.0;
-    private byte _cga16Val = 0;
-    private byte _hercPal = 0;
+    private double hueOffset = 0.0;
+    private int cga16Val = 0;// uint8
+    private int hercPal = 0;// uint8
 
-    private void selectCga16Color(byte val) {
-        _cga16Val = val;
+    private void selectCga16Color(int val) {
+        cga16Val = val;
         updateCGA16Color();
     }
 
@@ -2559,21 +2559,21 @@ public final class VGA {
         double I, Q, Y, pixelI, pixelQ, R, G, B;
         int colorBit1, colorBit2, colorBit3, colorBit4, index;
 
-        if ((_cga16Val & 0x01) != 0)
+        if ((cga16Val & 0x01) != 0)
             baseB += 0xa8;
-        if ((_cga16Val & 0x02) != 0)
+        if ((cga16Val & 0x02) != 0)
             baseG += 0xa8;
-        if ((_cga16Val & 0x04) != 0)
+        if ((cga16Val & 0x04) != 0)
             baseR += 0xa8;
-        if ((_cga16Val & 0x08) != 0) {
+        if ((cga16Val & 0x08) != 0) {
             baseR += 0x57;
             baseG += 0x57;
             baseB += 0x57;
         }
-        if ((_cga16Val & 0x20) != 0)
+        if ((cga16Val & 0x20) != 0)
             basehue = 35.0;
 
-        hue = (basehue + _hueOffset) * 0.017453239;
+        hue = (basehue + hueOffset) * 0.017453239;
         sinhue = Math.sin(hue);
         coshue = Math.cos(hue);
 
@@ -2626,44 +2626,42 @@ public final class VGA {
     private void increaseHue(boolean pressed) {
         if (!pressed)
             return;
-        _hueOffset += 5.0;
+        hueOffset += 5.0;
         updateCGA16Color();
-        Log.logMsg("Hue at %f", _hueOffset);
+        Log.logMsg("Hue at %f", hueOffset);
     }
 
     private void decreaseHue(boolean pressed) {
         if (!pressed)
             return;
-        _hueOffset -= 5.0;
+        hueOffset -= 5.0;
         updateCGA16Color();
-        Log.logMsg("Hue at %f", _hueOffset);
+        Log.logMsg("Hue at %f", hueOffset);
     }
 
-    private void writeColorSelect(byte val) {
-        Tandy.ColorSelect = val;
+    // (uint8)
+    private void writeColorSelect(int val) {
+        Tandy.ColorSelect = 0xff & val;
         switch (Mode) {
             case TANDY2:
                 setCGA2Table(0, val & 0xf);
                 break;
             case TANDY4: {
-                if ((DOSBox.Machine == DOSBox.MachineType.TANDY && (Tandy.GfxControl & 0x8) != 0)
+                if ((DOSBox.Machine == DOSBox.MachineType.TANDY && (Tandy.GFXControl & 0x8) != 0)
                         || (DOSBox.Machine == DOSBox.MachineType.PCJR
                                 && (Tandy.ModeControl == 0x0b))) {
                     setCGA4Table(0, 1, 2, 3);
                     return;
                 }
-                byte Base = (val & 0x10) != 0 ? (byte) 0x08 : (byte) 0;
+                int Base = (val & 0x10) != 0 ? 0x08 : 0;
                 /* Check for BW Mode */
                 if ((Tandy.ModeControl & 0x4) != 0) {
-                    setCGA4Table((byte) (val & 0xf), (byte) (3 + Base), (byte) (4 + Base),
-                            (byte) (7 + Base));
+                    setCGA4Table(val & 0xf, 3 + Base, 4 + Base, 7 + Base);
                 } else {
                     if ((val & 0x20) != 0)
-                        setCGA4Table((byte) (val & 0xf), (byte) (3 + Base), (byte) (5 + Base),
-                                (byte) (7 + Base));
+                        setCGA4Table(val & 0xf, 3 + Base, 5 + Base, 7 + Base);
                     else
-                        setCGA4Table((byte) (val & 0xf), (byte) (2 + Base), (byte) (4 + Base),
-                                (byte) (6 + Base));
+                        setCGA4Table(val & 0xf, 2 + Base, 4 + Base, 6 + Base);
                 }
             }
                 break;
@@ -2678,9 +2676,9 @@ public final class VGA {
 
     private void findModeTANDY() {
         if ((Tandy.ModeControl & 0x2) != 0) {
-            if ((Tandy.GfxControl & 0x10) != 0)
+            if ((Tandy.GFXControl & 0x10) != 0)
                 setMode(VGAModes.TANDY16);
-            else if ((Tandy.GfxControl & 0x08) != 0)
+            else if ((Tandy.GFXControl & 0x08) != 0)
                 setMode(VGAModes.TANDY4);
             else if ((Tandy.ModeControl & 0x10) != 0)
                 setMode(VGAModes.TANDY2);
@@ -2700,7 +2698,7 @@ public final class VGA {
                     setModeNow(VGAModes.TANDY16); // TODO lowres mode only
                 else
                     setMode(VGAModes.TANDY16);
-            } else if ((Tandy.GfxControl & 0x08) != 0) {
+            } else if ((Tandy.GFXControl & 0x08) != 0) {
                 /* bit3 of mode control 2 signals 2 colour graphics mode */
                 setMode(VGAModes.TANDY2);
             } else {
@@ -2731,7 +2729,9 @@ public final class VGA {
         }
     }
 
-    private void writeTandyReg(byte val) {
+    // (uint8)
+    private void writeTandyReg(int val) {
+        val &= 0xff;
         switch (Tandy.RegIndex) {
             case 0x0:
                 if (DOSBox.Machine == DOSBox.MachineType.PCJR) {
@@ -2745,10 +2745,10 @@ public final class VGA {
                 }
                 break;
             case 0x2: /* Border color */
-                Tandy.BorderColor = val;
+                Tandy.BorderColor = (byte) val;
                 break;
             case 0x3: /* More control */
-                Tandy.GfxControl = val;
+                Tandy.GFXControl = (byte) val;
                 if (DOSBox.Machine == DOSBox.MachineType.TANDY)
                     findModeTANDY();
                 else
@@ -2757,7 +2757,7 @@ public final class VGA {
             case 0x5: /* Extended ram page register */
                 // Bit 0 enables extended ram
                 // Bit 7 Switches clock, 0 . cga 28.6 , 1 . mono 32.5
-                Tandy.ExtendedRam = val;
+                Tandy.ExtendedRam = (byte) val;
                 // This is a bit of a hack to enable mapping video memory differently for
                 // highres mode
                 TandyCheckLineMask();
@@ -2786,7 +2786,7 @@ public final class VGA {
             case 0x1d:
             case 0x1e:
             case 0x1f:
-                Attr.setPalette(Tandy.RegIndex - 0x10, (byte) (val & 0xf));
+                Attr.setPalette(Tandy.RegIndex - 0x10, val & 0xf);
                 break;
             default:
                 Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
@@ -2795,11 +2795,12 @@ public final class VGA {
         }
     }
 
+    // writeCGA(UInt32 port, UInt32 val, UInt32 iolen)
     private void writeCGA(int port, int val, int iolen) {
         switch (port) {
             case 0x3d8:
-                Tandy.ModeControl = (byte) val;
-                Attr.Disabled = (val & 0x8) != 0 ? (byte) 0 : (byte) 1;
+                Tandy.ModeControl = 0xff & val;
+                Attr.Disabled = (byte) ((val & 0x8) != 0 ? 0 : 1);
                 if ((Tandy.ModeControl & 0x2) != 0) {
                     if ((Tandy.ModeControl & 0x10) != 0) {
                         if ((val & 0x4) == 0 && DOSBox.Machine == DOSBox.MachineType.CGA) {
@@ -2816,21 +2817,22 @@ public final class VGA {
                 setBlinking(val & 0x20);
                 break;
             case 0x3d9:
-                writeColorSelect((byte) val);
+                writeColorSelect(val);
                 break;
         }
     }
 
+    // (UInt32 port, UInt32 val, UInt32 iolen)
     private void writeTandy(int port, int val, int iolen) {
         switch (port) {
             case 0x3d8:
-                Tandy.ModeControl = (byte) val;
+                Tandy.ModeControl = 0xff & val;
                 TandyCheckLineMask();
                 setBlinking(val & 0x20);
                 findModeTANDY();
                 break;
             case 0x3d9:
-                writeColorSelect((byte) val);
+                writeColorSelect(val);
                 break;
             case 0x3da:
                 Tandy.RegIndex = 0xff & val;
@@ -2854,12 +2856,12 @@ public final class VGA {
             // case 0x3dd: //Extended ram page address register:
             // break;
             case 0x3de:
-                writeTandyReg((byte) val);
+                writeTandyReg(val);
                 break;
             case 0x3df:
-                Tandy.LineMask = (byte) (val >>> 6);
-                Tandy.DrawBank = (byte) (val & ((Tandy.LineMask & 2) != 0 ? 0x6 : 0x7));
-                Tandy.MemBank = (byte) ((val >>> 3) & ((Tandy.LineMask & 2) != 0 ? 0x6 : 0x7));
+                Tandy.LineMask = 0xff & (val >>> 6);
+                Tandy.DrawBank = 0xff & (val & ((Tandy.LineMask & 2) != 0 ? 0x6 : 0x7));
+                Tandy.MemBank = 0xff & ((val >>> 3) & ((Tandy.LineMask & 2) != 0 ? 0x6 : 0x7));
                 TandyCheckLineMask();
                 setupHandlers();
                 break;
@@ -2869,19 +2871,19 @@ public final class VGA {
     private void writePCJr(int port, int val, int iolen) {
         switch (port) {
             case 0x3d9:
-                writeColorSelect((byte) val);
+                writeColorSelect(val);
                 break;
             case 0x3da:
                 if (Tandy.PcjrFlipFlop != 0)
-                    writeTandyReg((byte) val);
+                    writeTandyReg(val);
                 else
                     Tandy.RegIndex = 0xff & val;
-                Tandy.PcjrFlipFlop = Tandy.PcjrFlipFlop == 0 ? (byte) 1 : (byte) 0;
+                Tandy.PcjrFlipFlop = (byte) (Tandy.PcjrFlipFlop == 0 ? 1 : 0);
                 break;
             case 0x3df:
-                Tandy.LineMask = (byte) (val >>> 6);
-                Tandy.DrawBank = (byte) (val & ((Tandy.LineMask & 2) != 0 ? 0x6 : 0x7));
-                Tandy.MemBank = (byte) ((val >>> 3) & ((Tandy.LineMask & 2) != 0 ? 0x6 : 0x7));
+                Tandy.LineMask = 0xff & (val >>> 6);
+                Tandy.DrawBank = 0xff & (val & ((Tandy.LineMask & 2) != 0 ? 0x6 : 0x7));
+                Tandy.MemBank = 0xff & ((val >>> 3) & ((Tandy.LineMask & 2) != 0 ? 0x6 : 0x7));
                 Tandy.DrawBase = Memory.MemBase + Tandy.DrawBank * 16 * 1024;
                 Tandy.DrawAlloc = Memory.getMemAlloc();
                 Tandy.MemBase = Memory.MemBase + Tandy.MemBank * 16 * 1024;
@@ -2895,14 +2897,14 @@ public final class VGA {
     private void cycleHercPal(boolean pressed) {
         if (!pressed)
             return;
-        if (++_hercPal > 2)
-            _hercPal = 0;
+        if (++hercPal > 2)
+            hercPal = 0;
         HercPalette();
         Dac.combineColor(1, 7);
     }
 
     public void HercPalette() {
-        switch (_hercPal) {
+        switch (hercPal) {
             case 0: // White
                 Dac.setEntry(0x7, 0x2a, 0x2a, 0x2a);
                 Dac.setEntry(0xf, 0x3f, 0x3f, 0x3f);
@@ -2926,7 +2928,7 @@ public final class VGA {
                 if ((Herc.ModeControl & 0x2) != 0) {
                     // already set
                     if ((val & 0x2) == 0) {
-                        Herc.ModeControl &= (byte) ~0x2;
+                        Herc.ModeControl &= 0xff & (~0x2);
                         setMode(VGAModes.HERC_TEXT);
                     }
                 } else {
@@ -2938,7 +2940,7 @@ public final class VGA {
                 }
                 if ((Herc.ModeControl & 0x80) != 0) {
                     if ((val & 0x80) == 0) {
-                        Herc.ModeControl &= (byte) ~0x80;
+                        Herc.ModeControl &= 0xff & (~0x80);
                         Tandy.DrawAlloc = Mem.LinearAlloc;
                         Tandy.DrawBase = Mem.LinearBase;
                     }
@@ -2951,7 +2953,7 @@ public final class VGA {
                 }
                 Draw.Blinking = (val & 0x20) != 0 ? 1 : 0;
                 Herc.ModeControl &= 0x82;
-                Herc.ModeControl |= (byte) (val & ~0x82);
+                Herc.ModeControl |= 0xff & (val & ~0x82);
                 break;
             }
             case 0x3bf:
@@ -3293,22 +3295,22 @@ public final class VGA {
     }
 
     final static class VGAHerc {
-        public byte ModeControl;
+        public int ModeControl;// uint8
         public byte EnableBits;
     }
 
     public static final class VGATandy {
         public byte PcjrFlipFlop;
-        public byte ModeControl;
-        public byte ColorSelect;
+        public int ModeControl;// uint8
+        public int ColorSelect;// uint8
         public byte DispBank;
         public int RegIndex;// byte
-        public byte GfxControl;
+        public byte GFXControl;
         public byte PaletteMask;
         public byte ExtendedRam;
         public byte BorderColor;
-        public byte LineMask, LineShift;
-        public byte DrawBank, MemBank;
+        public int LineMask, LineShift;// uint8
+        public int DrawBank, MemBank;// uint8
         // byte *draw_base, *mem_base;
         public int DrawBase, MemBase;// 할당된 메모리의 지정 인덱스
         public byte[] DrawAlloc, MemAlloc;// draw_base, mem_base가 가리키는 저장공간(할당 공간)
@@ -3320,7 +3322,7 @@ public final class VGA {
             ColorSelect = 0;
             DispBank = 0;
             RegIndex = 0;
-            GfxControl = 0;
+            GFXControl = 0;
             PaletteMask = 0;
             ExtendedRam = 0;
             BorderColor = 0;

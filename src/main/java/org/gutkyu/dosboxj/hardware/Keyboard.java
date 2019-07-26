@@ -225,8 +225,7 @@ public final class Keyboard {
     }
 
     private int readP64(int port, int iolen) {
-        byte status = (byte) (0x1c | (p60changed ? 0x1 : 0x0));
-        return status;
+        return 0xff & (0x1c | (p60changed ? 0x1 : 0x0));
     }
 
     public void addKey(KBDKeys keytype, boolean pressed) {
@@ -557,8 +556,8 @@ public final class Keyboard {
                 break;
             case KBD_pause:
                 addBuffer(0xe1);
-                addBuffer((byte) (29 | (pressed ? 0 : 0x80)));
-                addBuffer((byte) (69 | (pressed ? 0 : 0x80)));
+                addBuffer(0xff & (29 | (pressed ? 0 : 0x80)));
+                addBuffer(0xff & (69 | (pressed ? 0 : 0x80)));
                 return;
             case KBD_printscreen:
                 /* Not handled yet. But usuable in mapper for special events */

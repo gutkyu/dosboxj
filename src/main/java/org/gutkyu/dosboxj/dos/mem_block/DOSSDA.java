@@ -16,7 +16,7 @@ public final class DOSSDA extends MemStruct {
         saveIt(Size_sSDA_drive_crit_error, Off_sSDA_drive_crit_error, 0xff);
     }
 
-    public void setDrive(byte drive) {
+    public void setDrive(int drive) {
         saveIt(Size_sSDA_current_drive, Off_sSDA_current_drive, drive);
     }
 
@@ -28,8 +28,8 @@ public final class DOSSDA extends MemStruct {
         saveIt(Size_sSDA_current_psp, Off_sSDA_current_psp, psp);
     }
 
-    public byte getDrive() {
-        return (byte) getIt(Size_sSDA_current_drive, Off_sSDA_current_drive);
+    public int getDrive() {
+        return 0xff & getIt(Size_sSDA_current_drive, Off_sSDA_current_drive);
     }
 
     public int getPSP() {

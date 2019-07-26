@@ -110,7 +110,7 @@ public final class Drives {
 
         // Remove trailing dot. except when on cdrom and filename is exactly 8 (9 including the dot)
         // letters. MSCDEX feature/bug (fifa96 cdrom detection)
-        if ((labelPos > 0) && (output.get(labelPos - 1) == (byte) '.') && !(cdrom && labelPos == 9))
+        if ((labelPos > 0) && (output.get(labelPos - 1) == '.') && !(cdrom && labelPos == 9))
             output.set(labelPos - 1, (char) 0);
     }
 

@@ -12,11 +12,11 @@ public final class VGADac {
     }
 
     public byte Bits; /* DAC bits, usually 6 or 8 */
-    public short PelMask;
-    public byte PelIndex;
+    public int PelMask;// uint8
+    public int PelIndex;// uint8
     public DACState State;
-    public byte WriteIndex;
-    public byte ReadIndex;
+    public int WriteIndex;// uint8
+    public int ReadIndex;// uint8
     public int FirstChanged;
     // public byte combine[16];
     public byte[] Combine;
@@ -60,7 +60,7 @@ public final class VGADac {
         if (PelMask != val) {
             Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
                     "VGA:DCA:Pel Mask set to %X", val);
-            PelMask = (byte) val;
+            PelMask = 0xff & val;
             for (int i = 0; i < 256; i++)
                 updateColor(i);
         }
@@ -73,10 +73,10 @@ public final class VGADac {
 
 
     private void writeP3C7(int port, int val, int iolen) {
-        ReadIndex = (byte) val;
+        ReadIndex = 0xff & val;
         PelIndex = 0;
         State = DACState.DAC_READ;
-        WriteIndex = (byte) (val + 1);
+        WriteIndex = 0xff & (val + 1);
     }
 
     private int readP3C7(int port, int iolen) {
@@ -87,7 +87,7 @@ public final class VGADac {
     }
 
     private void writeP3C8(int port, int val, int iolen) {
-        WriteIndex = (byte) val;
+        WriteIndex = 0xff & val;
         PelIndex = 0;
         State = DACState.DAC_WRITE;
     }

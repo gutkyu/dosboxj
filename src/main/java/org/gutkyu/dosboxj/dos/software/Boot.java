@@ -175,7 +175,7 @@ public final class Boot extends Program {
         /*
          * In secure mode don't allow people to boot stuff. They might try to corrupt the data on it
          */
-        if (DOSBox.Control.secureMode()) {
+        if (DOSBox.Control.getSecureMode()) {
             writeOut(Message.get("PROGRAM_CONFIG_SECURE_DISALLOW"));
             return;
         }
@@ -186,7 +186,7 @@ public final class Boot extends Program {
         int floppySize = 0;
         int romByteSize1 = 0;
         int romByteSize2 = 0;
-        byte drive = (byte) 'A';
+        char drive = 'A';
         String cartCmd = "";
 
         if (Cmd.getCount() == 0) {
@@ -199,7 +199,7 @@ public final class Boot extends Program {
                     /* Specifying drive... next argument then is the drive */
                     i++;
                     if ((TempLine = Cmd.findCommand(i + 1)) != null) {
-                        drive = (byte) Character.toUpperCase(TempLine.charAt(0));
+                        drive = Character.toUpperCase(TempLine.charAt(0));
                         if ((drive != 'A') && (drive != 'C') && (drive != 'D')) {
                             printError();
                             return;
@@ -257,7 +257,7 @@ public final class Boot extends Program {
         BIOSDisk.swapInDisks();
 
         if (BIOSDisk.ImageDiskList[drive - 65] == null) {
-            writeOut(Message.get("PROGRAM_BOOT_UNABLE"), (char) drive);
+            writeOut(Message.get("PROGRAM_BOOT_UNABLE"), drive);
             return;
         }
 

@@ -110,11 +110,11 @@ public abstract class DOSShellBase extends Program {
     }
 
     private void showPrompt() {
-        byte drive = (byte) (DOSMain.getDefaultDrive() + (byte) 'A');
+        char drive = (char) ('A' + DOSMain.getDefaultDrive());
         String dir = null;
         // DOS_GetCurrentDir doesn't always return something. (if drive is messed up)
         dir = DOSMain.getCurrentDir(0);
-        writeOut((char) drive + ":\\" + dir + ">");
+        writeOut(drive + ":\\" + dir + ">");
     }
 
     /* A load of subfunctions */
@@ -480,11 +480,11 @@ public abstract class DOSShellBase extends Program {
         DOSMCB pspmcb = new DOSMCB(pspSeg - 1);
         pspmcb.setPSPSeg(pspSeg); // MCB of the command shell psp
         pspmcb.setSize(0x10 + 2);
-        pspmcb.setType((byte) 0x4d);
+        pspmcb.setType(0x4d);
         DOSMCB envmcb = new DOSMCB(env_seg - 1);
         envmcb.setPSPSeg(pspSeg); // MCB of the command shell environment
         envmcb.setSize((DOSMain.DOS_MEM_START - env_seg));
-        envmcb.setType((byte) 0x4d);
+        envmcb.setType(0x4d);
 
         /* Setup environment */
         int envWrite = Memory.physMake(env_seg, 0);

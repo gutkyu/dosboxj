@@ -229,9 +229,9 @@ public final class DOSPSP extends MemStruct {
         return true;
     }
 
-    public short findEntryByHandle(byte handle) {
+    public int findEntryByHandle(int handle) {
         int files = Memory.real2Phys(getIt(Size_file_table, Off_file_table));
-        for (short i = 0; i < getIt(Size_max_files, Off_max_files); i++) {
+        for (int i = 0; i < getIt(Size_max_files, Off_max_files); i++) {
             if (Memory.readB(files + i) == handle)
                 return i;
         }

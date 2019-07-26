@@ -329,7 +329,7 @@ final class VGACrtc {
                 break;
             case 0x17: /* Mode Control Register */
                 this.ModeControl = val;
-                vga.Tandy.LineMask = (byte) ((~val) & 3);
+                vga.Tandy.LineMask = 0xff & ((~val) & 3);
                 // Byte,word,dword mode
                 if ((this.UnderlineLocation & 0x20) != 0)
                     vga.Config.AddrShift = 2;

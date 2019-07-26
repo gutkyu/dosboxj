@@ -171,12 +171,12 @@ public final class BIOS {
 
     private class BIOSModule extends ModuleBase {
 
-        private CallbackHandlerObject[] _callback = new CallbackHandlerObject[11];
+        private CallbackHandlerObject[] callback = new CallbackHandlerObject[11];
 
         public BIOSModule(Section configuration) {
             super(configuration);
-            for (int i = 0; i < _callback.length; i++) {
-                _callback[i] = new CallbackHandlerObject();
+            for (int i = 0; i < callback.length; i++) {
+                callback[i] = new CallbackHandlerObject();
             }
 
             /* tandy DAC can be requested in tandy_sound.cpp by initializing this field */
@@ -207,63 +207,63 @@ public final class BIOS {
             Memory.writeD(BIOS_TIMER, 0); // Calculate the correct time
 
             /* INT 11 Get equipment list */
-            _callback[1].install(BIOS::INT11Handler, Callback.Symbol.IRET, "Int 11 Equipment");
-            _callback[1].setRealVec((byte) 0x11);
+            callback[1].install(BIOS::INT11Handler, Callback.Symbol.IRET, "Int 11 Equipment");
+            callback[1].setRealVec(0x11);
 
             /* INT 12 Memory Size default at 640 kb */
-            _callback[2].install(BIOS::INT12Handler, Callback.Symbol.IRET, "Int 12 Memory");
-            _callback[2].setRealVec((byte) 0x12);
+            callback[2].install(BIOS::INT12Handler, Callback.Symbol.IRET, "Int 12 Memory");
+            callback[2].setRealVec(0x12);
             if (DOSBox.isTANDYArch()) {
                 /*
                  * reduce reported memory size for the Tandy (32k graphics memory at the end of the
                  * conventional 640k)
                  */
                 if (DOSBox.Machine == DOSBox.MachineType.TANDY)
-                    Memory.writeW(BIOS_MEMORY_SIZE, (byte) 608);
+                    Memory.writeW(BIOS_MEMORY_SIZE, 608);
                 else
-                    Memory.writeW(BIOS_MEMORY_SIZE, (byte) 640);
-                Memory.writeW(BIOS_TRUE_MEMORY_SIZE, (byte) 640);
+                    Memory.writeW(BIOS_MEMORY_SIZE, 640);
+                Memory.writeW(BIOS_TRUE_MEMORY_SIZE, 640);
             } else
-                Memory.writeW(BIOS_MEMORY_SIZE, (byte) 640);
+                Memory.writeW(BIOS_MEMORY_SIZE, 640);
 
             /* INT 13 Bios Disk Support */
             BIOSDisk.setupDisks();
 
             /* INT 14 Serial Ports */
-            _callback[3].install(BIOS::INT14Handler, Callback.Symbol.IRET_STI, "Int 14 COM-port");
-            _callback[3].setRealVec((byte) 0x14);
+            callback[3].install(BIOS::INT14Handler, Callback.Symbol.IRET_STI, "Int 14 COM-port");
+            callback[3].setRealVec(0x14);
 
             /* INT 15 Misc Calls */
-            _callback[4].install(BIOS::INT15Handler, Callback.Symbol.IRET, "Int 15 Bios");
-            _callback[4].setRealVec((byte) 0x15);
+            callback[4].install(BIOS::INT15Handler, Callback.Symbol.IRET, "Int 15 Bios");
+            callback[4].setRealVec(0x15);
 
             /* INT 16 Keyboard handled in another file */
             BIOSKeyboard.setupKeyboard();
 
             /* INT 17 Printer Routines */
-            _callback[5].install(BIOS::INT17Handler, Callback.Symbol.IRET_STI, "Int 17 Printer");
-            _callback[5].setRealVec((byte) 0x17);
+            callback[5].install(BIOS::INT17Handler, Callback.Symbol.IRET_STI, "Int 17 Printer");
+            callback[5].setRealVec(0x17);
 
             /* INT 1A TIME and some other functions */
-            _callback[6].install(BIOS::INT1AHandler, Callback.Symbol.IRET_STI, "Int 1a Time");
-            _callback[6].setRealVec((byte) 0x1A);
+            callback[6].install(BIOS::INT1AHandler, Callback.Symbol.IRET_STI, "Int 1a Time");
+            callback[6].setRealVec(0x1A);
 
             /* INT 1C System Timer tick called from INT 8 */
-            _callback[7].install(BIOS::INT1CHandler, Callback.Symbol.IRET, "Int 1c Timer");
-            _callback[7].setRealVec((byte) 0x1C);
+            callback[7].install(BIOS::INT1CHandler, Callback.Symbol.IRET, "Int 1c Timer");
+            callback[7].setRealVec(0x1C);
 
             /* IRQ 8 RTC Handler */
-            _callback[8].install(BIOS::INT70Handler, Callback.Symbol.IRET, "Int 70 RTC");
-            _callback[8].setRealVec((byte) 0x70);
+            callback[8].install(BIOS::INT70Handler, Callback.Symbol.IRET, "Int 70 RTC");
+            callback[8].setRealVec(0x70);
 
             /* Irq 9 rerouted to irq 2 */
-            _callback[9].install(null, Callback.Symbol.IRQ9, "irq 9 bios");
-            _callback[9].setRealVec((byte) 0x71);
+            callback[9].install(null, Callback.Symbol.IRQ9, "irq 9 bios");
+            callback[9].setRealVec(0x71);
 
             /* Reboot */
-            _callback[10].install(BIOS::rebootHandler, Callback.Symbol.IRET, "reboot");
-            _callback[10].setRealVec((byte) 0x18);
-            int rptr = _callback[10].getRealPointer();
+            callback[10].install(BIOS::rebootHandler, Callback.Symbol.IRET, "reboot");
+            callback[10].setRealVec(0x18);
+            int rptr = callback[10].getRealPointer();
             Memory.realSetVec(0x19, rptr);
             // set system BIOS entry point too
             Memory.physWriteB(0xFFFF0, 0xEA); // FARJMP
@@ -453,10 +453,10 @@ public final class BIOS {
             if (disposing) {
                 eventOnFinalization();
 
-                for (CallbackHandlerObject cb : _callback) {
+                for (CallbackHandlerObject cb : callback) {
                     cb.dispose();
                 }
-                _callback = null;
+                callback = null;
             }
 
             super.dispose(disposing);
@@ -722,7 +722,7 @@ public final class BIOS {
             IO.write(0x0a, tandyDMA); /* enable DMA channel */
             /* set frequency */
             IO.write((0xffff & _tandySb.port) + 0xc, 0x40);
-            IO.write((0xffff & _tandySb.port) + 0xc, 0xff & ((byte) (256 - delay * 100 / 358)));
+            IO.write((0xffff & _tandySb.port) + 0xc, 0xff & ((int) (256 - delay * 100 / 358)));
             /* set playback type to 8bit */
             if (isplayback)
                 IO.write((0xffff & _tandySb.port) + 0xc, 0x14);
@@ -1061,7 +1061,7 @@ public final class BIOS {
                 if (_biosConfigSeg == 0)
                     _biosConfigSeg = DOSMain.getMemory(1); // We have 16 bytes
                 int data = Memory.physMake(_biosConfigSeg, 0);
-                Memory.writeW(data, (byte) 8); // 8 Bytes following
+                Memory.writeW(data, 8); // 8 Bytes following
                 if (DOSBox.isTANDYArch()) {
                     if (DOSBox.Machine == DOSBox.MachineType.TANDY) {
                         // Model ID (Tandy)

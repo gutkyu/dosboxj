@@ -149,7 +149,7 @@ public abstract class Program implements Disposable {
         String buf = String.format(format, args);
         // short size = (short)CString.strlen(buf);
         int size = buf.length();
-        for (short i = 0; i < size; i++) {
+        for (int i = 0; i < size; i++) {
             byte outByte = 0;
             short s = 1;
             if (buf.charAt(i) == 0xA && i > 0 && buf.charAt(i - 1) != 0xD) {

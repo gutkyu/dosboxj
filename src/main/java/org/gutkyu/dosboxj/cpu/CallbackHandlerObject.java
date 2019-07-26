@@ -5,27 +5,27 @@ import org.gutkyu.dosboxj.misc.*;
 import org.gutkyu.dosboxj.util.*;
 
 public final class CallbackHandlerObject implements Disposable {
-    private boolean _installed;
-    private int _callback;
+    private boolean installed;
+    private int callback;
 
     private enum AnonyEnum {
         NONE, SETUP, SETUPAT
     }
 
-    private AnonyEnum _type;
+    private AnonyEnum anonyType;
 
     private class VectorHandlerInfo {
         public int oldVector;
-        public byte interrupt;
+        public int interrupt;
         public boolean installed;
     }
 
-    private VectorHandlerInfo _vectorHandler = new VectorHandlerInfo();
+    private VectorHandlerInfo vectorHandler = new VectorHandlerInfo();
 
     public CallbackHandlerObject() {
-        _installed = false;
-        _type = AnonyEnum.NONE;
-        _vectorHandler.installed = false;
+        installed = false;
+        anonyType = AnonyEnum.NONE;
+        vectorHandler.installed = false;
     }
 
     // Implement IDisposable.
@@ -42,62 +42,62 @@ public final class CallbackHandlerObject implements Disposable {
 
     // 객체 소멸시 실행
     private void eventOnFinalization() {
-        if (!_installed)
+        if (!installed)
             return;
-        if (_type == AnonyEnum.SETUP) {
-            if (_vectorHandler.installed) {
+        if (anonyType == AnonyEnum.SETUP) {
+            if (vectorHandler.installed) {
                 // See if we are the current handler. if so restore the old one
-                if (Memory.realGetVec(_vectorHandler.interrupt) == getRealPointer()) {
-                    Memory.realSetVec(_vectorHandler.interrupt, _vectorHandler.oldVector);
+                if (Memory.realGetVec(vectorHandler.interrupt) == getRealPointer()) {
+                    Memory.realSetVec(vectorHandler.interrupt, vectorHandler.oldVector);
                 } else
                     Log.logging(Log.LogTypes.MISC, Log.LogServerities.Warn,
-                            "Interrupt vector changed on %X %s", _vectorHandler.interrupt,
-                            Callback.getDescription(_callback));
+                            "Interrupt vector changed on %X %s", vectorHandler.interrupt,
+                            Callback.getDescription(callback));
             }
-            Callback.removeSetup(_callback);
-        } else if (_type == AnonyEnum.SETUPAT) {
+            Callback.removeSetup(callback);
+        } else if (anonyType == AnonyEnum.SETUPAT) {
             Support.exceptionExit("Callback:SETUP at not handled yet.");
-        } else if (_type == AnonyEnum.NONE) {
+        } else if (anonyType == AnonyEnum.NONE) {
             // Do nothing. Merely DeAllocate the callback
         } else
             Support.exceptionExit("what kind of callback is this!");
 
-        if (Callback.CallbackDescription[_callback] != null)
-            Callback.CallbackDescription[_callback] = null;
+        if (Callback.CallbackDescription[callback] != null)
+            Callback.CallbackDescription[callback] = null;
         // CALLBACK.CallBack_Description[m_callback] = null;
-        Callback.deallocate(_callback);
+        Callback.deallocate(callback);
     }
 
     // Install and allocate a callback.
     public void install(DOSCallbackHandler handler, Callback.Symbol type, String description) {
-        if (!_installed) {
-            _installed = true;
-            _type = AnonyEnum.SETUP;
-            _callback = Callback.allocate();
-            Callback.setup(_callback, handler, type, description);
+        if (!installed) {
+            installed = true;
+            anonyType = AnonyEnum.SETUP;
+            callback = Callback.allocate();
+            Callback.setup(callback, handler, type, description);
         } else
             Support.exceptionExit("Allready installed");
     }
 
     public void install(DOSCallbackHandler handler, Callback.Symbol type, int addr,
             String description) {
-        if (!_installed) {
-            _installed = true;
-            _type = AnonyEnum.SETUP;
-            _callback = Callback.allocate();
-            Callback.setup(_callback, handler, type, addr, description);
+        if (!installed) {
+            installed = true;
+            anonyType = AnonyEnum.SETUP;
+            callback = Callback.allocate();
+            Callback.setup(callback, handler, type, addr, description);
         } else
             Support.exceptionExit("Allready installed");
     }
 
     // Only allocate a callback number
     public void allocate(DOSCallbackHandler handler, String description) {
-        if (!_installed) {
-            _installed = true;
-            _type = AnonyEnum.NONE;
-            _callback = Callback.allocate();
-            Callback.setDescription(_callback, description);
-            Callback.CallbackHandlers.set(_callback, handler);
+        if (!installed) {
+            installed = true;
+            anonyType = AnonyEnum.NONE;
+            callback = Callback.allocate();
+            Callback.setDescription(callback, description);
+            Callback.CallbackHandlers.set(callback, handler);
         } else
             Support.exceptionExit("Allready installed");
     }
@@ -108,18 +108,18 @@ public final class CallbackHandlerObject implements Disposable {
 
     // uint16()
     public int getCallback() {
-        return 0xffff & _callback;
+        return 0xffff & callback;
     }
 
     public int getRealPointer() {
-        return Callback.realPointer(_callback);
+        return Callback.realPointer(callback);
     }
 
-    public void setRealVec(byte vec) {
-        if (!_vectorHandler.installed) {
-            _vectorHandler.installed = true;
-            _vectorHandler.interrupt = vec;
-            _vectorHandler.oldVector = Memory.realSetVecAndReturnOld(vec, getRealPointer());
+    public void setRealVec(int vec) {
+        if (!vectorHandler.installed) {
+            vectorHandler.installed = true;
+            vectorHandler.interrupt = vec;
+            vectorHandler.oldVector = Memory.realSetVecAndReturnOld(vec, getRealPointer());
         } else
             Support.exceptionExit("double usage of vector handler");
     }

@@ -69,8 +69,8 @@ public final class DOSDTA extends MemStruct {
     }
 
 
-    public byte getSearchDrive() {
-        return (byte) getIt(Size_sDTA_sdrive, Off_sDTA_sdrive);
+    public int getSearchDrive() {
+        return getIt(Size_sDTA_sdrive, Off_sDTA_sdrive);
     }
 
     // return attr

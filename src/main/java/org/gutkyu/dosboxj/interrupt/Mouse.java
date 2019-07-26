@@ -923,7 +923,7 @@ public final class Mouse {
             case 0x24: /* Get Software version and mouse type */
                 Register.setRegBX(0x805); // Version 8.05 woohoo
                 Register.setRegCH(0x04); /* PS/2 type */
-                Register.setRegCL((byte) 0); /* PS/2 (unused) */
+                Register.setRegCL(0); /* PS/2 (unused) */
                 break;
             case 0x26: /* Get Maximum virtual coordinates */
                 Register.setRegBX((mouse.Enabled ? 0x0000 : 0xffff));

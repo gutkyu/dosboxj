@@ -94,7 +94,7 @@ public final class VGAAttr {
                 case 0x0e:
                 case 0x0f:
                     if ((Disabled & 0x1) != 0)
-                        setPalette(Index, (byte) val);
+                        setPalette(Index, 0xff & val);
                     /*
                      * 0-5 Index into the 256 color DAC table. May be modified by 3C0h index 10h and
                      * 14h.
@@ -106,7 +106,7 @@ public final class VGAAttr {
                     if (((ModeControl ^ val) & 0x80) != 0) {
                         ModeControl ^= 0x80;
                         for (byte i = 0; i < 0x10; i++) {
-                            setPalette(i, Palette[i]);
+                            setPalette(i, 0xff & Palette[i]);
                         }
                     }
                     if (((ModeControl ^ val) & 0x08) != 0) {
@@ -184,7 +184,7 @@ public final class VGAAttr {
                     if ((ColorSelect ^ val) != 0) {
                         ColorSelect = (byte) val;
                         for (byte i = 0; i < 0x10; i++) {
-                            setPalette(i, Palette[i]);
+                            setPalette(i, 0xff & Palette[i]);
                         }
                     }
                     /*

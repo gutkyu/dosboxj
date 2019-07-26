@@ -316,17 +316,17 @@ public final class TsengET3KSVGADriverProvider {
 
         // Tseng ET3K does not have horizontal overflow bits
         // Reinterpret ver_overflow
-        byte et4k_ver_overflow = (byte) (((modeData.VOverflow & 0x01) << 1) | // vtotal10
+        int et4kVerOverflow = 0xff & (((modeData.VOverflow & 0x01) << 1) | // vtotal10
                 ((modeData.VOverflow & 0x02) << 1) | // vdispend10
                 ((modeData.VOverflow & 0x04) >>> 2) | // vbstart10
                 ((modeData.VOverflow & 0x10) >>> 1) | // vretrace10 (tseng has vsync start?)
                 ((modeData.VOverflow & 0x40) >>> 2)); // line_compare
         IO.write(crtcBase, 0x25);
-        IO.write(crtcBase + 1, et4k_ver_overflow);
+        IO.write(crtcBase + 1, et4kVerOverflow);
 
         // Clear remaining ext CRTC registers
         for (int i = 0x16; i <= 0x21; i++)
-            IO.write(crtcBase, (byte) i);
+            IO.write(crtcBase, i);
         IO.write(crtcBase + 1, 0);
         IO.write(crtcBase, 0x23);
         IO.write(crtcBase + 1, 0);

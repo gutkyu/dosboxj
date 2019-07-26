@@ -13,7 +13,7 @@ public final class DeviceCON extends DOSDevice {
 
     public DeviceCON() {
         setName(CStringPt.create("CON"));
-        readcache = 0;
+        readCache = 0;
         lastwrite = 0;
         ansi.enabled = false;
         ansi.attr = 0x7;
@@ -38,11 +38,11 @@ public final class DeviceCON extends DOSDevice {
         byte[] data = buf;
         int oldax = Register.getRegAX();
         short count = 0;
-        if (readcache != 0 && size > 0) {
-            data[offset + count++] = readcache;
+        if (readCache != 0 && size > 0) {
+            data[offset + count++] = readCache;
             if (DOSMain.DOS.Echo)
-                CHAR.teletypeOutput((byte) readcache, 7);
-            readcache = 0;
+                CHAR.teletypeOutput((byte) readCache, 7);
+            readCache = 0;
         }
         while (size > count) {
             Register.setRegAH(DOSBox.isEGAVGAArch() ? 0x10 : 0x0);
@@ -84,7 +84,7 @@ public final class DeviceCON extends DOSDevice {
                         if (size > count)
                             data[offset + count++] = (byte) Register.getRegAH();
                         else
-                            readcache = (byte) Register.getRegAH();
+                            readCache = (byte) Register.getRegAH();
                     }
                     break;
                 case 0: /* Extended keys in the int 16 0x0 case */
@@ -92,7 +92,7 @@ public final class DeviceCON extends DOSDevice {
                     if (size > count)
                         data[offset + count++] = (byte) Register.getRegAH();
                     else
-                        readcache = (byte) Register.getRegAH();
+                        readCache = (byte) Register.getRegAH();
                     break;
                 default:
                     data[offset + count++] = (byte) Register.getRegAL();
@@ -458,9 +458,9 @@ public final class DeviceCON extends DOSDevice {
         int head = Memory.readW(BIOS.BIOS_KEYBOARD_BUFFER_HEAD);
         int tail = Memory.readW(BIOS.BIOS_KEYBOARD_BUFFER_TAIL);
 
-        if ((head == tail) && readcache == 0)
+        if ((head == tail) && readCache == 0)
             return 0x80D3; /* No Key Available */
-        if (readcache != 0 || Memory.realReadW(0x40, head) != 0)
+        if (readCache != 0 || Memory.realReadW(0x40, head) != 0)
             return 0x8093; /* Key Available */
 
         /* remove the zero from keyboard buffer */
@@ -485,7 +485,7 @@ public final class DeviceCON extends DOSDevice {
         return -1;
     }
 
-    private byte readcache;
+    private byte readCache;
     private byte lastwrite;
 
     class ANSI { /* should create a constructor which fills them with the appriorate values */

@@ -638,12 +638,12 @@ public final class CHAR {
 
         // Some weird behavior of mode 6 (and 11)
         if ((INT10Mode.CurMode.Mode == 0x6)/* || (CurMode.mode==0x11) */)
-            attr = (byte) ((attr & 0x80) | 1);
+            attr = (attr & 0x80) | 1;
         // (same fix for 11 fixes vgatest2, but it's not entirely correct according to wd)
 
         x = 8 * col;
         y = cheight * row;
-        byte xor_mask = (INT10Mode.CurMode.Type == VGAModes.VGA) ? (byte) 0x0 : (byte) 0x80;
+        int xorMask = (INT10Mode.CurMode.Type == VGAModes.VGA) ? 0x0 : 0x80;
         // TODO Check for out of bounds
         if (INT10Mode.CurMode.Type == VGAModes.EGA) {
             /* enable all planes for EGA modes (Ultima 1 colour bug) */
@@ -665,7 +665,7 @@ public final class CHAR {
                 if ((bitline & bitsel) != 0)
                     INT10.putPixel(tx, y, page, (byte) attr);
                 else
-                    INT10.putPixel(tx, y, page, (byte) (attr & xor_mask));
+                    INT10.putPixel(tx, y, page, (byte) (attr & xorMask));
                 tx++;
                 bitsel >>>= 1;
             }

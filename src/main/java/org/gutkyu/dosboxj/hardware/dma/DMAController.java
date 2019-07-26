@@ -5,18 +5,18 @@ import org.gutkyu.dosboxj.util.*;
 
 final class DMAController implements Disposable {
 
-    private byte ctrlNum;
+    private int ctrlNum;// uint8
     private boolean flipFlop;
     private DMAChannel[] dmaChannels = new DMAChannel[4];
 
     public IOReadHandleObject[] readHandler = new IOReadHandleObject[0x11];
     public IOWriteHandleObject[] writeHandler = new IOWriteHandleObject[0x11];
 
-    protected DMAController(byte num) {
+    protected DMAController(int num) {
         flipFlop = false;
         ctrlNum = num; /* first or second DMA controller */
         for (byte i = 0; i < 4; i++) {
-            dmaChannels[i] = new DMAChannel((byte) (i + ctrlNum * 4), ctrlNum == 1);
+            dmaChannels[i] = new DMAChannel(i + ctrlNum * 4, ctrlNum == 1);
         }
         for (int i = 0; i < readHandler.length; i++) {
             readHandler[i] = new IOReadHandleObject();

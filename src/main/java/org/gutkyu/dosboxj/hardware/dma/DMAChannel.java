@@ -8,8 +8,8 @@ final class DMAChannel {
     public int currAddr;// uint32
     public int baseCnt;// uint16
     public int currCnt;// uint16
-    public byte chanNum;
-    public byte pageNum;
+    public int chanNum;// uint8
+    public int pageNum;// uint8
     public byte dma16;
     public boolean increment;
     public boolean autoInit;
@@ -19,7 +19,8 @@ final class DMAChannel {
     public boolean request;
     public DMACallBack callback;
 
-    protected DMAChannel(byte num, boolean dma16) {
+    // (uint8, bool)
+    protected DMAChannel(int num, boolean dma16) {
         masked = true;
         callback = null;
         if (num == 4)
@@ -43,13 +44,13 @@ final class DMAChannel {
             callback.run(this, _event);
     }
 
-    public void setMask(boolean _mask) {
-        masked = _mask;
+    public void setMask(boolean val) {
+        masked = val;
         doCallBack(masked ? DMAEvent.MASKED : DMAEvent.UNMASKED);
     }
 
-    public void registerCallback(DMACallBack _cb) {
-        callback = _cb;
+    public void registerCallback(DMACallBack cb) {
+        callback = cb;
         setMask(masked);
         if (callback != null)
             raiseRequest();
@@ -62,8 +63,8 @@ final class DMAChannel {
         doCallBack(DMAEvent.REACHED_TC);
     }
 
-    public void setPage(byte val) {
-        pageNum = val;
+    public void setPage(int val) {
+        pageNum = 0xff & val;
         pageBase = (pageNum >>> this.dma16) << (16 + this.dma16);
     }
 

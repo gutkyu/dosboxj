@@ -468,14 +468,12 @@ public final class DOSMain {
                 break;
             case 0x29: /* Parse filename into FCB */
             {
-                FCBParseNameParamRef differenceRef = new FCBParseNameParamRef((byte) 0);
-                differenceRef.Change = 0;
                 CStringPt str = CStringPt.create(1024);
                 Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegSI(), str,
                         1023); // 1024 toasts the stack
                 Register.setRegAL(FCBParseName(Register.segValue(Register.SEG_NAME_ES),
-                        Register.getRegDI(), Register.getRegAL(), str, differenceRef));
-                Register.setRegSI(Register.getRegSI() + differenceRef.Change);
+                        Register.getRegDI(), Register.getRegAL(), str));
+                Register.setRegSI(Register.getRegSI() + returnedFCBParseNameChange);
             }
                 Log.logging(Log.LogTypes.FCB, Log.LogServerities.Normal,
                         "DOS:29:FCB Parse Filename, result:al=%d", Register.getRegAL());
@@ -1219,8 +1217,7 @@ public final class DOSMain {
                         break;
                     case 0x20: /* Capitalize Character */
                     {
-                        byte inval = (byte) Register.getRegDL();
-                        byte outval = CStringHelper.toupper(inval);
+                        int outval = CStringHelper.toupper((byte) Register.getRegDL());
                         Register.setRegDL(outval);
                     }
                         Callback.scf(false);
@@ -1810,7 +1807,7 @@ public final class DOSMain {
                         && (Memory.realReadB(0x17ff, 0) == 0x4d)
                         && (Memory.realReadW(0x17ff, 1) == 8)) {
                     /* re-enable the memory past segment 0x2000 */
-                    mcb.setType((byte) 0x4d);
+                    mcb.setType(0x4d);
                 } else
                     break;
             }
@@ -1900,7 +1897,7 @@ public final class DOSMain {
                             mcbNext.setType(mcb.getType());
                             mcbNext.setSize(blockSize - blocks - 1);
                             mcb.setSize(blocks);
-                            mcb.setType((byte) 0x4d);
+                            mcb.setType(0x4d);
                             mcb.setPSPSeg(DOS.getPSP());
                             mcb.setFileName(pspName);
                             // TODO Filename
@@ -1941,7 +1938,7 @@ public final class DOSMain {
                             mcbNext.setSize(foundSegSize - blocks - 1);
 
                             mcb.setSize(blocks);
-                            mcb.setType((byte) 0x4d);
+                            mcb.setType(0x4d);
                             mcb.setPSPSeg(DOS.getPSP());
                             mcb.setFileName(pspName);
                             // TODO Filename
@@ -1967,7 +1964,7 @@ public final class DOSMain {
                             // Old Block
                             mcb.setSize(foundSegSize - blocks - 1);
                             mcb.setPSPSeg(DOSMCB.MCB_FREE);
-                            mcb.setType((byte) 0x4D);
+                            mcb.setType(0x4D);
                         }
                         return true;
                     }
@@ -2011,7 +2008,7 @@ public final class DOSMain {
             mcbNewNext.setType(mcb.getType());
             if (mcb.getType() == 0x5a) {
                 /* Further blocks follow */
-                mcb.setType((byte) 0x4d);
+                mcb.setType(0x4d);
             }
 
             mcbNewNext.setSize(total - blocks - 1);
@@ -2035,7 +2032,7 @@ public final class DOSMain {
             mcbNext.setSize(total - blocks - 1);
             mcbNext.setType(mcb.getType());
             mcbNext.setPSPSeg(DOSMCB.MCB_FREE);
-            mcb.setType((byte) 0x4d);
+            mcb.setType(0x4d);
             mcb.setPSPSeg(DOS.getPSP());
             return true;
         }
@@ -2094,7 +2091,7 @@ public final class DOSMain {
             DOSMCB umbMCB = new DOSMCB(first_umb_seg);
             umbMCB.setPSPSeg(0); // currently free
             umbMCB.setSize(first_umb_size - 1);
-            umbMCB.setType((byte) 0x5a);
+            umbMCB.setType(0x5a);
 
             /* Scan MCB-chain for last block */
             int mcbSegment = DOS.FirstMCB;
@@ -2109,7 +2106,7 @@ public final class DOSMain {
              */
             int cover_mcb = mcbSegment + mcb.getSize() + 1;
             mcb.setSegPt(cover_mcb);
-            mcb.setType((byte) 0x4d);
+            mcb.setType(0x4d);
             mcb.setPSPSeg(0x0008);
             mcb.setSize(first_umb_seg - cover_mcb - 1);
             mcb.setFileName(CStringPt.create("SC      "));
@@ -2135,26 +2132,26 @@ public final class DOSMain {
             return true;
 
         /* Scan MCB-chain for last block before UMB-chain */
-        int mcb_segment = DOS.FirstMCB;
-        int prev_mcb_segment = DOS.FirstMCB;
-        DOSMCB mcb = new DOSMCB(mcb_segment);
-        while ((mcb_segment != umbStart) && (mcb.getType() != 0x5a)) {
-            prev_mcb_segment = mcb_segment;
-            mcb_segment += mcb.getSize() + 1;
-            mcb.setSegPt(mcb_segment);
+        int mcbSegment = DOS.FirstMCB;
+        int prevMCBSegment = DOS.FirstMCB;
+        DOSMCB mcb = new DOSMCB(mcbSegment);
+        while ((mcbSegment != umbStart) && (mcb.getType() != 0x5a)) {
+            prevMCBSegment = mcbSegment;
+            mcbSegment += mcb.getSize() + 1;
+            mcb.setSegPt(mcbSegment);
         }
-        DOSMCB prev_mcb = new DOSMCB(prev_mcb_segment);
+        DOSMCB prevMCB = new DOSMCB(prevMCBSegment);
 
         switch (linkState) {
             case 0x0000: // unlink
-                if ((prev_mcb.getType() == 0x4d) && (mcb_segment == umbStart)) {
-                    prev_mcb.setType((byte) 0x5a);
+                if ((prevMCB.getType() == 0x4d) && (mcbSegment == umbStart)) {
+                    prevMCB.setType(0x5a);
                 }
                 DOSInfoBlock.setUMBChainState(0);
                 break;
             case 0x0001: // link
                 if (mcb.getType() == 0x5a) {
-                    mcb.setType((byte) 0x4d);
+                    mcb.setType(0x4d);
                     DOSInfoBlock.setUMBChainState(1);
                 }
                 break;
@@ -2199,7 +2196,7 @@ public final class DOSMain {
         DOSMCB mcb_devicedummy = new DOSMCB(DOS_MEM_START);
         mcb_devicedummy.setPSPSeg(DOSMCB.MCB_DOS); // Devices
         mcb_devicedummy.setSize(1);
-        mcb_devicedummy.setType((byte) 0x4d); // More blocks will follow
+        mcb_devicedummy.setType(0x4d); // More blocks will follow
         // mcb_devicedummy.SetFileName("SD ");
 
         short mcb_sizes = 2;
@@ -2208,18 +2205,18 @@ public final class DOSMain {
         tempmcb.setPSPSeg(DOSMCB.MCB_FREE);
         tempmcb.setSize(4);
         mcb_sizes += 5;
-        tempmcb.setType((byte) 0x4d);
+        tempmcb.setType(0x4d);
 
         // Lock the previous empty MCB
         DOSMCB tempmcb2 = new DOSMCB(DOS_MEM_START + mcb_sizes);
         tempmcb2.setPSPSeg(0x40); // can be removed by loadfix
         tempmcb2.setSize(16);
         mcb_sizes += 17;
-        tempmcb2.setType((byte) 0x4d);
+        tempmcb2.setType(0x4d);
 
         DOSMCB mcb = new DOSMCB(DOS_MEM_START + mcb_sizes);
         mcb.setPSPSeg(DOSMCB.MCB_FREE); // Free
-        mcb.setType((byte) 0x5a); // Last Block
+        mcb.setType(0x5a); // Last Block
         if (DOSBox.Machine == DOSBox.MachineType.TANDY) {
             /*
              * memory up to 608k available, the rest (to 640k) is used by the tandy graphics
@@ -2231,17 +2228,17 @@ public final class DOSMain {
             mcb_devicedummy.setSegPt(0x2000);
             mcb_devicedummy.setPSPSeg(DOSMCB.MCB_FREE);
             mcb_devicedummy.setSize(0x9FFF - 0x2000);
-            mcb_devicedummy.setType((byte) 0x5a);
+            mcb_devicedummy.setType(0x5a);
 
             /* exclude PCJr graphics region */
             mcb_devicedummy.setSegPt(0x17ff);
             mcb_devicedummy.setPSPSeg(DOSMCB.MCB_DOS);
             mcb_devicedummy.setSize(0x800);
-            mcb_devicedummy.setType((byte) 0x4d);
+            mcb_devicedummy.setType(0x4d);
 
             /* memory below 96k */
             mcb.setSize(0x1800 - DOS_MEM_START - (2 + mcb_sizes));
-            mcb.setType((byte) 0x4d);
+            mcb.setType(0x4d);
         } else {
             /* complete memory up to 640k available */
             /* last paragraph used to add UMB chain to low-memory MCB chain */
@@ -2542,7 +2539,7 @@ public final class DOSMain {
                     setError(DOSERR_FUNCTION_NUMBER_INVALID);
                     return false;
                 }
-                Register.setRegAL((byte) 0); /* Only 1 logical drive assigned */
+                Register.setRegAL(0); /* Only 1 logical drive assigned */
                 return true;
             default:
                 Log.logging(Log.LogTypes.DOSMISC, Log.LogServerities.Error,
@@ -2584,9 +2581,9 @@ public final class DOSMain {
     public static DOSFile[] Files = new DOSFile[DOS_FILES];
     public static DOSDrive[] Drives = new DOSDrive[DOS_DRIVES];
 
-    public static byte getDefaultDrive() {
+    public static int getDefaultDrive() {
         // return DOS_SDA(DOS_SDA_SEG,DOS_SDA_OFS).GetDrive();
-        byte d = (new DOSSDA(DOS_SDA_SEG, DOS_SDA_OFS)).getDrive();
+        int d = (new DOSSDA(DOS_SDA_SEG, DOS_SDA_OFS)).getDrive();
         if (d != DOS.CurrentDrive)
             Log.logging(Log.LogTypes.DOSMISC, Log.LogServerities.Error,
                     "SDA drive %d not the same as dos.current_drive %d", d, DOS.CurrentDrive);
@@ -2598,8 +2595,8 @@ public final class DOSMain {
         // if (drive<=DOS_DRIVES && ((drive<2) || Drives[drive]))
         // DOS_SDA(DOS_SDA_SEG,DOS_SDA_OFS).SetDrive(drive);
         if (drive <= DOS_DRIVES && ((drive < 2) || Drives[drive] != null)) {
-            DOS.CurrentDrive = (byte) drive;
-            new DOSSDA(DOS_SDA_SEG, DOS_SDA_OFS).setDrive((byte) drive);
+            DOS.CurrentDrive = drive;
+            new DOSSDA(DOS_SDA_SEG, DOS_SDA_OFS).setDrive(drive);
         }
     }
 
@@ -2702,7 +2699,7 @@ public final class DOSMain {
 
         /* Now parse the new file name to make the final filename */
         if (upname.charAt(0) != '\\') {
-            fullname.append(Drives[drive].curdir);
+            fullname.append(Drives[drive].curDir);
         } else {
             fullname.setLength(0);
         }
@@ -2814,7 +2811,7 @@ public final class DOSMain {
         return true;
     }
 
-    public static String getCurrentDir(byte drive) {
+    public static String getCurrentDir(int drive) {
         if (drive == 0)
             drive = getDefaultDrive();
         else
@@ -2823,14 +2820,10 @@ public final class DOSMain {
             setError(DOSERR_INVALID_DRIVE);
             return null;
         }
-        return Drives[drive].curdir;
+        return Drives[drive].curDir;
     }
 
-    public static String getCurrentDir(int drive) {
-        return getCurrentDir((byte) drive);
-    }
-
-    public static boolean getCurrentDir(byte drive, CStringPt buffer) {
+    public static boolean getCurrentDir(int drive, CStringPt buffer) {
         if (drive == 0)
             drive = getDefaultDrive();
         else
@@ -2839,13 +2832,8 @@ public final class DOSMain {
             setError(DOSERR_INVALID_DRIVE);
             return false;
         }
-        CStringPt.copy(Drives[drive].curdir, buffer);
+        CStringPt.copy(Drives[drive].curDir, buffer);
         return true;
-    }
-
-    public static boolean getCurrentDir(int drive, CStringPt buffer) {
-        return getCurrentDir((byte) drive, buffer);
-
     }
 
     public static boolean changeDir(String dir) {
@@ -2854,7 +2842,7 @@ public final class DOSMain {
         String fullDir = returnedFullName;
         int drive = returnedFullNameDrive;
         if (Drives[drive].testDir(fullDir)) {
-            Drives[drive].curdir = fullDir;
+            Drives[drive].curDir = fullDir;
             return true;
         } else {
             setError(DOSERR_PATH_NOT_FOUND);
@@ -2901,7 +2889,7 @@ public final class DOSMain {
         /* See if it's current directory */
         CStringPt currdir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         currdir.set(0, (char) 0);
-        getCurrentDir((byte) (drive + 1), currdir);
+        getCurrentDir(drive + 1, currdir);
         if (currdir.equalsIgnoreCase(fullDir)) {
             setError(DOSERR_REMOVE_CURRENT_DIRECTORY);
             return false;
@@ -3012,7 +3000,7 @@ public final class DOSMain {
 
     public static boolean findNext() {
         DOSDTA dta = new DOSDTA(DOS.getDTA());
-        byte i = dta.getSearchDrive();
+        int i = dta.getSearchDrive();
         if (i >= DOS_DRIVES || Drives[i] == null) {
             /* Corrupt search. */
             Log.logging(Log.LogTypes.FILES, Log.LogServerities.Error, "Corrupt search!!!!");
@@ -3672,20 +3660,14 @@ public final class DOSMain {
     public static final byte CommandTailOffCount = 0;
     public static final byte CommandTailOffBuffer = 1;
 
-    public static class FCBParseNameParamRef {
-        public byte Change;
+    public static int returnedFCBParseNameChange;
 
-        public FCBParseNameParamRef(byte change) {
-            this.Change = change;
-        }
-    }
-
-    public static byte FCBParseName(int seg, int offset, int parser, CStringPt str,
-            FCBParseNameParamRef changeRef) {
-        int savefcb = 1, checkext = 2;
+    // (parsed idx - str idx) -> returnedFCBParseNameChange
+    public static int FCBParseName(int seg, int offset, int parser, CStringPt str) {
+        int saveFCB = 1, checkext = 2;
 
         CStringPt string_begin = str;
-        byte ret = 0;
+        int ret = 0;
         if ((parser & PARSE_DFLT_DRIVE) == 0) {
             // default drive forced, this intentionally invalidates an extended FCB
             Memory.writeB(Memory.physMake(seg, offset), 0);
@@ -3697,14 +3679,14 @@ public final class DOSMain {
         char fill = ' ';
         /* First get the old data from the fcb */
         // char[] fcb_name = new char[Size_FCB_total];
-        CStringPt fcb_namePt = CStringPt.create(Size_FCB_total);
+        CStringPt fcbNamePt = CStringPt.create(Size_FCB_total);
         /* Get the old information from the previous fcb */
-        fcb.getName(fcb_namePt);
-        fcb_namePt.set(Off_FCB_drive + 0,
-                (char) (fcb_namePt.get(Off_FCB_drive + 0) - (char) ('A' - 1)));
-        fcb_namePt.set(Off_FCB_drive + 1, (char) 0);
-        fcb_namePt.set(Off_FCB_name + 8, (char) 0);
-        fcb_namePt.set(Off_FCB_ext + 3, (char) 0);
+        fcb.getName(fcbNamePt);
+        fcbNamePt.set(Off_FCB_drive + 0,
+                (char) (fcbNamePt.get(Off_FCB_drive + 0) - (char) ('A' - 1)));
+        fcbNamePt.set(Off_FCB_drive + 1, (char) 0);
+        fcbNamePt.set(Off_FCB_name + 8, (char) 0);
+        fcbNamePt.set(Off_FCB_ext + 3, (char) 0);
         /* Strip of the leading sepetaror */
         if ((parser & PARSE_SEP_STOP) != 0 && str.get() != 0) { // ignore leading seperator
             if (ArrayHelper.indexOf(FCB_SEP, str.get()) >= 0)
@@ -3716,18 +3698,18 @@ public final class DOSMain {
             str.movePtToR1();
         /* Check for a drive */
         if (str.get(1) == ':') {
-            fcb_namePt.set(Off_FCB_drive + 0, (char) 0);
+            fcbNamePt.set(Off_FCB_drive + 0, (char) 0);
             hasdrive = true;
             if (Character.isLetter(str.get(0))
                     && Drives[Character.toUpperCase(str.get(0)) - 'A'] != null) {
-                fcb_namePt.set(Off_FCB_drive + 0,
+                fcbNamePt.set(Off_FCB_drive + 0,
                         (char) (Character.toUpperCase(str.get(0)) - 'A' + 1));
             } else
-                ret = (byte) 0xff;
+                ret = 0xff;
             str.moveR(2);
         }
 
-        int nextStep = savefcb;// default
+        int nextStep = saveFCB;// default
         while (true) {
             /* Special checks for . and .. */
             if (str.get(0) == '.') {
@@ -3735,18 +3717,18 @@ public final class DOSMain {
                 if (str.get(0) == 0) {
                     hasname = true;
                     ret = PARSE_RET_NOWILD;
-                    CStringPt.copy(".       ", CStringPt.clone(fcb_namePt, Off_FCB_name));
+                    CStringPt.copy(".       ", CStringPt.clone(fcbNamePt, Off_FCB_name));
                     // goto savefcb;
-                    nextStep = savefcb;
+                    nextStep = saveFCB;
                     break;
                 }
                 if (str.get(1) == '.' && str.get(1) == 0) {
                     str.movePtToR1();
                     hasname = true;
                     ret = PARSE_RET_NOWILD;
-                    CStringPt.copy("..      ", CStringPt.clone(fcb_namePt, Off_FCB_name));
+                    CStringPt.copy("..      ", CStringPt.clone(fcbNamePt, Off_FCB_name));
                     // goto savefcb;
-                    nextStep = savefcb;
+                    nextStep = saveFCB;
                     break;
                 }
                 // goto checkext;
@@ -3762,16 +3744,16 @@ public final class DOSMain {
                 if (!finished) {
                     if (str.get(0) == '*') {
                         fill = '?';
-                        fcb_namePt.set(Off_FCB_name + index, '?');
+                        fcbNamePt.set(Off_FCB_name + index, '?');
                         if (ret == 0)
                             ret = 1;
                         finished = true;
                     } else if (str.get(0) == '?') {
-                        fcb_namePt.set(Off_FCB_name + index, '?');
+                        fcbNamePt.set(Off_FCB_name + index, '?');
                         if (ret == 0)
                             ret = 1;
                     } else if (isValid(str.get(0))) {
-                        fcb_namePt.set(Off_FCB_name + index,
+                        fcbNamePt.set(Off_FCB_name + index,
                                 (char) (Character.toUpperCase(str.get(0))));
                     } else {
                         finished = true;
@@ -3779,13 +3761,13 @@ public final class DOSMain {
                     }
                     str.movePtToR1();
                 } else {
-                    fcb_namePt.set(Off_FCB_name + index, fill);
+                    fcbNamePt.set(Off_FCB_name + index, fill);
                 }
                 index++;
             }
             if (!(str.get(0) == '.')) {
                 // goto savefcb;
-                nextStep = savefcb;
+                nextStep = saveFCB;
                 break;
             }
             str.movePtToR1();
@@ -3803,14 +3785,14 @@ public final class DOSMain {
                 if (!finished) {
                     if (str.get(0) == '*') {
                         fill = '?';
-                        fcb_namePt.set(Off_FCB_ext + index, '?');
+                        fcbNamePt.set(Off_FCB_ext + index, '?');
                         finished = true;
                     } else if (str.get(0) == '?') {
-                        fcb_namePt.set(Off_FCB_ext + index, '?');
+                        fcbNamePt.set(Off_FCB_ext + index, '?');
                         if (ret == 0)
                             ret = 1;
                     } else if (isValid(str.get(0))) {
-                        fcb_namePt.set(Off_FCB_ext + index,
+                        fcbNamePt.set(Off_FCB_ext + index,
                                 (char) (Character.toUpperCase(str.get(0))));
                     } else {
                         finished = true;
@@ -3818,24 +3800,24 @@ public final class DOSMain {
                     }
                     str.movePtToR1();
                 } else {
-                    fcb_namePt.set(Off_FCB_ext + index, fill);
+                    fcbNamePt.set(Off_FCB_ext + index, fill);
                 }
                 index++;
             }
             nextStep++;
         }
         // savefcb:
-        if (nextStep == savefcb) {
+        if (nextStep == saveFCB) {
             if (!hasdrive & (parser & PARSE_DFLT_DRIVE) == 0)
-                fcb_namePt.set(Off_FCB_drive + 0, (char) 0);
+                fcbNamePt.set(Off_FCB_drive + 0, (char) 0);
             if (!hasname & (parser & PARSE_BLNK_FNAME) == 0)
-                CStringPt.copy("        ", CStringPt.clone(fcb_namePt, Off_FCB_name));
+                CStringPt.copy("        ", CStringPt.clone(fcbNamePt, Off_FCB_name));
             if (!hasext & (parser & PARSE_BLNK_FEXT) == 0)
-                CStringPt.copy("   ", CStringPt.clone(fcb_namePt, Off_FCB_ext));
-            fcb.setName(0xff & fcb_namePt.get(Off_FCB_drive + 0),
-                    CStringPt.clone(fcb_namePt, Off_FCB_name),
-                    CStringPt.clone(fcb_namePt, Off_FCB_ext));
-            changeRef.Change = (byte) CStringPt.diff(str, string_begin);
+                CStringPt.copy("   ", CStringPt.clone(fcbNamePt, Off_FCB_ext));
+            fcb.setName(0xff & fcbNamePt.get(Off_FCB_drive + 0),
+                    CStringPt.clone(fcbNamePt, Off_FCB_name),
+                    CStringPt.clone(fcbNamePt, Off_FCB_ext));
+            returnedFCBParseNameChange = CStringPt.diff(str, string_begin);
         }
         return ret;
     }
@@ -3885,7 +3867,7 @@ public final class DOSMain {
         fcb.getName(shortname);
         if (!createFile(shortname.toString(), DOSSystem.DOS_ATTR_ARCHIVE))
             return false;
-        fcb.openFile((byte) returnFileHandle);
+        fcb.openFile(returnFileHandle);
         return true;
     }
 
@@ -3903,7 +3885,7 @@ public final class DOSMain {
         int drive = returnedFullNameDrive;
 
         /* Check, if file is already opened */
-        for (byte i = 0; i < DOS_FILES; i++) {
+        for (int i = 0; i < DOS_FILES; i++) {
             DOSPSP psp = new DOSPSP(DOS.getPSP());
             if (Files[i] != null && Files[i].isOpen() && Files[i].isName(fullName)) {
                 handle = psp.findEntryByHandle(i);
@@ -3913,14 +3895,14 @@ public final class DOSMain {
                             "DOS: File %s is opened but has no psp entry.", shortname.toString());
                     return false;
                 }
-                fcb.openFile((byte) handle);
+                fcb.openFile(handle);
                 return true;
             }
         }
-        if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READWRITE))
+        if (!openFile(shortname.toString(), DOSSystem.OPEN_READWRITE))
             return false;
         handle = returnFileHandle;
-        fcb.openFile((byte) handle);
+        fcb.openFile(handle);
         return true;
     }
 
@@ -3929,7 +3911,7 @@ public final class DOSMain {
         DOSFCB fcb = new DOSFCB(seg, offset);
         if (!fcb.valid())
             return false;
-        byte fhandle = fcb.closeFile();
+        int fhandle = fcb.closeFile();
         closeFile(fhandle);
         return true;
     }
@@ -4178,7 +4160,7 @@ public final class DOSMain {
         int recSize = 0;
         DOSFCB fcb = new DOSFCB(seg, offset);
         fcb.getName(shortname);
-        if (!openFile(shortname.toString(), (byte) DOSSystem.OPEN_READ))
+        if (!openFile(shortname.toString(), DOSSystem.OPEN_READ))
             return false;
         entry = 0xffff & returnFileHandle;
         handle = realHandle(entry);
@@ -4263,7 +4245,7 @@ public final class DOSMain {
         return true;
     }
 
-    public static boolean setDrive(byte drive) {
+    public static boolean setDrive(int drive) {
         if (Drives[drive] != null) {
             setDefaultDrive(drive);
             return true;
@@ -4729,7 +4711,7 @@ public final class DOSMain {
                     /* MCB after PCJr graphics memory region is still free */
                     if (pspSeg + maxSize == 0x17ff) {
                         DOSMCB cmcb = new DOSMCB(pspSeg - 1);
-                        cmcb.setType((byte) 0x5a); // last block
+                        cmcb.setType(0x5a); // last block
                     }
                 }
             }
@@ -4887,8 +4869,8 @@ public final class DOSMain {
             int index = 0;
 
             int nmSz = name.length();
-            for (int name_idx = 0; name_idx < nmSz; name_idx++) {
-                char chr = name.charAt(name_idx);
+            for (int nameIdx = 0; nameIdx < nmSz; nameIdx++) {
+                char chr = name.charAt(nameIdx);
                 switch (chr) {
                     case ':':
                     case '\\':
@@ -4903,7 +4885,7 @@ public final class DOSMain {
             }
             index = 0;
             while (index < 8) {
-                if (stripname.get(index) == (byte) '.')
+                if (stripname.get(index) == '.')
                     break;
                 if (stripname.get(index) == 0)
                     break;

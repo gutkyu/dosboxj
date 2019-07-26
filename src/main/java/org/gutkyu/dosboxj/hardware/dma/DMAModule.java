@@ -14,9 +14,9 @@ public final class DMAModule extends ModuleBase {
     private DMAModule(Section configuration) {
         super(configuration);
         int i;
-        dmaControllers[0] = new DMAController((byte) 0);
+        dmaControllers[0] = new DMAController(0);
         if (DOSBox.isEGAVGAArch())
-            dmaControllers[1] = new DMAController((byte) 1);
+            dmaControllers[1] = new DMAController(1);
         else
             dmaControllers[1] = null;
 
@@ -173,22 +173,22 @@ public final class DMAModule extends ModuleBase {
             switch (port) {
                 /* write DMA page register */
                 case 0x81:
-                    getDMAChannel(2).setPage((byte) val);
+                    getDMAChannel(2).setPage(val);
                     break;
                 case 0x82:
-                    getDMAChannel(3).setPage((byte) val);
+                    getDMAChannel(3).setPage(val);
                     break;
                 case 0x83:
-                    getDMAChannel(1).setPage((byte) val);
+                    getDMAChannel(1).setPage(val);
                     break;
                 case 0x89:
-                    getDMAChannel(6).setPage((byte) val);
+                    getDMAChannel(6).setPage(val);
                     break;
                 case 0x8a:
-                    getDMAChannel(7).setPage((byte) val);
+                    getDMAChannel(7).setPage(val);
                     break;
                 case 0x8b:
-                    getDMAChannel(5).setPage((byte) val);
+                    getDMAChannel(5).setPage(val);
                     break;
             }
         }

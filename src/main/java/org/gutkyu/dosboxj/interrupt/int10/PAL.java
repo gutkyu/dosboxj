@@ -63,24 +63,22 @@ final class PAL {
         IO.read(Memory.realReadW(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CRTC_ADDRESS) + 6);
     }
 
-    private static void writeTandyACTL(byte creg, byte val) {
-        IO.write(VGAREG_TDY_ADDRESS, creg);
-        if (DOSBox.Machine == DOSBox.MachineType.TANDY)
-            IO.write(VGAREG_TDY_DATA, val);
-        else
-            IO.write(VGAREG_PCJR_DATA, val);
-    }
-
+    // (uint8,uint8)
     private static void writeTandyACTL(int creg, int val) {
-        writeTandyACTL((byte) creg, (byte) val);
+        IO.write(VGAREG_TDY_ADDRESS, 0xff & creg);
+        if (DOSBox.Machine == DOSBox.MachineType.TANDY)
+            IO.write(VGAREG_TDY_DATA, 0xff & val);
+        else
+            IO.write(VGAREG_PCJR_DATA, 0xff & val);
     }
 
-    public static void setSinglePaletteRegister(byte reg, byte val) {
+    // (uint8,uint8)
+    public static void setSinglePaletteRegister(int reg, int val) {
         switch (DOSBox.Machine) {
             case TANDY:
             case PCJR:
                 IO.read(VGAREG_TDY_RESET);
-                writeTandyACTL((byte) (reg + 0x10), val);
+                writeTandyACTL(reg + 0x10, val);
                 break;
             case EGA:
             case VGA:
@@ -94,10 +92,6 @@ final class PAL {
                 IO.write(VGAREG_ACTL_ADDRESS, 32); // Enable output and protect palette
                 break;
         }
-    }
-
-    public static void setSinglePaletteRegister(int reg, int val) {
-        setSinglePaletteRegister((byte) reg, (byte) val);
     }
 
     public static void setOverscanBorderColor(int val) {
@@ -124,7 +118,7 @@ final class PAL {
                 IO.read(VGAREG_TDY_RESET);
                 // First the colors
                 for (byte i = 0; i < 0x10; i++) {
-                    writeTandyACTL((byte) (i + 0x10), Memory.readB(data));
+                    writeTandyACTL(i + 0x10, Memory.readB(data));
                     data++;
                 }
                 // Then the border
@@ -168,8 +162,7 @@ final class PAL {
         IO.write(VGAREG_ACTL_ADDRESS, 32); // Enable output and protect palette
 
         if (state <= 1) {
-            byte msrval =
-                    (byte) (Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_MSR) & 0xdf);
+            int msrval = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_MSR) & 0xdf;
             if (state != 0)
                 msrval |= 0x20;
             Memory.realWriteB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_MSR, msrval);
@@ -355,7 +348,7 @@ final class PAL {
         else if (DOSBox.isEGAVGAArch()) {
             if (INT10Mode.CurMode.Mode <= 3) // Maybe even skip the total function!
                 return;
-            val = (byte) ((temp & 0x10) | 2 | val);
+            val = 0xff & ((temp & 0x10) | 2 | val);
             setSinglePaletteRegister(1, val);
             val += 2;
             setSinglePaletteRegister(2, val);

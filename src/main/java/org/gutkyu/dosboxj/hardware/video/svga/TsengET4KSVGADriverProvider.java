@@ -381,13 +381,13 @@ public final class TsengET4KSVGADriverProvider {
         // Reinterpret hor_overflow. Curiously, three bits out of four are
         // in the same places. Input has hdispend (not supported), output
         // has CRTC offset (also not supported)
-        byte et4kHorOverflow = (byte) ((modeData.HOverflow & 0x01) | (modeData.HOverflow & 0x04)
+        int et4kHorOverflow = 0xff & ((modeData.HOverflow & 0x01) | (modeData.HOverflow & 0x04)
                 | (modeData.HOverflow & 0x10));
         IO.write(crtc_base, 0x3f);
         IO.write(crtc_base + 1, et4kHorOverflow);
 
         // Reinterpret ver_overflow
-        byte et4kVerOverflow = (byte) (((modeData.VOverflow & 0x01) << 1) | // vtotal10
+        int et4kVerOverflow = 0xff & (((modeData.VOverflow & 0x01) << 1) | // vtotal10
                 ((modeData.VOverflow & 0x02) << 1) | // vdispend10
                 ((modeData.VOverflow & 0x04) >>> 2) | // vbstart10
                 ((modeData.VOverflow & 0x10) >>> 1) | // vretrace10 (tseng has vsync start?)
@@ -407,8 +407,8 @@ public final class TsengET4KSVGADriverProvider {
         IO.write(crtc_base, 0x36);
         IO.write(crtc_base + 1, 0);
         IO.write(crtc_base, 0x37);
-        IO.write(crtc_base + 1, (byte) (0x0c
-                | (vga.VMemSize == 1024 * 1024 ? 3 : vga.VMemSize == 512 * 1024 ? 2 : 1)));
+        IO.write(crtc_base + 1,
+                0x0c | (vga.VMemSize == 1024 * 1024 ? 3 : vga.VMemSize == 512 * 1024 ? 2 : 1));
         // Clear ext SEQ
         IO.write(0x3c4, 0x06);
         IO.write(0x3c5, 0);

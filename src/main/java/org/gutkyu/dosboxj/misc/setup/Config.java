@@ -17,14 +17,14 @@ public final class Config {
     public CommandLine CmdLine;
     private LinkedList<Section> SectionList = new LinkedList<Section>();
 
-    private DOSAction _startFunction;
-    private boolean _secureMode; // Sandbox mode
+    private DOSAction startFunction;
+    private boolean secureMode; // Sandbox mode
 
     private DOSAction1<Section> initFunction;
 
     public Config(CommandLine cmd) {
         CmdLine = cmd;
-        _secureMode = false;
+        secureMode = false;
     }
 
     public SectionLine addSectionLine(String name, DOSAction1<Section> initFunction) {
@@ -73,7 +73,7 @@ public final class Config {
 
 
     public void setStartUp(DOSAction fn) {
-        _startFunction = fn;
+        startFunction = fn;
     }
 
     public void init() {
@@ -89,7 +89,7 @@ public final class Config {
     }// 원 소스에는 구현이 없다
 
     public void startup() {
-        _startFunction.run();
+        startFunction.run();
     }
 
     public boolean printConfig(String configFileName) {
@@ -272,11 +272,11 @@ public final class Config {
         // }
     }
 
-    public boolean secureMode() {
-        return _secureMode;
+    public boolean getSecureMode() {
+        return secureMode;
     }
 
     public void switchToSecureMode() {
-        _secureMode = true;
+        secureMode = true;
     }// can't be undone
 }

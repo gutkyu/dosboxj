@@ -19,7 +19,7 @@ public final class MEM extends Program {
 
         int umbStart = DOSMain.DOSInfoBlock.getStartOfUMBChain();
         int umbFlag = DOSMain.DOSInfoBlock.getUMBChainState();
-        byte oldMemstrat = (byte) (DOSMain.getMemAllocStrategy() & 0xff);
+        int oldMemstrat = DOSMain.getMemAllocStrategy() & 0xff;// uint8
         if (umbStart != 0xffff) {
             if ((umbFlag & 1) == 1)
                 DOSMain.linkUMBsToMemChain(0);

@@ -184,7 +184,7 @@ public class DOSDriveCache implements Disposable {
             int len = work.length();
 
             if ((work.get(len - 1) == Cross.FILESPLIT) && (len >= 2)
-                    && (work.get(len - 2) != (byte) ':')) {
+                    && (work.get(len - 2) != ':')) {
 
                 work.set(len - 1, (char) 0); // Remove trailing slashes except when in root
             }

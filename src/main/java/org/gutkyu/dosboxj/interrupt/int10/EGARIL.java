@@ -20,11 +20,10 @@ final class EGARIL {
                     Memory.realReadB(INT10.BIOSMEM_SEG, (INT10.BIOSMEM_CURRENT_MODE + i)));
         }
         /* Second area */
-        Memory.writeB(save + 0x22,
-                Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_ROWS) + 1);
+        Memory.writeB(save + 0x22, Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_ROWS) + 1);
         for (i = 1; i < 3; i++) {
             Memory.writeB(save + 0x22 + i,
-                    Memory.realReadB(INT10.BIOSMEM_SEG, (byte) (INT10.BIOSMEM_NB_ROWS + i)));
+                    Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_NB_ROWS + i));
         }
         /* Zero out rest of block */
         for (i = 0x25; i < 0x40; i++)
@@ -38,8 +37,8 @@ final class EGARIL {
         if (svstable != 0) {
             int dcctable = (int) Memory.realReadD(Memory.realSeg(svstable),
                     Memory.realOff(svstable) + 0x02);
-            byte entries = (byte) Memory.realReadB(Memory.realSeg(dcctable),
-                    Memory.realOff(dcctable) + 0x00);
+            int entries =
+                    Memory.realReadB(Memory.realSeg(dcctable), Memory.realOff(dcctable) + 0x00);
             int idx = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_DCC_INDEX);
             // check if index within range
             if (idx < entries) {
@@ -53,28 +52,28 @@ final class EGARIL {
         }
         Memory.writeB(save + 0x25, dccode);
 
-        short col_count = 0;
+        short colCount = 0;
         switch (INT10Mode.CurMode.Type) {
             case TEXT:
                 if (INT10Mode.CurMode.Mode == 0x7)
-                    col_count = 1;
+                    colCount = 1;
                 else
-                    col_count = 16;
+                    colCount = 16;
                 break;
             case CGA2:
-                col_count = 2;
+                colCount = 2;
                 break;
             case CGA4:
-                col_count = 4;
+                colCount = 4;
                 break;
             case EGA:
                 if (INT10Mode.CurMode.Mode == 0x11 || INT10Mode.CurMode.Mode == 0x0f)
-                    col_count = 2;
+                    colCount = 2;
                 else
-                    col_count = 16;
+                    colCount = 16;
                 break;
             case VGA:
-                col_count = 256;
+                colCount = 256;
                 break;
             default:
                 Log.logging(Log.LogTypes.INT10, Log.LogServerities.Error,
@@ -82,7 +81,7 @@ final class EGARIL {
                 break;
         }
         /* Colour count */
-        Memory.writeW(save + 0x27, col_count);
+        Memory.writeW(save + 0x27, colCount);
         /* Page count */
         Memory.writeB(save + 0x29, INT10Mode.CurMode.PTotal);
         /* scan lines */

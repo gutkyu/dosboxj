@@ -30,7 +30,7 @@ public final class ImgMount extends Program {
         /*
          * In secure mode don't allow people to change imgmount points. Neither mount nor unmount
          */
-        if (DOSBox.Control.secureMode()) {
+        if (DOSBox.Control.getSecureMode()) {
             writeOut(Message.get("PROGRAM_CONFIG_SECURE_DISALLOW"));
             return;
         }
@@ -53,7 +53,7 @@ public final class ImgMount extends Program {
                     case 0:
                         DOSMain.Drives[iDrive] = null;
                         if (iDrive == DOSMain.getDefaultDrive())
-                            DOSMain.setDrive((byte) ('Z' - 'A'));
+                            DOSMain.setDrive('Z' - 'A');
                         writeOut(Message.get("PROGRAM_MOUNT_UMOUNT_SUCCESS"), umount.charAt(0));
                         break;
                     case 1:
@@ -76,19 +76,19 @@ public final class ImgMount extends Program {
         fstype = Cmd.findString("-fs", true);
         if (type == "cdrom")
             type = "iso"; // Tiny hack for people who like to type -t cdrom
-        byte mediaId;
+        int mediaId;
         if (type == "floppy" || type == "hdd" || type == "iso") {
             int[] sizes = new int[4];
             boolean imgsizedetect = false;
 
             String strSize = "";
-            mediaId = (byte) 0xF8;
+            mediaId = 0xF8;
 
             if (type == "floppy") {
-                mediaId = (byte) 0xF0;
+                mediaId = 0xF0;
             } else if (type == "iso") {
                 strSize = "650,127,16513,1700";
-                mediaId = (byte) 0xF8;
+                mediaId = 0xF8;
                 fstype = "iso";
             }
             strSize = Cmd.findString("-size", true);

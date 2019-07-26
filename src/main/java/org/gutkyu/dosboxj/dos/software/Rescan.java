@@ -12,7 +12,7 @@ public final class Rescan extends Program {
 
     @Override
     public void run() { // Get current drive
-        byte drive = DOSMain.getDefaultDrive();
+        int drive = DOSMain.getDefaultDrive();
         if (DOSMain.Drives[drive] != null) {
             DOSMain.Drives[drive].emptyCache();
             writeOut(Message.get("PROGRAM_RESCAN_SUCCESS"));

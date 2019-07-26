@@ -125,7 +125,7 @@ public final class EMS {
 
     }
 
-    private static final int ByteSizeOfemm_mappings = (byte) (EMM_MAX_PHYS * EMMMapping.Size);
+    private static final int ByteSizeOfEMMMappings = 0xff & (EMM_MAX_PHYS * EMMMapping.Size);
 
     public static EMMHandle getSystemHandle() {
         return EMMHandles[EMM_SYSTEM_HANDLE];
@@ -136,18 +136,18 @@ public final class EMS {
         public short EMSHandle;
         public int PMInterface;
         public int PrivateAREA;
-        public byte pic1Remapping, pic2Remapping;
+        public int pic1Remapping, pic2Remapping;// uint8
     }
 
     public static VCPI vcpi = new VCPI();
 
     private static class MoveRegion {
         public int bytes;
-        public byte SrcType;
+        public int SrcType;// int8
         public int SrcHandle;// uint16
         public int SrcOffset;// uint16
         public int SrcPageSeg;// uint16
-        public byte DestType;
+        public int DestType;// int8
         public int DestHandle;// uint16
         public int DestOffset;// uint16
         public int DestPageSeg;// uint16
@@ -174,21 +174,21 @@ public final class EMS {
 
     // private static byte EMMAllocateMemory(short pages, RefU16Ret refDhandle,boolean
     // canAllocateZPages)
-    private static byte EMMAllocateMemory(int pages, boolean canAllocateZPages) {
+    private static int EMMAllocateMemory(int pages, boolean canAllocateZPages) {
         /* Check for 0 page allocation */
         if (pages == 0) {
             if (!canAllocateZPages)
-                return (byte) EMM_ZERO_PAGES;
+                return EMM_ZERO_PAGES;
         }
         /* Check for enough free pages */
         if ((Memory.freeTotal() / 4) < pages) {
-            return (byte) EMM_OUT_OF_LOG;
+            return EMM_OUT_OF_LOG;
         }
         short handle = 1;
         /* Check for a free handle */
         while (EMMHandles[handle].Pages != NULL_HANDLE) {
             if (++handle >= EMM_MAX_HANDLES) {
-                return (byte) EMM_OUT_OF_HANDLES;
+                return EMM_OUT_OF_HANDLES;
             }
         }
         int mem = 0;
@@ -201,14 +201,14 @@ public final class EMS {
         EMMHandles[handle].Mem = mem;
         /* Change handle only if there is no error. */
         EMMAllocatedMemoryHandle = handle;
-        return (byte) EMM_NO_ERROR;
+        return EMM_NO_ERROR;
     }
 
     // byte(uint16)
-    public static byte EMMAllocateSystemHandle(int pages) {
+    public static int EMMAllocateSystemHandle(int pages) {
         /* Check for enough free pages */
         if ((Memory.freeTotal() / 4) < pages) {
-            return (byte) EMM_OUT_OF_LOG;
+            return EMM_OUT_OF_LOG;
         }
         short handle = EMM_SYSTEM_HANDLE; // emm system handle (reserved for OS usage)
         /* Release memory if already allocated */
@@ -220,7 +220,7 @@ public final class EMS {
             Support.exceptionExit("EMS:System handle memory allocation failure");
         EMMHandles[handle].Pages = pages;
         EMMHandles[handle].Mem = mem;
-        return (byte) EMM_NO_ERROR;
+        return EMM_NO_ERROR;
     }
 
     // private static byte EMMReallocatePages(short handle, short pages) {
@@ -245,12 +245,12 @@ public final class EMS {
     }
 
     // int, short, short
-    private static byte EMMMapPage(int phys_page, int handle, int log_page) {
+    private static int EMMMapPage(int phys_page, int handle, int log_page) {
         // Log.LOG_MSG("EMS MapPage handle %d phys %d log
         // %d",handle,phys_page,log_page);
         /* Check for too high physical page */
         if (phys_page >= EMM_MAX_PHYS)
-            return (byte) EMM_ILL_PHYS;
+            return EMM_ILL_PHYS;
 
         /* unmapping doesn't need valid handle (as handle isn't used) */
         if (log_page == NULL_PAGE) {
@@ -265,7 +265,7 @@ public final class EMS {
         }
         /* Check for valid handle */
         if (!validHandle(handle))
-            return (byte) EMM_INVALID_HANDLE;
+            return EMM_INVALID_HANDLE;
 
         if (log_page < EMMHandles[handle].Pages) {
             /* Mapping it is */
@@ -281,12 +281,12 @@ public final class EMS {
             return EMM_NO_ERROR;
         } else {
             /* Illegal logical page it is */
-            return (byte) EMM_LOG_OUT_RANGE;
+            return EMM_LOG_OUT_RANGE;
         }
     }
 
     // int, short, short
-    private static byte EMMMapSegment(int segment, int handle, int log_page) {
+    private static int EMMMapSegment(int segment, int handle, int logPage) {
         // Log.LOG_MSG("EMS MapSegment handle %d segment %d log
         // %d",handle,segment,log_page);
 
@@ -295,7 +295,7 @@ public final class EMS {
             int tphysPage = (segment - EMM_PAGEFRAME) / (0x1000 / EMM_MAX_PHYS);
 
             /* unmapping doesn't need valid handle (as handle isn't used) */
-            if (log_page == NULL_PAGE) {
+            if (logPage == NULL_PAGE) {
                 /* Unmapping */
                 if ((tphysPage >= 0) && (tphysPage < EMM_MAX_PHYS)) {
                     EMMmappings[tphysPage].handle = NULL_HANDLE;
@@ -311,19 +311,19 @@ public final class EMS {
             }
             /* Check for valid handle */
             if (!validHandle(handle))
-                return (byte) EMM_INVALID_HANDLE;
+                return EMM_INVALID_HANDLE;
 
-            if (log_page < EMMHandles[handle].Pages) {
+            if (logPage < EMMHandles[handle].Pages) {
                 /* Mapping it is */
                 if ((tphysPage >= 0) && (tphysPage < EMM_MAX_PHYS)) {
                     EMMmappings[tphysPage].handle = handle;
-                    EMMmappings[tphysPage].page = log_page;
+                    EMMmappings[tphysPage].page = logPage;
                 } else {
                     EMMSegmentMappings[segment >>> 10].handle = handle;
-                    EMMSegmentMappings[segment >>> 10].page = log_page;
+                    EMMSegmentMappings[segment >>> 10].page = logPage;
                 }
 
-                int memh = Memory.nextHandleAt(EMMHandles[handle].Mem, log_page * 4);;
+                int memh = Memory.nextHandleAt(EMMHandles[handle].Mem, logPage * 4);;
                 for (int i = 0; i < 4; i++) {
                     Paging.mapPage(segment * 16 / 4096 + i, memh);
                     memh = Memory.nextHandle(memh);
@@ -332,18 +332,18 @@ public final class EMS {
                 return EMM_NO_ERROR;
             } else {
                 /* Illegal logical page it is */
-                return (byte) EMM_LOG_OUT_RANGE;
+                return EMM_LOG_OUT_RANGE;
             }
         }
 
-        return (byte) EMM_ILL_PHYS;
+        return EMM_ILL_PHYS;
     }
 
     // private static byte EMMReleaseMemory(short handle) {
-    private static byte EMMReleaseMemory(int handle) {
+    private static int EMMReleaseMemory(int handle) {
         /* Check for valid handle */
         if (!validHandle(handle))
-            return (byte) EMM_INVALID_HANDLE;
+            return EMM_INVALID_HANDLE;
 
         // should check for saved_page_map flag here, returning an error if it's true
         // as apps are required to restore the pagemap beforehand; to be checked
@@ -384,7 +384,7 @@ public final class EMS {
     }
 
     private static byte EMMRestoreMappingTable() {
-        byte result;
+        int result = 0;
         /* Move through the mappings table and setup mapping accordingly */
         for (int i = 0; i < 0x40; i++) {
             /* Skip the pageframe */
@@ -434,7 +434,7 @@ public final class EMS {
         return EMM_NO_ERROR;
     }
 
-    private static byte EMMPartialPageMapping() {
+    private static int EMMPartialPageMapping() {
         int list, data;
         int count;
         switch (Register.getRegAL()) {
@@ -461,7 +461,7 @@ public final class EMS {
                         Memory.blockWrite(data, EMMSegmentMappings[segment >>> 10]);
                         data += EMMMapping.Size;
                     } else {
-                        return (byte) EMM_ILL_PHYS;
+                        return EMM_ILL_PHYS;
                     }
                 }
                 break;
@@ -479,25 +479,25 @@ public final class EMS {
                             || ((segment >= 0xa000) && (segment < 0xb000))) {
                         Memory.blockRead(data, EMMSegmentMappings, segment >>> 10, 1);
                     } else {
-                        return (byte) EMM_ILL_PHYS;
+                        return EMM_ILL_PHYS;
                     }
                     data += EMMMapping.Size;
                 }
                 return EMMRestoreMappingTable();
             // break;
             case 0x02: /* Get Partial Page Map Array Size */
-                Register.setRegAL((byte) (2 + Register.getRegBX() * (2 + EMMMapping.Size)));
+                Register.setRegAL(0xff & (2 + Register.getRegBX() * (2 + EMMMapping.Size)));
                 break;
             default:
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                         "EMS:Call %2X Subfunction %2X not supported", Register.getRegAH(),
                         Register.getRegAL());
-                return (byte) EMM_FUNC_NOSUP;
+                return EMM_FUNC_NOSUP;
         }
         return EMM_NO_ERROR;
     }
 
-    private static byte searchHandleName() {
+    private static int searchHandleName() {
         CStringPt name = CStringPt.create(9);
         short handle = 0;
         int data;
@@ -526,7 +526,7 @@ public final class EMS {
                         }
                     }
                 }
-                return (byte) EMM_NOT_FOUND;
+                return EMM_NOT_FOUND;
             // break;
             case 0x02: /* Get Total number of handles */
                 Register.setRegBX(EMM_MAX_HANDLES);
@@ -535,23 +535,23 @@ public final class EMS {
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                         "EMS:Call %2X Subfunction %2X not supported", Register.getRegAH(),
                         Register.getRegAL());
-                return (byte) EMM_INVALID_SUB;
+                return EMM_INVALID_SUB;
         }
         return EMM_NO_ERROR;
     }
 
-    private static byte getSetHandleName() {
+    private static int getSetHandleName() {
         int handle = Register.getRegDX();
         switch (Register.getRegAL()) {
             case 0x00: /* Get Handle Name */
                 if (handle >= EMM_MAX_HANDLES || EMMHandles[handle].Pages == NULL_HANDLE)
-                    return (byte) EMM_INVALID_HANDLE;
+                    return EMM_INVALID_HANDLE;
                 Memory.blockWrite(Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDI(),
                         EMMHandles[handle].Name.getAsciiBytes(), 0, 8);
                 break;
             case 0x01: /* Set Handle Name */
                 if (handle >= EMM_MAX_HANDLES || EMMHandles[handle].Pages == NULL_HANDLE)
-                    return (byte) EMM_INVALID_HANDLE;
+                    return EMM_INVALID_HANDLE;
                 Memory.blockRead(Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDI(),
                         EMMHandles[handle].Name, 8);
                 break;
@@ -559,7 +559,7 @@ public final class EMS {
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                         "EMS:Call %2X Subfunction %2X not supported", Register.getRegAH(),
                         Register.getRegAL());
-                return (byte) EMM_INVALID_SUB;
+                return EMM_INVALID_SUB;
         }
         return EMM_NO_ERROR;
 
@@ -568,18 +568,18 @@ public final class EMS {
     private static void loadMoveRegion(int data, MoveRegion region) {
         region.bytes = Memory.readD(data + 0x0);
 
-        region.SrcType = (byte) Memory.readB(data + 0x4);
+        region.SrcType = Memory.readB(data + 0x4);
         region.SrcHandle = Memory.readW(data + 0x5);
         region.SrcOffset = Memory.readW(data + 0x7);
         region.SrcPageSeg = Memory.readW(data + 0x9);
 
-        region.DestType = (byte) Memory.readB(data + 0xb);
+        region.DestType = Memory.readB(data + 0xb);
         region.DestHandle = Memory.readW(data + 0xc);
         region.DestOffset = Memory.readW(data + 0xe);
         region.DestPageSeg = Memory.readW(data + 0x10);
     }
 
-    private static byte memoryRegion() {
+    private static int memoryRegion() {
         MoveRegion region = new MoveRegion();
         byte[] bufSrc = new byte[Paging.MEM_PAGE_SIZE];
         byte[] BufDest = new byte[Paging.MEM_PAGE_SIZE];
@@ -587,7 +587,7 @@ public final class EMS {
             Log.logging(Log.LogTypes.MISC, Log.LogServerities.Error,
                     "EMS:Call %2X Subfunction %2X not supported", Register.getRegAH(),
                     Register.getRegAL());
-            return (byte) EMM_FUNC_NOSUP;
+            return EMM_FUNC_NOSUP;
         }
         loadMoveRegion(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegSI(), region);
         /* Parse the region for information */
@@ -599,11 +599,11 @@ public final class EMS {
             srcMem = region.SrcPageSeg * 16 + region.SrcOffset;
         } else {
             if (!validHandle(region.SrcHandle))
-                return (byte) EMM_INVALID_HANDLE;
+                return EMM_INVALID_HANDLE;
             if ((EMMHandles[region.SrcHandle].Pages
                     * EMM_PAGE_SIZE) < ((region.SrcPageSeg * EMM_PAGE_SIZE) + region.SrcOffset
                             + region.bytes))
-                return (byte) EMM_LOG_OUT_RANGE;
+                return EMM_LOG_OUT_RANGE;
             srcHandle = EMMHandles[region.SrcHandle].Mem;
             int pages = region.SrcPageSeg * 4 + (region.SrcOffset / Paging.MEM_PAGE_SIZE);
             for (; pages > 0; pages--)
@@ -615,11 +615,11 @@ public final class EMS {
             destMem = region.DestPageSeg * 16 + region.DestOffset;
         } else {
             if (!validHandle(region.DestHandle))
-                return (byte) EMM_INVALID_HANDLE;
+                return EMM_INVALID_HANDLE;
             if (EMMHandles[region.DestHandle].Pages
                     * EMM_PAGE_SIZE < (region.DestPageSeg * EMM_PAGE_SIZE) + region.DestOffset
                             + region.bytes)
-                return (byte) EMM_LOG_OUT_RANGE;
+                return EMM_LOG_OUT_RANGE;
             destHandle = EMMHandles[region.DestHandle].Mem;
             int pages = region.DestPageSeg * 4 + (region.DestOffset / Paging.MEM_PAGE_SIZE);
             for (; pages > 0; pages--)
@@ -793,7 +793,7 @@ public final class EMS {
                         Register.setRegAH(EMMRestoreMappingTable());
                         break;
                     case 0x03: /* Get Page Map Array Size */
-                        Register.setRegAL(ByteSizeOfemm_mappings);
+                        Register.setRegAL(ByteSizeOfEMMMappings);
                         Register.setRegAH(EMM_NO_ERROR);
                         break;
                     default:
@@ -1044,8 +1044,8 @@ public final class EMS {
                             break;
                         case 0x0b: /* VCPI Set PIC Vector Mappings */
                             Register.Flags &= (~Register.FlagIF);
-                            vcpi.pic1Remapping = (byte) (Register.getRegBX() & 0xff);
-                            vcpi.pic2Remapping = (byte) (Register.getRegCX() & 0xff);
+                            vcpi.pic1Remapping = Register.getRegBX() & 0xff;
+                            vcpi.pic2Remapping = Register.getRegCX() & 0xff;
                             Register.setRegAH(EMM_NO_ERROR);
                             break;
                         case 0x0c: { /* VCPI Switch from V86 to Protected Mode */
@@ -1520,17 +1520,17 @@ public final class EMS {
          * location in protected unfreeable memory where the ems name and callback are stored 32
          * bytes.
          */
-        private int old4bPointer, _old67Pointer;
-        private CallbackHandlerObject _callVDMA = new CallbackHandlerObject(),
-                _callVCPI = new CallbackHandlerObject(), _callV86Mon = new CallbackHandlerObject();
+        private int old4bPointer, old67Pointer;
+        private CallbackHandlerObject callVDMA = new CallbackHandlerObject(),
+                callVCPI = new CallbackHandlerObject(), _callV86Mon = new CallbackHandlerObject();
         private int _callINT67;
 
         public EMSModule(Section configuration) throws WrongType {
             super(configuration);
 
             /* Virtual DMA interrupt callback */
-            _callVDMA.install(EMS::INT4BHandler, Callback.Symbol.IRET, "Int 4b vdma");
-            _callVDMA.setRealVec((byte) 0x4b);
+            callVDMA.install(EMS::INT4BHandler, Callback.Symbol.IRET, "Int 4b vdma");
+            callVDMA.setRealVec(0x4b);
 
             vcpi.Enabled = false;
             DeviceEMM.clearGEMMIS();
@@ -1554,7 +1554,7 @@ public final class EMS {
             _callINT67 = Callback.allocate();
             Callback.setup(_callINT67, EMS::INT67Handler, Callback.Symbol.IRET,
                     Memory.physMake(_emsBaseSeg, 4), "Int 67 ems");
-            _old67Pointer = Memory.realSetVecAndReturnOld(0x67, Memory.realMake(_emsBaseSeg, 4));
+            old67Pointer = Memory.realSetVecAndReturnOld(0x67, Memory.realMake(_emsBaseSeg, 4));
 
             /* Register the ems device */
             // TODO MAYBE put it in the class.
@@ -1587,8 +1587,8 @@ public final class EMS {
                 return;
 
             /* Install a callback that handles VCPI-requests in protected mode requests */
-            _callVCPI.install(EMS::VCPIPageModeHandler, Callback.Symbol.IRETD, "VCPI PM");
-            vcpi.PMInterface = (_callVCPI.getCallback()) * Callback.Symbol.IPXESR.toValue();
+            callVCPI.install(EMS::VCPIPageModeHandler, Callback.Symbol.IRETD, "VCPI PM");
+            vcpi.PMInterface = (callVCPI.getCallback()) * Callback.Symbol.IPXESR.toValue();
 
             /* Initialize private data area and set up descriptor tables */
             setupVCPI();
@@ -1656,7 +1656,7 @@ public final class EMS {
             byte[] buf = new byte[32];
             buf[0] = 0;
             Memory.blockWrite(Memory.physMake(_emsBaseSeg, 0), buf, 0, 32);
-            Memory.realSetVec(0x67, _old67Pointer);
+            Memory.realSetVec(0x67, old67Pointer);
 
             /* Release memory allocated to system handle */
             if (EMMHandles[EMM_SYSTEM_HANDLE].Pages != NULL_HANDLE) {

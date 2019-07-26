@@ -1,7 +1,6 @@
 package org.gutkyu.dosboxj.shell;
 
 import org.gutkyu.dosboxj.dos.*;
-import org.gutkyu.dosboxj.dos.DOSMain.FCBParseNameParamRef;
 import java.util.*;
 import org.gutkyu.dosboxj.*;
 import org.gutkyu.dosboxj.misc.*;
@@ -591,7 +590,7 @@ public final class DOSShell extends DOSShellBase {
             formatNumber(byteCount, numformat);
             writeOut(Message.get("SHELL_CMD_DIR_BYTES_USED"), fileCount,
                     StringHelper.padLeft(numformat.toString(), 17));
-            byte drive = dta.getSearchDrive();
+            int drive = dta.getSearchDrive();
             // TODO Free Space
             int freeSpace = 1024 * 1024 * 100;
             if (DOSMain.Drives[drive] != null) {
@@ -718,10 +717,10 @@ public final class DOSShell extends DOSShellBase {
             return;
         args.lTrim();
         if (args.get() == 0) {
-            byte drive = (byte) (DOSMain.getDefaultDrive() + 'A');
+            char drive = (char) (DOSMain.getDefaultDrive() + 'A');
             CStringPt dir = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
             DOSMain.getCurrentDir(0, dir);
-            writeOut("{0}:\\{1}\n", (char) drive, dir);
+            writeOut("{0}:\\{1}\n", drive, dir);
         } else if (args.length() == 2 && args.get(1) == ':') {
             writeOut(Message.get("SHELL_CMD_CHDIR_HINT"), Character.toUpperCase(args.get(0)));
         } else if (!DOSMain.changeDir(args.toString())) {
@@ -750,7 +749,7 @@ public final class DOSShell extends DOSShellBase {
                 temps += "~1";
                 writeOut(Message.get("SHELL_CMD_CHDIR_HINT_2"), slashpart + temps);
             } else {
-                byte drive = (byte) (DOSMain.getDefaultDrive() + 'A');
+                char drive = (char) ('A' + DOSMain.getDefaultDrive());
                 if (drive == 'Z') {
                     writeOut(Message.get("SHELL_CMD_CHDIR_HINT_3"));
                 } else {
@@ -1689,7 +1688,7 @@ public final class DOSShell extends DOSShellBase {
         /* check for a drive change */
         if ((CStringPt.clone(name, 1).equals(":") || CStringPt.clone(name, 1).equals(":\\"))
                 && Character.isLetter(name.get())) {
-            if (!DOSMain.setDrive((byte) (Character.toUpperCase(name.get(0)) - 'A'))) {
+            if (!DOSMain.setDrive(Character.toUpperCase(name.get(0)) - 'A')) {
                 writeOut(Message.get("SHELL_EXECUTE_DRIVE_NOT_FOUND"),
                         Character.toUpperCase(name.get(0)));
             }
@@ -1774,31 +1773,31 @@ public final class DOSShell extends DOSShellBase {
             FullArguments = line.toString();
 
             /* Fill the command line */
-            byte[] cmdtail = new byte[DOSMain.CommandTailSize];// 첫번째 값은 문자열이 아닌 Count
+            byte[] cmdTail = new byte[DOSMain.CommandTailSize];// 첫번째 값은 문자열이 아닌 Count
             // CStringPt csCmdTail = CStringPt.Create(cmdtail);
-            cmdtail[DOSMain.CommandTailOffCount] = 0;
+            cmdTail[DOSMain.CommandTailOffCount] = 0;
             // Else some part of the string is unitialized (valgrind)
-            Arrays.fill(cmdtail, DOSMain.CommandTailOffBuffer, 126, (byte) 0);
+            Arrays.fill(cmdTail, DOSMain.CommandTailOffBuffer, 126, (byte) 0);
             if (line.length() > 126)
                 line.set(126, (char) 0);
-            cmdtail[DOSMain.CommandTailOffCount] = (byte) line.length();
-            ArrayHelper.copy(line.getAsciiBytes(), 0, cmdtail, DOSMain.CommandTailOffBuffer,
+            cmdTail[DOSMain.CommandTailOffCount] = (byte) line.length();
+            ArrayHelper.copy(line.getAsciiBytes(), 0, cmdTail, DOSMain.CommandTailOffBuffer,
                     line.length());// 마지막 null 제외
-            cmdtail[DOSMain.CommandTailOffBuffer + line.length()] = 0xd;
+            cmdTail[DOSMain.CommandTailOffBuffer + line.length()] = 0xd;
 
             /* Copy command line in stack block too */
             Memory.blockWrite(Register.segPhys(Register.SEG_NAME_SS) + Register.getRegSP() + 0x100,
-                    cmdtail, 0, 128);
+                    cmdTail, 0, 128);
             /* Parse FCB (first two parameters) and put them into the current DOS_PSP */
-            byte add = 0;
-            FCBParseNameParamRef addRef = new FCBParseNameParamRef((byte) 0);
-            CStringPt cmdtailBuffer = CStringPt.create(DOSMain.CommandTail_Size_Buffer);
+            int add = 0;
+            CStringPt cmdTailBuffer = CStringPt.create(DOSMain.CommandTail_Size_Buffer);
             for (int i = 0; i < DOSMain.CommandTail_Size_Buffer; i++) {
-                cmdtailBuffer.set(i, (char) cmdtail[i + DOSMain.CommandTailOffBuffer]);
+                cmdTailBuffer.set(i, (char) cmdTail[i + DOSMain.CommandTailOffBuffer]);
             }
-            DOSMain.FCBParseName(DOSMain.DOS.getPSP(), 0x5C, (byte) 0x00, cmdtailBuffer, addRef);
-            DOSMain.FCBParseName(DOSMain.DOS.getPSP(), 0x6C, (byte) 0x00,
-                    CStringPt.clone(cmdtailBuffer, addRef.Change), addRef);
+            DOSMain.FCBParseName(DOSMain.DOS.getPSP(), 0x5C, 0x00, cmdTailBuffer);
+            add = DOSMain.returnedFCBParseNameChange;
+            DOSMain.FCBParseName(DOSMain.DOS.getPSP(), 0x6C, 0x00,
+                    CStringPt.clone(cmdTailBuffer, add));
             block.Exec.FCB1 = Memory.realMake(DOSMain.DOS.getPSP(), 0x5C);
             block.Exec.FCB2 = Memory.realMake(DOSMain.DOS.getPSP(), 0x6C);
             /* Set the command line in the block and save it */

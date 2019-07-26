@@ -270,7 +270,7 @@ final class VESA {
         } else {
             Memory.hostWriteW(minfo, Off_MODE_INFO_ModeAttributes, modeAttributes);
             int pages = (VGA.instance().VMemSize / pageSize) - 1;
-            Memory.hostWriteB(minfo, Off_MODE_INFO_NumberOfImagePages, (byte) pages);
+            Memory.hostWriteB(minfo, Off_MODE_INFO_NumberOfImagePages, pages);
         }
 
         if (mblock.Type == VGAModes.TEXT) {
@@ -320,7 +320,8 @@ final class VESA {
         // return 0x00;
     }
 
-    public static byte setCPUWindow(byte window, byte address) {
+    // uint8(uint8, uint8)
+    public static int setCPUWindow(int window, int address) {
         if (window > 0)
             return 0x1;
         if ((0xff & address) * 64 * 1024 < VGA.instance().VMemSize) {
@@ -329,10 +330,6 @@ final class VESA {
             return 0x0;
         } else
             return 0x1;
-    }
-
-    public static byte setCPUWindow(int window, int address) {
-        return setCPUWindow((byte) window, (byte) address);
     }
 
     // public static byte GetCPUWindow(byte window, ref UInt16 address)

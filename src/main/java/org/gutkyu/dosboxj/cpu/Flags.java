@@ -208,14 +208,14 @@ public final class Flags {
         LASTFLAG(63);
         //@formatter:on
 
-        private final byte value;
+        private final int value;
 
         private TypeFlag(int value) {
-            this.value = (byte) value;
+            this.value = value;
         }
 
-        public byte toValue() {
-            return value;
+        public int toValue() {
+            return this.value;
         }
     }
 

@@ -18,7 +18,7 @@ class Config extends Program {
         if ((TempLine = Cmd.findString("-writeconf", true)) != null
                 || (TempLine = Cmd.findString("-wc", true)) != null) {
             /* In secure mode don't allow a new configfile to be created */
-            if (DOSBox.Control.secureMode()) {
+            if (DOSBox.Control.getSecureMode()) {
                 writeOut(Message.get("PROGRAM_CONFIG_SECURE_DISALLOW"));
                 return;
             }
@@ -42,7 +42,7 @@ class Config extends Program {
              * In secure mode don't allow a new languagefile to be created Who knows which kind of
              * file we would overwriting.
              */
-            if (DOSBox.Control.secureMode()) {
+            if (DOSBox.Control.getSecureMode()) {
                 writeOut(Message.get("PROGRAM_CONFIG_SECURE_DISALLOW"));
                 return;
             }

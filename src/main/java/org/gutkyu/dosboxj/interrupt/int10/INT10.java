@@ -11,27 +11,27 @@ public final class INT10 {
 
     static final int S3_LFB_BASE = 0xC0000000;
 
-    public static final byte BIOSMEM_SEG = 0x40;
+    public static final int BIOSMEM_SEG = 0x40;
 
-    static final byte BIOSMEM_INITIAL_MODE = 0x10;
-    static final byte BIOSMEM_CURRENT_MODE = 0x49;
-    public static final byte BIOSMEM_NB_COLS = 0x4A;
-    static final byte BIOSMEM_PAGE_SIZE = 0x4C;
-    static final byte BIOSMEM_CURRENT_START = 0x4E;
-    static final byte BIOSMEM_CURSOR_POS = 0x50;
-    static final byte BIOSMEM_CURSOR_TYPE = 0x60;
-    public static final byte BIOSMEM_CURRENT_PAGE = 0x62;
-    static final byte BIOSMEM_CRTC_ADDRESS = 0x63;
-    static final byte BIOSMEM_CURRENT_MSR = 0x65;
-    static final byte BIOSMEM_CURRENT_PAL = 0x66;
-    public static final byte BIOSMEM_NB_ROWS = (byte) 0x84;
-    static final byte BIOSMEM_CHAR_HEIGHT = (byte) 0x85;
-    static final byte BIOSMEM_VIDEO_CTL = (byte) 0x87;
-    static final byte BIOSMEM_SWITCHES = (byte) 0x88;
-    static final byte BIOSMEM_MODESET_CTL = (byte) 0x89;
-    static final byte BIOSMEM_DCC_INDEX = (byte) 0x8A;
-    static final byte BIOSMEM_CRTCPU_PAGE = (byte) 0x8A;
-    static final byte BIOSMEM_VS_POINTER = (byte) 0xA8;
+    static final int BIOSMEM_INITIAL_MODE = 0x10;
+    static final int BIOSMEM_CURRENT_MODE = 0x49;
+    public static final int BIOSMEM_NB_COLS = 0x4A;
+    static final int BIOSMEM_PAGE_SIZE = 0x4C;
+    static final int BIOSMEM_CURRENT_START = 0x4E;
+    static final int BIOSMEM_CURSOR_POS = 0x50;
+    static final int BIOSMEM_CURSOR_TYPE = 0x60;
+    public static final int BIOSMEM_CURRENT_PAGE = 0x62;
+    static final int BIOSMEM_CRTC_ADDRESS = 0x63;
+    static final int BIOSMEM_CURRENT_MSR = 0x65;
+    static final int BIOSMEM_CURRENT_PAL = 0x66;
+    public static final int BIOSMEM_NB_ROWS = 0x84;
+    static final int BIOSMEM_CHAR_HEIGHT = 0x85;
+    static final int BIOSMEM_VIDEO_CTL = 0x87;
+    static final int BIOSMEM_SWITCHES = 0x88;
+    static final int BIOSMEM_MODESET_CTL = 0x89;
+    static final int BIOSMEM_DCC_INDEX = 0x8A;
+    static final int BIOSMEM_CRTCPU_PAGE = 0x8A;
+    static final int BIOSMEM_VS_POINTER = 0xA8;
 
     public static byte[] int10_font_08, int10_font_14, int10_font_16;
     static {
@@ -105,30 +105,30 @@ public final class INT10 {
                 break;
             case 0x05: /* Set Active Page */
                 if ((Register.getRegAL() & 0x80) != 0 && DOSBox.isTANDYArch()) {
-                    byte crtcpu = (byte) Memory.realReadB(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE);
+                    int crtCPU = Memory.realReadB(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE);
                     switch (Register.getRegAL()) {
                         case 0x80:
-                            Register.setRegBH((byte) (crtcpu & 7));
-                            Register.setRegBL((byte) ((crtcpu >>> 3) & 0x7));
+                            Register.setRegBH(crtCPU & 7);
+                            Register.setRegBL((crtCPU >>> 3) & 0x7);
                             break;
                         case 0x81:
-                            crtcpu = (byte) ((crtcpu & 0xc7) | ((Register.getRegBL() & 7) << 3));
+                            crtCPU = 0xff & ((crtCPU & 0xc7) | ((Register.getRegBL() & 7) << 3));
                             break;
                         case 0x82:
-                            crtcpu = (byte) ((crtcpu & 0xf8) | (Register.getRegBH() & 7));
+                            crtCPU = 0xff & ((crtCPU & 0xf8) | (Register.getRegBH() & 7));
                             break;
                         case 0x83:
-                            crtcpu = (byte) ((crtcpu & 0xc0) | (Register.getRegBH() & 7)
+                            crtCPU = 0xff & ((crtCPU & 0xc0) | (Register.getRegBH() & 7)
                                     | ((Register.getRegBL() & 7) << 3));
                             break;
                     }
                     if (DOSBox.Machine == DOSBox.MachineType.PCJR) {
                         /* always return graphics mapping, even for invalid values of AL */
-                        Register.setRegBH((byte) (crtcpu & 7));
-                        Register.setRegBL((byte) ((crtcpu >>> 3) & 0x7));
+                        Register.setRegBH(crtCPU & 7);
+                        Register.setRegBL((crtCPU >>> 3) & 0x7);
                     }
-                    IO.writeB(0x3df, crtcpu);
-                    Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE, crtcpu);
+                    IO.writeB(0x3df, crtCPU);
+                    Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE, crtCPU);
                 } else
                     CHAR.setActivePage(Register.getRegAL());
                 break;
@@ -225,8 +225,8 @@ public final class INT10 {
                                 Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDX());
                         break;
                     case 0x10: /* SET INDIVIDUAL DAC REGISTER */
-                        PAL.setSingleDacRegister(Register.getRegBL(), (byte) Register.getRegDH(),
-                                (byte) Register.getRegCH(), (byte) Register.getRegCL());
+                        PAL.setSingleDacRegister(Register.getRegBL(), Register.getRegDH(),
+                                Register.getRegCH(), Register.getRegCL());
                         break;
                     case 0x12: /* SET BLOCK OF DAC REGISTERS */
                         PAL.setDACBlock(Register.getRegBX(), Register.getRegCX(),
@@ -349,14 +349,14 @@ public final class INT10 {
                         switch (Register.getRegBH()) {
                             case 0x00: /* interupt 0x1f vector */
                             {
-                                int int_1f = Memory.realGetVec((byte) 0x1f);
+                                int int_1f = Memory.realGetVec(0x1f);
                                 Register.segSet16(Register.SEG_NAME_ES, Memory.realSeg(int_1f));
                                 Register.setRegBP(Memory.realOff(int_1f));
                             }
                                 break;
                             case 0x01: /* interupt 0x43 vector */
                             {
-                                int int_43 = Memory.realGetVec((byte) 0x43);
+                                int int_43 = Memory.realGetVec(0x43);
                                 Register.segSet16(Register.SEG_NAME_ES, Memory.realSeg(int_43));
                                 Register.setRegBP(Memory.realOff(int_43));
                             }
@@ -430,10 +430,8 @@ public final class INT10 {
                                 (Memory.realReadW(BIOSMEM_SEG, BIOSMEM_CRTC_ADDRESS) == 0x3B4 ? 1
                                         : 0));
                         Register.setRegBL(3); // 256 kb
-                        Register.setRegCL(
-                                (byte) (Memory.realReadB(BIOSMEM_SEG, BIOSMEM_SWITCHES) & 0x0F));
-                        Register.setRegCH(
-                                (byte) (Memory.realReadB(BIOSMEM_SEG, BIOSMEM_SWITCHES) >>> 4));
+                        Register.setRegCL(Memory.realReadB(BIOSMEM_SEG, BIOSMEM_SWITCHES) & 0x0F);
+                        Register.setRegCH(Memory.realReadB(BIOSMEM_SEG, BIOSMEM_SWITCHES) >>> 4);
                         break;
                     case 0x20: /* Set alternate printscreen */
                         break;
@@ -450,32 +448,30 @@ public final class INT10 {
                                 break;
                             }
                         }
-                        byte modeset_ctl =
-                                (byte) Memory.realReadB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL);
-                        byte video_switches =
-                                (byte) (Memory.realReadB(BIOSMEM_SEG, BIOSMEM_SWITCHES) & 0xf0);
+                        int modesetCTL = Memory.realReadB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL);
+                        int videoSwitches = Memory.realReadB(BIOSMEM_SEG, BIOSMEM_SWITCHES) & 0xf0;
                         switch (Register.getRegAL()) {
                             case 0: // 200
-                                modeset_ctl &= 0xef;
-                                modeset_ctl |= 0x80;
-                                video_switches |= 8; // ega normal/cga emulation
+                                modesetCTL &= 0xef;
+                                modesetCTL |= 0x80;
+                                videoSwitches |= 8; // ega normal/cga emulation
                                 break;
                             case 1: // 350
-                                modeset_ctl &= 0x6f;
-                                video_switches |= 9; // ega enhanced
+                                modesetCTL &= 0x6f;
+                                videoSwitches |= 9; // ega enhanced
                                 break;
                             case 2: // 400
-                                modeset_ctl &= 0x6f;
-                                modeset_ctl |= 0x10; // use 400-line mode at next mode set
-                                video_switches |= 9; // ega enhanced
+                                modesetCTL &= 0x6f;
+                                modesetCTL |= 0x10; // use 400-line mode at next mode set
+                                videoSwitches |= 9; // ega enhanced
                                 break;
                             default:
-                                modeset_ctl &= 0xef;
-                                video_switches |= 8; // ega normal/cga emulation
+                                modesetCTL &= 0xef;
+                                videoSwitches |= 8; // ega normal/cga emulation
                                 break;
                         }
-                        Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL, modeset_ctl);
-                        Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_SWITCHES, video_switches);
+                        Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL, modesetCTL);
+                        Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_SWITCHES, videoSwitches);
                         Register.setRegAL(0x12); // success
                         break;
                     }
@@ -489,8 +485,7 @@ public final class INT10 {
                             Register.setRegAL(0); // invalid subfunction
                             break;
                         }
-                        byte temp =
-                                (byte) (Memory.realReadB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL) & 0xf7);
+                        int temp = Memory.realReadB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL) & 0xf7;
                         if ((Register.getRegAL() & 1) != 0)
                             temp |= 8; // enable if al=0
                         Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL, temp);
@@ -519,8 +514,7 @@ public final class INT10 {
                             Register.setRegAL(0);
                             break;
                         }
-                        byte temp =
-                                (byte) (Memory.realReadB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL) & 0xfd);
+                        int temp = Memory.realReadB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL) & 0xfd;
                         if ((Register.getRegAL() & 1) == 0)
                             temp |= 2; // enable if al=0
                         Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_MODESET_CTL, temp);
@@ -538,10 +532,9 @@ public final class INT10 {
                             Register.setRegAL(0);
                             break;
                         }
-                        byte temp =
-                                (byte) (Memory.realReadB(BIOSMEM_SEG, BIOSMEM_VIDEO_CTL) & 0xfe);
+                        int temp = Memory.realReadB(BIOSMEM_SEG, BIOSMEM_VIDEO_CTL) & 0xfe;
                         Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_VIDEO_CTL,
-                                (byte) (temp | Register.getRegAL()));
+                                0xff & (temp | Register.getRegAL()));
                         Register.setRegAL(0x12);
                         break;
                     }
@@ -599,9 +592,9 @@ public final class INT10 {
                     if (svstable != 0) {
                         int dcctable = (int) Memory.realReadD(Memory.realSeg(svstable),
                                 Memory.realOff(svstable) + 0x02);
-                        byte entries = (byte) Memory.realReadB(Memory.realSeg(dcctable),
+                        int entries = Memory.realReadB(Memory.realSeg(dcctable),
                                 Memory.realOff(dcctable) + 0x00);
-                        byte idx = (byte) Memory.realReadB(BIOSMEM_SEG, BIOSMEM_DCC_INDEX);
+                        int idx = Memory.realReadB(BIOSMEM_SEG, BIOSMEM_DCC_INDEX);
                         // check if index within range
                         if (idx < entries) {
                             int dccentry = Memory.realReadW(Memory.realSeg(dcctable),
@@ -624,7 +617,7 @@ public final class INT10 {
                     if (svstable != 0) {
                         int dcctable = (int) Memory.realReadD(Memory.realSeg(svstable),
                                 Memory.realOff(svstable) + 0x02);
-                        byte entries = (byte) Memory.realReadB(Memory.realSeg(dcctable),
+                        int entries = Memory.realReadB(Memory.realSeg(dcctable),
                                 Memory.realOff(dcctable) + 0x00);
                         if (entries != 0) {
                             int ct;
@@ -942,7 +935,7 @@ public final class INT10 {
     private static void graphicsChars() {
         switch (Register.getRegBL()) {
             case 0x00:
-                Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_NB_ROWS, (byte) (Register.getRegDL() - 1));
+                Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_NB_ROWS, Register.getRegDL() - 1);
                 break;
             case 0x01:
                 Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_NB_ROWS, 13);
@@ -1018,7 +1011,7 @@ public final class INT10 {
     }
 
     /*--------------------------- begin INT10Memory -----------------------------*/
-    static byte[] static_functionality = {/* 0 */ (byte) 0xff, // All modes supported #1
+    static byte[] staticFunctionality = {/* 0 */ (byte) 0xff, // All modes supported #1
             /* 1 */ (byte) 0xff, // All modes supported #2
             /* 2 */ 0x0f, // All modes supported #3
             /* 3 */ 0x00, 0x00, 0x00, 0x00, // reserved
@@ -1034,12 +1027,12 @@ public final class INT10 {
             /* f */ 0x00 // reserved
     };
 
-    static short[] map_offset = {0x0000, 0x4000, (short) 0x8000, (short) 0xc000, 0x2000, 0x6000,
+    static short[] mapOffset = {0x0000, 0x4000, (short) 0x8000, (short) 0xc000, 0x2000, 0x6000,
             (short) 0xa000, (short) 0xe000};
 
     private static void loadFont(int font, boolean reload, int count, int offset, int map,
             int height) {
-        int ftwhere = Memory.physMake(0xa000, map_offset[map & 0x7] + (offset * 32));
+        int ftwhere = Memory.physMake(0xa000, mapOffset[map & 0x7] + (offset * 32));
         IO.write(0x3c4, 0x2);
         IO.write(0x3c5, 0x4); // Enable plane 2
         IO.write(0x3ce, 0x6);
@@ -1066,8 +1059,8 @@ public final class INT10 {
             // Vertical display end bios says, but should stay the same?
             // Rows setting in bios segment
             Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_NB_ROWS,
-                    (byte) ((INT10Mode.CurMode.SHeight / height) - 1));
-            Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT, (byte) height);
+                    (INT10Mode.CurMode.SHeight / height) - 1);
+            Memory.realWriteB(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT, height);
             // TODO Reprogram cursor size?
         }
     }
@@ -1123,7 +1116,7 @@ public final class INT10 {
         }
         int10.RomStaticState = Memory.realMake(0xC000, int10.RomUsed);
         for (i = 0; i < 0x10; i++) {
-            Memory.physWriteB(rom_base + int10.RomUsed++, static_functionality[i]);
+            Memory.physWriteB(rom_base + int10.RomUsed++, staticFunctionality[i]);
         }
         for (i = 0; i < 128 * 8; i++) {
             Memory.physWriteB(Memory.physMake(0xf000, 0xfa6e) + i, int10_font_08[i]);
@@ -1353,7 +1346,7 @@ public final class INT10 {
             {
                 /* Set the correct bitmask for the pixel position */
                 IO.write(0x3ce, 0x8);
-                byte mask = (byte) (128 >>> (x & 7));
+                int mask = 128 >>> (x & 7);
                 IO.write(0x3cf, mask);
                 /* Set the color to set/reset register */
                 IO.write(0x3ce, 0x0);

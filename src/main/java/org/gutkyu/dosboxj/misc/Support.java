@@ -96,15 +96,15 @@ public final class Support {
 
     public static boolean scanCmdBool(CStringPt cmd, String check) {
         CStringPt scan = CStringPt.clone(cmd);
-        int c_len = check.length();
+        int cLen = check.length();
         while (!(scan = scan.positionOf('/')).isEmpty()) {
             /* found a / now see behind it */
             scan.movePtToR1();
-            if (scan.equalsIgnoreCase(check) && (scan.get(c_len) == ' ' || scan.get(c_len) == '\t'
-                    || scan.get(c_len) == '/' || scan.get(c_len) == 0)) {
+            if (scan.equalsIgnoreCase(check) && (scan.get(cLen) == ' ' || scan.get(cLen) == '\t'
+                    || scan.get(cLen) == '/' || scan.get(cLen) == 0)) {
                 /* Found a math now remove it from the string */
                 // memmove(scan - 1, scan + c_len, strlen(scan + c_len) + 1);
-                CStringPt pt1 = CStringPt.clone(scan, c_len);
+                CStringPt pt1 = CStringPt.clone(scan, cLen);
                 CStringPt pt2 = CStringPt.clone(scan, -1);
                 CStringPt.rawMove(pt1, pt2, pt1.length() + 1);
                 pt2.trim();

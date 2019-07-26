@@ -98,7 +98,7 @@ public final class DOSFCB extends MemStruct {
         fillName[fillNameIdx + 14] = 0;
     }
 
-    public void openFile(byte fHandle) {
+    public void openFile(int fHandle) {
         saveIt(Size_sFCB_drive, Off_sFCB_drive, getDrive() + 1);
         saveIt(Size_sFCB_file_handle, Off_sFCB_file_handle, fHandle);
         saveIt(Size_sFCB_cur_block, Off_sFCB_cur_block, 0);
@@ -114,8 +114,8 @@ public final class DOSFCB extends MemStruct {
         saveIt(Size_sFCB_date, Off_sFCB_date, DOSMain.Files[temp].Date);
     }
 
-    public byte closeFile() {
-        byte fHandle = (byte) getIt(Size_sFCB_file_handle, Off_sFCB_file_handle);
+    public int closeFile() {
+        int fHandle = 0xff & getIt(Size_sFCB_file_handle, Off_sFCB_file_handle);
         saveIt(Size_sFCB_file_handle, Off_sFCB_file_handle, 0xff);
         return fHandle;
     }
@@ -158,12 +158,12 @@ public final class DOSFCB extends MemStruct {
         saveIt(Size_sFCB_rndm, Off_sFCB_rndm, random);
     }
 
-    public byte getDrive() {
-        byte drive = (byte) getIt(Size_sFCB_drive, Off_sFCB_drive);
+    public int getDrive() {
+        int drive = getIt(Size_sFCB_drive, Off_sFCB_drive);
         if (drive == 0)
             return DOSMain.getDefaultDrive();
         else
-            return (byte) (drive - 1);
+            return drive - 1;
     }
 
     public boolean extended() {

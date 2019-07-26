@@ -381,13 +381,13 @@ public final class CPU {
 
     enum TSwitchType {
         JMP(0), CALL_INT(1), IRET(2);
-        private final byte value;
+        private final int value;
 
         private TSwitchType(int value) {
-            this.value = (byte) value;
+            this.value = value;
         }
 
-        public byte toValue() {
+        public int toValue() {
             return value;
         }
 

@@ -74,7 +74,7 @@ public final class DriveManager {
                 driveInfos[idrive].CurrentDisk = currentDisk;
 
                 // copy working directory, acquire system resources and finally switch to next drive
-                newDisk.curdir = oldDisk.curdir;
+                newDisk.curDir = oldDisk.curDir;
                 newDisk.activate();
                 DOSMain.Drives[idrive] = newDisk;
                 Log.logMsg("Drive %c: disk %d of %d now active", 'A' + idrive, currentDisk + 1,

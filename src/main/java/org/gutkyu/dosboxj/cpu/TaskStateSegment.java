@@ -11,7 +11,7 @@ public final class TaskStateSegment {
     public int BaseAddr;
     public int Limit;
     public boolean Is386;
-    private boolean _valid;
+    private boolean valid;
 
     // struct TSS_16는 각 요소의 offset을 구하는데만 사용, map역할만 하고 직접적인 데이타저장에는 사용되지 않음
     // enum형과 OffsetOf함수 조합으로 사용하도록 변경
@@ -32,13 +32,13 @@ public final class TaskStateSegment {
         ss(19), /* The application stack selector */
         ds(20), /* The data selector */
         ldt(21); /* The local descriptor table */
-        private final byte value;
+        private final int value;
 
         private TSS16(int value) {
-            this.value = (byte) value;
+            this.value = value;
         }
 
-        public byte toValue() {
+        public int toValue() {
             return this.value;
         }
     }
@@ -65,23 +65,23 @@ public final class TaskStateSegment {
         fs(22), /* And another extra selector */
         gs(23), /* ... and another one */
         ldt(24); /* The local descriptor table */
-        private final byte value;
+        private final int value;
 
         private TSS32(int value) {
-            this.value = (byte) value;
+            this.value = value;
         }
 
-        public byte toValue() {
+        public int toValue() {
             return this.value;
         }
     }
 
     public TaskStateSegment() {
-        _valid = false;
+        valid = false;
     }
 
     public boolean isValid() {
-        return _valid;
+        return valid;
     }
 
     public int getBack() {
@@ -129,7 +129,7 @@ public final class TaskStateSegment {
     }
 
     public boolean setSelector(int newSel) {
-        _valid = false;
+        valid = false;
         if ((newSel & 0xfffc) == 0) {
             Selector = 0;
             BaseAddr = 0;
@@ -153,7 +153,7 @@ public final class TaskStateSegment {
         if (Desc.Saved.Seg.P == 0)
             return false;
         Selector = newSel;
-        _valid = true;
+        valid = true;
         BaseAddr = Desc.getBase();
         Limit = Desc.getLimit();
         Is386 = Desc.is386();

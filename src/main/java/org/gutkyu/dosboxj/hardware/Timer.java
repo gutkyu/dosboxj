@@ -34,7 +34,7 @@ public final class Timer {
                 + ((val >>> 12) & 0x0f) * 1000);
     }
 
-    class PIT_Block {
+    class PITBlock {
         public int cntr;
         public float delay;
         public double start;
@@ -42,26 +42,26 @@ public final class Timer {
         public int readLatch;// uint16
         public int writeLatch;// uint16
 
-        public byte mode;
-        public byte latch_mode;
-        public byte read_state;
-        public byte write_state;
+        public int mode;// uint8
+        public byte latchMode;// uint8
+        public int readState;// uint8
+        public int writeState;// uint8
 
         public boolean bcd;
-        public boolean go_read_latch;
-        public boolean new_mode;
-        public boolean counterstatus_set;
+        public boolean goReadLatch;
+        public boolean newMode;
+        public boolean counterStatusSet;
         public boolean counting;
-        public boolean update_count;
+        public boolean updateCount;
     }
 
-    private static PIT_Block[] pit = new PIT_Block[3];
+    private static PITBlock[] pit = new PITBlock[3];
     private static boolean gate2;
 
-    private static byte latched_timerstatus;
+    private static int latchedTimerStatus;// uint8
     // the timer status can not be overwritten until it is read or the timer was
     // reprogrammed.
-    private static boolean latched_timerstatus_locked;
+    private static boolean latchedTimerStatusLocked;
 
     private static EventHandler pit0EventWrap = Timer::PIT0Event;
 
@@ -70,20 +70,20 @@ public final class Timer {
         if (pit[0].mode != 0) {
             pit[0].start += pit[0].delay;
 
-            if (pit[0].update_count) {
+            if (pit[0].updateCount) {
                 pit[0].delay = (1000.0f / ((float) PIT_TICK_RATE / (float) pit[0].cntr));
-                pit[0].update_count = false;
+                pit[0].updateCount = false;
             }
             PIC.addEvent(pit0EventWrap, pit[0].delay);
         }
     }
 
     private static boolean doCounterOutput(int counter) {
-        PIT_Block p = pit[counter];
+        PITBlock p = pit[counter];
         double index = PIC.getFullIndex() - p.start;
         switch (p.mode) {
             case 0:
-                if (p.new_mode)
+                if (p.newMode)
                     return false;
                 if (index > p.delay)
                     return true;
@@ -91,12 +91,12 @@ public final class Timer {
                     return false;
                 // break;
             case 2:
-                if (p.new_mode)
+                if (p.newMode)
                     return true;
                 index = index % (double) p.delay;
                 return index > 0;
             case 3:
-                if (p.new_mode)
+                if (p.newMode)
                     return true;
                 index = index % (double) p.delay;
                 return index * 2 < p.delay;
@@ -116,9 +116,9 @@ public final class Timer {
     private static void doStatusLatch(int counter) {
         // the timer status can not be overwritten until it is read or the timer was
         // reprogrammed.
-        if (!latched_timerstatus_locked) {
-            PIT_Block p = pit[counter];
-            latched_timerstatus = 0;
+        if (!latchedTimerStatusLocked) {
+            PITBlock p = pit[counter];
+            latchedTimerStatus = 0;
             // Timer Status Word
             // 0: BCD
             // 1-3: Timer mode
@@ -127,29 +127,29 @@ public final class Timer {
             // should rarely be 1 (i.e. on exotic modes)
             // 7: OUT - the logic level on the Timer output pin
             if (p.bcd)
-                latched_timerstatus |= 0x1;
-            latched_timerstatus |= (byte) ((p.mode & 7) << 1);
-            if ((p.read_state == 0) || (p.read_state == 3))
-                latched_timerstatus |= 0x30;
-            else if (p.read_state == 1)
-                latched_timerstatus |= 0x10;
-            else if (p.read_state == 2)
-                latched_timerstatus |= 0x20;
+                latchedTimerStatus |= 0x1;
+            latchedTimerStatus |= 0xff & ((p.mode & 7) << 1);
+            if ((p.readState == 0) || (p.readState == 3))
+                latchedTimerStatus |= 0x30;
+            else if (p.readState == 1)
+                latchedTimerStatus |= 0x10;
+            else if (p.readState == 2)
+                latchedTimerStatus |= 0x20;
             if (doCounterOutput(counter))
-                latched_timerstatus |= 0x80;
-            if (p.new_mode)
-                latched_timerstatus |= 0x40;
+                latchedTimerStatus |= 0x80;
+            if (p.newMode)
+                latchedTimerStatus |= 0x40;
             // The first thing that is being read from this counter now is the
             // counter status.
-            p.counterstatus_set = true;
-            latched_timerstatus_locked = true;
+            p.counterStatusSet = true;
+            latchedTimerStatusLocked = true;
         }
     }
 
     private static void doCounterLatch(int counter) {
         /* Fill the read_latch of the selected counter with current count */
-        PIT_Block p = pit[counter];
-        p.go_read_latch = false;
+        PITBlock p = pit[counter];
+        p.goReadLatch = false;
 
         // If gate2 is disabled don't update the read_latch
         if (counter == 2 && !gate2 && p.mode != 1)
@@ -209,18 +209,18 @@ public final class Timer {
     private static void writeLatch(int port, int val, int iolen) {
         // LOG(LOG_PIT,LOG_ERROR)("port %X write:%X state:%X",port,val,pit[port-0x40].write_state);
         int counter = port - 0x40;
-        PIT_Block p = pit[counter];
+        PITBlock p = pit[counter];
         if (p.bcd == true)
             p.writeLatch = doBIN2BCD(p.writeLatch);
 
-        switch (p.write_state) {
+        switch (p.writeState) {
             case 0:
                 p.writeLatch = p.writeLatch | ((val & 0xff) << 8);
-                p.write_state = 3;
+                p.writeState = 3;
                 break;
             case 3:
                 p.writeLatch = val & 0xff;
-                p.write_state = 0;
+                p.writeState = 0;
                 break;
             case 1:
                 p.writeLatch = val & 0xff;
@@ -231,7 +231,7 @@ public final class Timer {
         }
         if (p.bcd == true)
             p.writeLatch = doBCD2BIN(p.writeLatch);
-        if (p.write_state != 0) {
+        if (p.writeState != 0) {
             if (p.writeLatch == 0) {
                 if (p.bcd == false)
                     p.cntr = 0x10000;
@@ -240,11 +240,11 @@ public final class Timer {
             } else
                 p.cntr = p.writeLatch;
 
-            if ((!p.new_mode) && (p.mode == 2) && (counter == 0)) {
+            if ((!p.newMode) && (p.mode == 2) && (counter == 0)) {
                 // In mode 2 writing another value has no direct effect on the count
                 // until the old one has run out. This might apply to other modes too.
                 // This is not fixed for PIT2 yet!!
-                p.update_count = true;
+                p.updateCount = true;
                 return;
             }
             p.start = PIC.getFullIndex();
@@ -252,7 +252,7 @@ public final class Timer {
 
             switch (counter) {
                 case 0x00: /* Timer hooked to IRQ 0 */
-                    if (p.new_mode || p.mode == 0) {
+                    if (p.newMode || p.mode == 0) {
                         if (p.mode == 0)
                             PIC.removeEvents(pit0EventWrap); // DoWhackaDo demo
                         PIC.addEvent(pit0EventWrap, p.delay);
@@ -275,7 +275,7 @@ public final class Timer {
                             "PIT:Illegal timer selected for writing");
                     break;
             }
-            p.new_mode = false;
+            p.newMode = false;
         }
     }
 
@@ -283,34 +283,34 @@ public final class Timer {
         // LOG(LOG_PIT,LOG_ERROR)("port read %X",port);
         int counter = port - 0x40;
         int ret = 0;// uint8
-        if (pit[counter].counterstatus_set) {
-            pit[counter].counterstatus_set = false;
-            latched_timerstatus_locked = false;
-            ret = 0xff & latched_timerstatus;
+        if (pit[counter].counterStatusSet) {
+            pit[counter].counterStatusSet = false;
+            latchedTimerStatusLocked = false;
+            ret = 0xff & latchedTimerStatus;
         } else {
-            if (pit[counter].go_read_latch == true)
+            if (pit[counter].goReadLatch == true)
                 doCounterLatch(counter);
 
             if (pit[counter].bcd == true)
                 pit[counter].readLatch = doBIN2BCD(pit[counter].readLatch);
 
-            switch (pit[counter].read_state) {
+            switch (pit[counter].readState) {
                 case 0: /* read MSB & return to state 3 */
                     ret = (pit[counter].readLatch >>> 8) & 0xff;
-                    pit[counter].read_state = 3;
-                    pit[counter].go_read_latch = true;
+                    pit[counter].readState = 3;
+                    pit[counter].goReadLatch = true;
                     break;
                 case 3: /* read LSB followed by MSB */
                     ret = pit[counter].readLatch & 0xff;
-                    pit[counter].read_state = 0;
+                    pit[counter].readState = 0;
                     break;
                 case 1: /* read LSB */
                     ret = pit[counter].readLatch & 0xff;
-                    pit[counter].go_read_latch = true;
+                    pit[counter].goReadLatch = true;
                     break;
                 case 2: /* read MSB */
                     ret = (pit[counter].readLatch >>> 8) & 0xff;
-                    pit[counter].go_read_latch = true;
+                    pit[counter].goReadLatch = true;
                     break;
                 default:
                     Support.exceptionExit("Timer.cpp: error in readlatch");
@@ -340,15 +340,15 @@ public final class Timer {
                     }
 
                     // Timer is being reprogrammed, unlock the status
-                    if (pit[latch].counterstatus_set) {
-                        pit[latch].counterstatus_set = false;
-                        latched_timerstatus_locked = false;
+                    if (pit[latch].counterStatusSet) {
+                        pit[latch].counterStatusSet = false;
+                        latchedTimerStatusLocked = false;
                     }
-                    pit[latch].update_count = false;
+                    pit[latch].updateCount = false;
                     pit[latch].counting = false;
-                    pit[latch].read_state = (byte) ((val >>> 4) & 0x03);
-                    pit[latch].write_state = (byte) ((val >>> 4) & 0x03);
-                    byte mode = (byte) ((val >>> 1) & 0x07);
+                    pit[latch].readState = (val >>> 4) & 0x03;
+                    pit[latch].writeState = (val >>> 4) & 0x03;
+                    int mode = (val >>> 1) & 0x07;
                     if (mode > 5)
                         mode -= 4; // 6,7 become 2 and 3
 
@@ -377,7 +377,7 @@ public final class Timer {
                         if (mode == 0)
                             PIC.deactivateIRQ(0);
                     }
-                    pit[latch].new_mode = true;
+                    pit[latch].newMode = true;
                     pit[latch].mode = mode; // Set the correct mode (here)
                 }
                 break;
@@ -404,43 +404,43 @@ public final class Timer {
         }
     }
 
-    public static void setGate2(boolean _in) {
+    public static void setGate2(boolean val) {
         // No changes if gate doesn't change
-        if (gate2 == _in)
+        if (gate2 == val)
             return;
-        byte mode = pit[2].mode;
-        switch (mode) {
+        PITBlock pit2 = pit[2];
+        switch (pit2.mode) {
             case 0:
-                if (_in)
-                    pit[2].start = PIC.getFullIndex();
+                if (val)
+                    pit2.start = PIC.getFullIndex();
                 else {
                     // Fill readlatch and store it.
                     doCounterLatch(2);
-                    pit[2].cntr = pit[2].readLatch;
+                    pit2.cntr = pit2.readLatch;
                 }
                 break;
             case 1:
                 // gate 1 on: reload counter; off: nothing
-                if (_in) {
-                    pit[2].counting = true;
-                    pit[2].start = PIC.getFullIndex();
+                if (val) {
+                    pit2.counting = true;
+                    pit2.start = PIC.getFullIndex();
                 }
                 break;
             case 2:
             case 3:
                 // If gate is enabled restart counting. If disable store the current read_latch
-                if (_in)
-                    pit[2].start = PIC.getFullIndex();
+                if (val)
+                    pit2.start = PIC.getFullIndex();
                 else
                     doCounterLatch(2);
                 break;
             case 4:
             case 5:
                 Log.logging(Log.LogTypes.MISC, Log.LogServerities.Warn,
-                        "unsupported gate 2 mode %x", mode);
+                        "unsupported gate 2 mode %x", pit2.mode);
                 break;
         }
-        gate2 = _in; // Set it here so the counter_latch above works
+        gate2 = val; // Set it here so the counter_latch above works
     }
 
     /* The TIMER Part */
@@ -532,43 +532,43 @@ public final class Timer {
             ReadHandler[2].install(0x42, Timer::readLatch, IO.IO_MB);
             /* Setup Timer 0 */
             for (int i = 0; i < pit.length; i++) {
-                pit[i] = new PIT_Block();
+                pit[i] = new PITBlock();
             }
             pit[0].cntr = 0x10000;
-            pit[0].write_state = 3;
-            pit[0].read_state = 3;
+            pit[0].writeState = 3;
+            pit[0].readState = 3;
             pit[0].readLatch = 0;
             pit[0].writeLatch = 0;
             pit[0].mode = 3;
             pit[0].bcd = false;
-            pit[0].go_read_latch = true;
-            pit[0].counterstatus_set = false;
-            pit[0].update_count = false;
+            pit[0].goReadLatch = true;
+            pit[0].counterStatusSet = false;
+            pit[0].updateCount = false;
 
             pit[1].bcd = false;
-            pit[1].write_state = 1;
-            pit[1].read_state = 1;
-            pit[1].go_read_latch = true;
+            pit[1].writeState = 1;
+            pit[1].readState = 1;
+            pit[1].goReadLatch = true;
             pit[1].cntr = 18;
             pit[1].mode = 2;
-            pit[1].write_state = 3;
-            pit[1].counterstatus_set = false;
+            pit[1].writeState = 3;
+            pit[1].counterStatusSet = false;
 
             pit[2].readLatch = 1320; /* MadTv1 */
-            pit[2].write_state = 3; /* Chuck Yeager */
-            pit[2].read_state = 3;
+            pit[2].writeState = 3; /* Chuck Yeager */
+            pit[2].readState = 3;
             pit[2].mode = 3;
             pit[2].bcd = false;
             pit[2].cntr = 1320;
-            pit[2].go_read_latch = true;
-            pit[2].counterstatus_set = false;
+            pit[2].goReadLatch = true;
+            pit[2].counterStatusSet = false;
             pit[2].counting = false;
 
             pit[0].delay = (1000.0f / ((float) PIT_TICK_RATE / (float) pit[0].cntr));
             pit[1].delay = (1000.0f / ((float) PIT_TICK_RATE / (float) pit[1].cntr));
             pit[2].delay = (1000.0f / ((float) PIT_TICK_RATE / (float) pit[2].cntr));
 
-            latched_timerstatus_locked = false;
+            latchedTimerStatusLocked = false;
             gate2 = false;
             PIC.addEvent(Timer::PIT0Event, pit[0].delay);
         }

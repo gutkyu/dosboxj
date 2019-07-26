@@ -40,7 +40,7 @@ public final class Mount extends Program {
         /*
          * In secure mode don't allow people to change mount points. Neither mount nor unmount
          */
-        if (DOSBox.Control.secureMode()) {
+        if (DOSBox.Control.getSecureMode()) {
             writeOut(Message.get("PROGRAM_CONFIG_SECURE_DISALLOW"));
             return;
         }
@@ -54,7 +54,7 @@ public final class Mount extends Program {
                     case 0:
                         DOSMain.Drives[iDrive] = null;
                         if (iDrive == DOSMain.getDefaultDrive())
-                            DOSMain.setDrive((byte) ('Z' - 'A'));
+                            DOSMain.setDrive('Z' - 'A');
                         writeOut(Message.get("PROGRAM_MOUNT_UMOUNT_SUCCESS"), umount.charAt(0));
                         break;
                     case 1:

@@ -17,10 +17,10 @@ public final class DOSModule extends ModuleBase {
             callback[i] = new CallbackHandlerObject();
         }
         callback[0].install(DOSMain::INT20Handler, Callback.Symbol.IRET, "DOS Int 20");
-        callback[0].setRealVec((byte) 0x20);
+        callback[0].setRealVec(0x20);
 
         callback[1].install(DOSMain::INT21Handler, Callback.Symbol.INT21, "DOS Int 21");
-        callback[1].setRealVec((byte) 0x21);
+        callback[1].setRealVec(0x21);
         // Pseudo code for int 21
         // sti
         // callback
@@ -28,19 +28,19 @@ public final class DOSModule extends ModuleBase {
         // retf <- int 21 4c jumps here to mimic a retf Cyber
 
         callback[2].install(DOSMain::INT25Handler, Callback.Symbol.RETF, "DOS Int 25");
-        callback[2].setRealVec((byte) 0x25);
+        callback[2].setRealVec(0x25);
 
         callback[3].install(DOSMain::INT26Handler, Callback.Symbol.RETF, "DOS Int 26");
-        callback[3].setRealVec((byte) 0x26);
+        callback[3].setRealVec(0x26);
 
         callback[4].install(DOSMain::INT27Handler, Callback.Symbol.IRET, "DOS Int 27");
-        callback[4].setRealVec((byte) 0x27);
+        callback[4].setRealVec(0x27);
 
         callback[5].install(null, Callback.Symbol.IRET, "DOS Int 28");
-        callback[5].setRealVec((byte) 0x28);
+        callback[5].setRealVec(0x28);
 
         callback[6].install(null, Callback.Symbol.INT29, "CON Output Int 29");
-        callback[6].setRealVec((byte) 0x29);
+        callback[6].setRealVec(0x29);
         // pseudocode for CB_INT29:
         // push ax
         // mov ah, 0x0e
@@ -55,7 +55,7 @@ public final class DOSModule extends ModuleBase {
         DOSMain.setupPrograms();
         DOSSystem.setupMisc(); /* Some additional dos interrupts */
         (new DOSSDA(DOSMain.DOS_SDA_SEG, DOSMain.DOS_SDA_OFS))
-                .setDrive((byte) 25); /* Else the next call gives a warning. */
+                .setDrive(25); /* Else the next call gives a warning. */
         DOSMain.setDefaultDrive(25);
 
         DOSMain.DOS.Version.major = 5;

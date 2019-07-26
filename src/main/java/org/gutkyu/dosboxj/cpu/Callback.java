@@ -24,10 +24,10 @@ public final class Callback {
         IRQ1(8), IRQ9(9), IRQ12(10), IRQ12_RET(11), IRQ6_PCJR(12), MOUSE(13), INT29(14),
         INT16(15), HOOKABLE(16), TDE_IRET(17), IPXESR(18), IPXESR_RET(19), INT21(20);
         //@formatter:on
-        private final byte value;
+        private final int value;
 
         private Symbol(int value) {
-            this.value = (byte) value;
+            this.value = value;
         }
 
         public int toValue() {

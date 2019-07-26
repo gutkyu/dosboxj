@@ -48,7 +48,7 @@ public class Programs {
         byte index = (byte) progsLen;
         _internalProgs.add(makable);
 
-        comdata[exeBlockLen] = (byte) index;
+        comdata[exeBlockLen] = index;
         VFile.register(name, comdata, exeBlockLen + 1);
     }
 
@@ -59,7 +59,7 @@ public class Programs {
         /* Read the index from program code in memory */
         int reader = Memory.physMake(DOSMain.DOS.getPSP(), 256 + exeBlock.length);
         for (int i = 0; i < size; i++)
-            index |=  Memory.readB(reader++) << i;
+            index |= Memory.readB(reader++) << i;
         if (index > _internalProgs.size())
             Support.exceptionExit("something is messing with the memory");
         Program newProgram = _internalProgs.get(index).make();

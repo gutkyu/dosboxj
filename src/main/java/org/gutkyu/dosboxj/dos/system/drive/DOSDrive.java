@@ -8,7 +8,7 @@ import org.gutkyu.dosboxj.util.*;
 
 public abstract class DOSDrive {
     public DOSDrive() {
-        curdir = "";
+        curDir = "";
         info = "";
     }
 
@@ -52,7 +52,7 @@ public abstract class DOSDrive {
     public abstract int getMediaByte();
 
     public void setDir(String path) {
-        curdir = path;
+        curDir = path;
     }
 
     public void emptyCache() {
@@ -71,7 +71,7 @@ public abstract class DOSDrive {
         return info;
     }
 
-    public String curdir = "";
+    public String curDir = "";
     // 소스에서는 public이나 protected로 변경, GetInfo()로 외부 접근 인터페이스 구현
     protected String info = "";
 
