@@ -29,8 +29,8 @@ public class UnchainedEGAHandler extends UnchainedReadHandler {
         pixels.b2 = linearAlloc[idx4 + 2];
         pixels.b3 = linearAlloc[idx4 + 3];
 
-        pixels.d &= vga.Config.FullNotMapMask;
-        pixels.d |= (data & vga.Config.FullMapMask);
+        pixels.d(pixels.d() & vga.Config.FullNotMapMask);
+        pixels.d(pixels.d() | (data & vga.Config.FullMapMask));
         linearAlloc[idx4] = pixels.b0;
         linearAlloc[idx4 + 1] = pixels.b1;
         linearAlloc[idx4 + 2] = pixels.b2;
@@ -40,7 +40,7 @@ public class UnchainedEGAHandler extends UnchainedReadHandler {
 
         // ByteConvert colors0_3, colors4_7;
         VGALatch temp = new VGALatch();
-        temp.d = (pixels.d >>> 4) & 0x0f0f0f0f;
+        temp.d((pixels.d() >>> 4) & 0x0f0f0f0f);
         int[][] expand16Tbl = vga.Expand16Table;
         int colors0_3 = expand16Tbl[0][temp.b0] | expand16Tbl[1][temp.b1] | expand16Tbl[2][temp.b2]
                 | expand16Tbl[3][temp.b3];
@@ -49,7 +49,7 @@ public class UnchainedEGAHandler extends UnchainedReadHandler {
         byte[] fastmemAlloc = vga.FastMemAlloc;
         ByteConv.setInt(fastmemAlloc, fmidx, colors0_3);
         fmidx += 4;
-        temp.d = pixels.d & 0x0f0f0f0f;
+        temp.d(pixels.d() & 0x0f0f0f0f);
         int colors4_7 = expand16Tbl[0][temp.b0] | expand16Tbl[1][temp.b1] | expand16Tbl[2][temp.b2]
                 | expand16Tbl[3][temp.b3];
         ByteConv.setInt(fastmemAlloc, fmidx, colors4_7);

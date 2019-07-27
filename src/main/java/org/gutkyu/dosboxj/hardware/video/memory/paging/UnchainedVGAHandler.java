@@ -25,8 +25,8 @@ public final class UnchainedVGAHandler extends ChainedVGAHandler {
         pixels.b2 = vga.Mem.LinearAlloc[idx4 + 2];
         pixels.b3 = vga.Mem.LinearAlloc[idx4 + 3];
 
-        pixels.d &= vga.Config.FullNotMapMask;
-        pixels.d |= (data & vga.Config.FullMapMask);
+        pixels.d(pixels.d() & vga.Config.FullNotMapMask);
+        pixels.d(pixels.d() | (data & vga.Config.FullMapMask));
         // ((Bit32u*)vga.mem.linear)[addr] = pixels.d;
         vga.Mem.LinearAlloc[idx4] = pixels.b0;
         vga.Mem.LinearAlloc[idx4 + 1] = pixels.b1;

@@ -1960,13 +1960,13 @@ public final class VGA {
     private int rasterOp(int input, int mask) {
         switch (Config.RasterOp) {
             case 0x00: /* None */
-                return (input & mask) | (Latch.d & ~mask);
+                return (input & mask) | (Latch.d() & ~mask);
             case 0x01: /* AND */
-                return (input | ~mask) & Latch.d;
+                return (input | ~mask) & Latch.d();
             case 0x02: /* OR */
-                return (input & mask) | Latch.d;
+                return (input & mask) | Latch.d();
             case 0x03: /* XOR */
-                return (input & mask) ^ Latch.d;
+                return (input & mask) ^ Latch.d();
         }
         return 0;
     }
@@ -1992,7 +1992,7 @@ public final class VGA {
                 // Write Mode 1: In this mode, data is transferred directly from the 32 bit
                 // latch register to display memory, affected only by the Memory Plane Write
                 // Enable field. The host data is not used in this mode.
-                full = Latch.d;
+                full = Latch.d();
                 break;
             case 0x02:
                 // Write Mode 2: In this mode, the bits 3-0 of the host data are replicated

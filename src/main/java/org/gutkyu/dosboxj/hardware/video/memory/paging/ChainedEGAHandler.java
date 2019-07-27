@@ -37,7 +37,7 @@ public final class ChainedEGAHandler extends PageHandler {
         // ByteConvert colors0_3 = new ByteConvert();
         // ByteBuffer colors0_3 = ByteBuffer.allocate(4);
         VGALatch temp = new VGALatch();
-        temp.d = (pixels.d >>> 4) & 0x0f0f0f0f;
+        temp.d((pixels.d() >>> 4) & 0x0f0f0f0f);
         int[][] expand16Tbl = vga.Expand16Table;
         int colors0_3 = expand16Tbl[0][temp.b0] | expand16Tbl[1][temp.b1] | expand16Tbl[2][temp.b2]
                 | expand16Tbl[3][temp.b3];
@@ -48,7 +48,7 @@ public final class ChainedEGAHandler extends PageHandler {
         fmidx += 4;
 
         // ByteConvert colors4_7 = new ByteConvert();
-        temp.d = pixels.d & 0x0f0f0f0f;
+        temp.d(pixels.d() & 0x0f0f0f0f);
         int colors4_7 = expand16Tbl[0][temp.b0] | expand16Tbl[1][temp.b1] | expand16Tbl[2][temp.b2]
                 | expand16Tbl[3][temp.b3];
         ByteConv.setInt(fastmemAlloc, fmidx, colors4_7);

@@ -36,8 +36,8 @@ class UnchainedReadHandler extends PageHandler {
                 break;// 여기까지 도달 불가능
             case 1:
                 VGALatch templatch = new VGALatch();
-                templatch.d = (vga.Latch.d & vga.FillTable[vga.Config.ColorDontCare])
-                        ^ vga.FillTable[vga.Config.ColorCompare & vga.Config.ColorDontCare];
+                templatch.d((vga.Latch.d() & vga.FillTable[vga.Config.ColorDontCare])
+                        ^ vga.FillTable[vga.Config.ColorCompare & vga.Config.ColorDontCare]);
                 return (byte) ~(templatch.b0 | templatch.b1 | templatch.b2 | templatch.b3);
         }
         return 0;
