@@ -80,17 +80,17 @@ public final class VGA {
     public SVGADriver SVGADrv = new SVGADriver();
     public VGAXGA XGA = null;
 
-    private static final int[] CGA2Table = new int[16];
-    private static final int[] CGA4Table = new int[256];
-    private static final int[] CGA4HiResTable = new int[256];
-    private static final int[] CGA16Table = new int[256];
-    private static final int[] TXTFontTable = new int[16];
-    private static final int[] TXTFGTable = new int[16];
-    private static final int[] TXTBGTable = new int[16];
-    public static final int[] ExpandTable = new int[256];
-    public static final int[][] Expand16Table = new int[4][16];
-    public static final int[] FillTable = new int[16];
-    private static final int[] ColorTable = new int[16];
+    private final int[] CGA2Table = new int[16];
+    private final int[] CGA4Table = new int[256];
+    private final int[] CGA4HiResTable = new int[256];
+    private final int[] CGA16Table = new int[256];
+    private final int[] TXTFontTable = new int[16];
+    private final int[] TXTFGTable = new int[16];
+    private final int[] TXTBGTable = new int[16];
+    public final int[] ExpandTable = new int[256];
+    public final int[][] Expand16Table = new int[4][16];
+    public final int[] FillTable = new int[16];
+    private final int[] ColorTable = new int[16];
 
     private VGA() {
         // VGA_Type init
