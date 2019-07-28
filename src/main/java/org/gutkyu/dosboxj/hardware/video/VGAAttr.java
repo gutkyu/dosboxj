@@ -226,17 +226,17 @@ public final class VGAAttr {
             case 0x0d:
             case 0x0e:
             case 0x0f:
-                return Palette[Index];
+                return 0xff & Palette[Index];
             case 0x10: /* Mode Control Register */
-                return ModeControl;
+                return 0xff & ModeControl;
             case 0x11: /* Overscan Color Register */
-                return OverscanColor;
+                return 0xff & OverscanColor;
             case 0x12: /* Color Plane Enable Register */
-                return ColorPlaneEnable;
+                return 0xff & ColorPlaneEnable;
             case 0x13: /* Horizontal PEL Panning Register */
                 return HorizontalPelPanning;
             case 0x14: /* Color Select Register */
-                return ColorSelect;
+                return 0xff & ColorSelect;
             default:
                 if (vga.SVGADrv.ReadP3C1 != null)
                     return vga.SVGADrv.ReadP3C1.exec(Index, iolen);

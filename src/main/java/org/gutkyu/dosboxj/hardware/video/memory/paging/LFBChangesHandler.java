@@ -19,7 +19,7 @@ public final class LFBChangesHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) - vga.Lfb.Addr;
         addr = vga.checked(addr);
         // return MEMORY.host_readb(ref vga.mem.linear_orgptr, vga.mem.linear + addr);
-        return vga.Mem.LinearAlloc[addr];
+        return 0xff & vga.Mem.LinearAlloc[addr];
     }
 
     @Override

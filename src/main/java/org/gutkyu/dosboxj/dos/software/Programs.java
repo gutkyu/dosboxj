@@ -18,7 +18,9 @@ public class Programs {
     private static int callProgram;
 
     // byte
-    private static byte[] exeBlock = {(byte) 0xbc, 0x00, 0x04, // MOV SP,0x400 decrease stack size
+    private static byte[] exeBlock = {
+
+            (byte) 0xbc, 0x00, 0x04, // MOV SP,0x400 decrease stack size
             (byte) 0xbb, 0x40, 0x00, // MOV BX,0x040 for memory resize
             (byte) 0xb4, 0x4a, // MOV AH,0x4A Resize memory block
             (byte) 0xcd, 0x21, // INT 0x21
@@ -26,11 +28,12 @@ public class Programs {
             0xFE, 0x38, 0x00, 0x00, // CALLBack number
             (byte) 0xb8, 0x00, 0x4c, // Mov ax,4c00
             (byte) 0xcd, 0x21, // INT 0x21
+
     };
 
     private static final int CB_POS = 12;
 
-    private static List<ProgramMake> _internalProgs = new ArrayList<ProgramMake>();
+    private static List<ProgramMake> internalProgs = new ArrayList<ProgramMake>();
 
     public static void makeFile(String name, ProgramMake makable) {
         byte[] comdata = new byte[32]; // MEM LEAK
@@ -38,15 +41,15 @@ public class Programs {
         for (int i = 0; i < exeBlockLen; i++) {
             comdata[i] = exeBlock[i];
         }
-        comdata[CB_POS] = (byte) (callProgram & 0xff);
-        comdata[CB_POS + 1] = (byte) ((callProgram >>> 8) & 0xff);
+        comdata[CB_POS] = (byte) callProgram;
+        comdata[CB_POS + 1] = (byte) (callProgram >>> 8);
 
         /* Copy save the pointer in the vector and save it's index */
-        int progsLen = _internalProgs.size();
+        int progsLen = internalProgs.size();
         if (progsLen > 255)
             Support.exceptionExit("PROGRAMS_MakeFile program size too large (%d)", progsLen);
         byte index = (byte) progsLen;
-        _internalProgs.add(makable);
+        internalProgs.add(makable);
 
         comdata[exeBlockLen] = index;
         VFile.register(name, comdata, exeBlockLen + 1);
@@ -60,9 +63,9 @@ public class Programs {
         int reader = Memory.physMake(DOSMain.DOS.getPSP(), 256 + exeBlock.length);
         for (int i = 0; i < size; i++)
             index |= Memory.readB(reader++) << i;
-        if (index > _internalProgs.size())
+        if (index > internalProgs.size())
             Support.exceptionExit("something is messing with the memory");
-        Program newProgram = _internalProgs.get(index).make();
+        Program newProgram = internalProgs.get(index).make();
         newProgram.run();
         return Callback.ReturnTypeNone;
     }

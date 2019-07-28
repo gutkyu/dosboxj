@@ -283,19 +283,19 @@ public final class Boot extends Program {
                     byte[] cmdlist = new byte[1024];
                     cmdlist[0] = 0;
                     int ct = 6;
-                    int clen = romBuf[ct];
+                    int cLen = 0xff & romBuf[ct];
                     byte[] buf = new byte[257];
                     if (cartCmd == "?") {
-                        while (clen != 0) {
-                            CStringHelper.strncpy(buf, 0, romBuf, ct + 1, clen);
-                            buf[clen] = 0;
+                        while (cLen != 0) {
+                            CStringHelper.strncpy(buf, 0, romBuf, ct + 1, cLen);
+                            buf[cLen] = 0;
                             CStringHelper.upcase(buf);
                             CStringHelper.strcat(cmdlist, tmSpB);
                             CStringHelper.strcat(cmdlist, buf);
-                            ct += 1 + clen + 3;
+                            ct += 1 + cLen + 3;
                             if (ct > cmdlist.length)
                                 break;
-                            clen = romBuf[ct];
+                            cLen = 0xff & romBuf[ct];
                         }
                         if (ct > 6) {
                             writeOut(Message.get("PROGRAM_BOOT_CART_LIST_CMDS"),
@@ -312,13 +312,13 @@ public final class Boot extends Program {
                         // fclose(useFileCh1); //delete diskSwap closes the file
                         return;
                     } else {
-                        while (clen != 0) {
-                            CStringHelper.strncpy(buf, 0, romBuf, ct + 1, clen);
-                            buf[clen] = 0;
+                        while (cLen != 0) {
+                            CStringHelper.strncpy(buf, 0, romBuf, ct + 1, cLen);
+                            buf[cLen] = 0;
                             CStringHelper.upcase(buf);
                             CStringHelper.strcat(cmdlist, tmSpB);
                             CStringHelper.strcat(cmdlist, buf);
-                            ct += 1 + clen;
+                            ct += 1 + cLen;
                             if (cartCmd == new String(buf, 0, CStringHelper.strlen(buf),
                                     StandardCharsets.US_ASCII)) {
                                 cFoundAt = ct;
@@ -328,7 +328,7 @@ public final class Boot extends Program {
                             ct += 3;
                             if (ct > cmdlist.length)
                                 break;
-                            clen = romBuf[ct];
+                            cLen = 0xff & romBuf[ct];
                         }
                         if (cFoundAt <= 0) {
                             if (ct > 6) {

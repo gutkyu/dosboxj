@@ -13,11 +13,11 @@ import org.gutkyu.dosboxj.misc.setup.Value.WrongType;
 import org.gutkyu.dosboxj.cpu.*;
 
 public abstract class DOSShellBase extends Program {
-    protected LinkedList<String> _history = new LinkedList<String>(),
-            _completion = new LinkedList<String>();
+    protected LinkedList<String> history = new LinkedList<String>(),
+            completion = new LinkedList<String>();
 
     protected String _completionStart;
-    protected int _completionIndex;
+    protected int completionIndex;
 
     /* The shell's variables */
     public int InputHandle;// uint16
@@ -310,12 +310,11 @@ public abstract class DOSShellBase extends Program {
         return new DOSShell();
     }
 
-    private static final byte[] _pathString = "PATH=Z:\\\0".getBytes(StandardCharsets.US_ASCII);
-    private static final byte[] _comspecString =
+    private static final byte[] pathString = "PATH=Z:\\\0".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] comspecString =
             "COMSPEC=Z:\\COMMAND.COM\0".getBytes(StandardCharsets.US_ASCII);;
-    private static final byte[] _fullName =
-            "Z:\\COMMAND.COM\0".getBytes(StandardCharsets.US_ASCII);;
-    private static final byte[] _initLine =
+    private static final byte[] fullName = "Z:\\COMMAND.COM\0".getBytes(StandardCharsets.US_ASCII);;
+    private static final byte[] initLine =
             "/INIT AUTOEXEC.BAT\0".getBytes(StandardCharsets.US_ASCII);;
 
     public static void init() throws WrongType {
@@ -488,14 +487,14 @@ public abstract class DOSShellBase extends Program {
 
         /* Setup environment */
         int envWrite = Memory.physMake(env_seg, 0);
-        Memory.blockWrite(envWrite, _pathString, 0, _pathString.length);
-        envWrite += _pathString.length;
-        Memory.blockWrite(envWrite, _comspecString, 0, _comspecString.length);
-        envWrite += _comspecString.length;
+        Memory.blockWrite(envWrite, pathString, 0, pathString.length);
+        envWrite += pathString.length;
+        Memory.blockWrite(envWrite, comspecString, 0, comspecString.length);
+        envWrite += comspecString.length;
         Memory.writeB(envWrite++, 0);
         Memory.writeW(envWrite, 1);
         envWrite += 2;
-        Memory.blockWrite(envWrite, _fullName, 0, _fullName.length);
+        Memory.blockWrite(envWrite, fullName, 0, fullName.length);
 
         DOSPSP psp = new DOSPSP(pspSeg);
         psp.makeNew(0);
@@ -519,8 +518,8 @@ public abstract class DOSShellBase extends Program {
         psp.setEnvironment(env_seg);
         /* Set the command line for the shell start up */
         byte[] tail = new byte[DOSMain.CommandTailSize];
-        tail[DOSMain.CommandTailOffCount] = (byte) (_initLine.length - 1);// null character제외
-        ArrayHelper.copy(_initLine, 0, tail, DOSMain.CommandTailOffBuffer, _initLine.length);
+        tail[DOSMain.CommandTailOffCount] = (byte) (initLine.length - 1);// null character제외
+        ArrayHelper.copy(initLine, 0, tail, DOSMain.CommandTailOffBuffer, initLine.length);
         Memory.blockWrite(Memory.physMake(pspSeg, 128), tail, 0, 128);
 
         /* Setup internal DOS Variables */

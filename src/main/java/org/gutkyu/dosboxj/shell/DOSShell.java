@@ -159,9 +159,9 @@ public final class DOSShell extends DOSShellBase {
     /* Some supported commands */
     // static char empty_char = 0;
     // static char* empty_string = &empty_char;
-    private static char _emptyChar = (char) 0;
-    private static CStringPt _emptyString = CStringPt.create(new char[] {_emptyChar});
-    private static int _emptyStringIdx = 0;
+    private static char emptyChar = (char) 0;
+    private static CStringPt emptyString = CStringPt.create(new char[] {emptyChar});
+    private static int emptyStringIdx = 0;
 
     private void cmdHELP(CStringPt args) {
         if (help(args, "HELP"))
@@ -175,7 +175,7 @@ public final class DOSShell extends DOSShellBase {
             if (optall || cmd.Flags == 0) {
                 writeOut("<\u001B[34;1m{0,-8}\u001B[0m> {1}", cmd.Name, Message.get(cmd.Help));
                 if ((++write_count % 22) == 0)
-                    cmdPAUSE(_emptyString);
+                    cmdPAUSE(emptyString);
             }
             cmd_index++;
         }
@@ -532,11 +532,11 @@ public final class DOSShell extends DOSShellBase {
                     writeOut("%s\n", name);
                 }
             } else {
-                CStringPt ext = _emptyString;
+                CStringPt ext = emptyString;
                 if (!optW && (name.get(0) != '.')) {
                     ext = name.lastPositionOf('.');
                     if (ext.isEmpty())
-                        ext = _emptyString;
+                        ext = emptyString;
                     else {
                         ext.set((char) 0);
                         ext.movePtToR1();
@@ -578,7 +578,7 @@ public final class DOSShell extends DOSShellBase {
                 }
             }
             if (optP && (++pCount % (22 * wSize)) == 0) {
-                cmdPAUSE(_emptyString);
+                cmdPAUSE(emptyString);
             }
         } while ((ret = DOSMain.findNext()));
         if (optW) {
@@ -858,9 +858,9 @@ public final class DOSShell extends DOSShellBase {
                 return;
             }
 
-            byte n = 0;
+            int n = 0;// uint8
             do
-                n = (byte) (n * 10 + (word.get() - '0'));
+                n = 0xff & (n * 10 + (word.get() - '0'));
             while (Character.isDigit((word.movePtToR1()).get()));
             if (word.get() != 0 && !Character.isWhitespace(word.get())) {
                 writeOut(Message.get("SHELL_CMD_IF_ERRORLEVEL_INVALID_NUMBER"));
@@ -1141,7 +1141,7 @@ public final class DOSShell extends DOSShellBase {
             this.parseLine(args);
     }
 
-    private static CStringPt _defChoice = CStringPt.create("yn");
+    private static CStringPt defChoice = CStringPt.create("yn");
 
     private void cmdCHOICE(CStringPt args) {
         if (help(args, "CHOICE"))
@@ -1170,7 +1170,7 @@ public final class DOSShell extends DOSShellBase {
                 args.empty();
         }
         if (rem.isEmpty() || rem.get() == 0)
-            rem = _defChoice; /* No choices specified use YN */
+            rem = defChoice; /* No choices specified use YN */
         ptr = rem;
         byte c = 0;
         if (!optS)
@@ -1286,12 +1286,12 @@ public final class DOSShell extends DOSShellBase {
 
         line.set(0, '\0');
         String currHisStr = null;
-        if (!_history.isEmpty())
-            currHisStr = _history.getFirst();
+        if (!history.isEmpty())
+            currHisStr = history.getFirst();
         int currHisIdx = 0;
         String currCmpStr = null;
-        if (!_completion.isEmpty())
-            currCmpStr = _completion.getFirst();
+        if (!completion.isEmpty())
+            currCmpStr = completion.getFirst();
         int currCmpIdx = 0;
         while (size > 0) {
             DOSMain.DOS.Echo = false;
@@ -1318,9 +1318,9 @@ public final class DOSShell extends DOSShellBase {
                     switch (c) {
 
                         case 0x3d: /* F3 */
-                            if (_history.size() == 0)
+                            if (history.size() == 0)
                                 break;
-                            currHisStr = _history.getFirst();
+                            currHisStr = history.getFirst();
                             currHisIdx = 0;
                             if (currHisStr != null && currHisStr.length() > strLen) {
                                 int readerIdx = strLen;
@@ -1363,13 +1363,13 @@ public final class DOSShell extends DOSShellBase {
 
                         case 0x48: /* UP */
                         {
-                            if (currHisStr == null || _history.size() == 0)
+                            if (currHisStr == null || history.size() == 0)
                                 break;
 
                             // store current command in history if we are at beginning
-                            if (currHisStr == _history.getFirst() && !currentHist) {
+                            if (currHisStr == history.getFirst() && !currentHist) {
                                 currentHist = true;
-                                _history.addFirst(line.toString());
+                                history.addFirst(line.toString());
                             }
 
                             for (; strIndex > 0; strIndex--) {
@@ -1384,29 +1384,29 @@ public final class DOSShell extends DOSShellBase {
                             size = ShellInner.CMD_MAXLINE - strIndex - 2;
                             DOSMain.writeFile(DOSMain.STDOUT, line.getAsciiBytes(), 0, len);
                             len = DOSMain.WrittenSize;
-                            currHisStr = _history.get(++currHisIdx);
+                            currHisStr = history.get(++currHisIdx);
                             break;
                         }
                         case 0x50: /* DOWN */
                         {
-                            if (_history.size() == 0 || currHisStr == _history.getFirst())
+                            if (history.size() == 0 || currHisStr == history.getFirst())
                                 break;
 
                             // not very nice but works ..
-                            currHisStr = _history.get(--currHisIdx);
+                            currHisStr = history.get(--currHisIdx);
 
-                            if (currHisStr == _history.getFirst()) {
+                            if (currHisStr == history.getFirst()) {
                                 // no previous commands in history
-                                currHisStr = _history.get(++currHisIdx);
+                                currHisStr = history.get(++currHisIdx);
 
                                 // remove current command from history
                                 if (currentHist) {
                                     currentHist = false;
-                                    _history.removeFirst();
+                                    history.removeFirst();
                                 }
                                 break;
                             } else {
-                                currHisStr = _history.get(--currHisIdx);
+                                currHisStr = history.get(--currHisIdx);
                             }
 
                             for (; strIndex > 0; strIndex--) {
@@ -1421,7 +1421,7 @@ public final class DOSShell extends DOSShellBase {
                             size = ShellInner.CMD_MAXLINE - strIndex - 2;
                             DOSMain.writeFile(DOSMain.STDOUT, line.getAsciiBytes(), 0, len);
                             len = DOSMain.WrittenSize;
-                            currHisStr = _history.get(++currHisIdx);
+                            currHisStr = history.get(++currHisIdx);
 
                             break;
                         }
@@ -1472,8 +1472,8 @@ public final class DOSShell extends DOSShellBase {
                         while (strRemain-- != 0)
                             outc(8);
                     }
-                    if (_completion.size() != 0)
-                        _completion.clear();
+                    if (completion.size() != 0)
+                        completion.clear();
                     break;
                 case 0x0a: /* New Line not handled */
                     /* Don't care */
@@ -1483,35 +1483,35 @@ public final class DOSShell extends DOSShellBase {
                     size = 0; // Kill the while loop
                     break;
                 case (byte) '\t': {
-                    if (_completion.size() > 0) {
-                        currCmpStr = _completion.get(++currCmpIdx);
+                    if (completion.size() > 0) {
+                        currCmpStr = completion.get(++currCmpIdx);
                         if (currCmpStr == null) {
                             currCmpIdx = 0;
-                            currCmpStr = _completion.getFirst();
+                            currCmpStr = completion.getFirst();
                         }
                     } else {
                         // build new completion list
                         // Lines starting with CD will only get directories in the list
-                        boolean dir_only =
+                        boolean dirOnly =
                                 line.toString().substring(0, 3).compareToIgnoreCase("CD") == 0;
                         // get completion mask
                         CStringPt pCompletionStart = line.lastPositionOf(' ');
 
                         if (!pCompletionStart.isEmpty()) {
                             pCompletionStart.movePtToR1();
-                            _completionIndex = strLen - pCompletionStart.length();
+                            completionIndex = strLen - pCompletionStart.length();
                         } else {
                             pCompletionStart = line;
-                            _completionIndex = 0;
+                            completionIndex = 0;
                         }
 
                         CStringPt path;
-                        if (!(path = CStringPt.clone(line, _completionIndex).lastPositionOf('\\'))
+                        if (!(path = CStringPt.clone(line, completionIndex).lastPositionOf('\\'))
                                 .isEmpty())
-                            _completionIndex = CStringPt.diff(path, line) + 1;
-                        if (!(path = CStringPt.clone(line, _completionIndex).lastPositionOf('/'))
+                            completionIndex = CStringPt.diff(path, line) + 1;
+                        if (!(path = CStringPt.clone(line, completionIndex).lastPositionOf('/'))
                                 .isEmpty())
-                            _completionIndex = CStringPt.diff(path, line) + 1;
+                            completionIndex = CStringPt.diff(path, line) + 1;
 
                         CStringPt mask = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
                         if (!pCompletionStart.isEmpty()) {
@@ -1554,10 +1554,10 @@ public final class DOSShell extends DOSShellBase {
 
                             CStringPt ext; // file extension
                             if (name.equals(".") && name.equals("..")) {
-                                if (dir_only) { // Handle the dir only case different (line starts
-                                                // with cd)
+                                if (dirOnly) { // Handle the dir only case different (line starts
+                                               // with cd)
                                     if ((att & DOSSystem.DOS_ATTR_DIRECTORY) > 0)
-                                        _completion.addLast(name.toString());
+                                        completion.addLast(name.toString());
                                 } else {
                                     ext = name.lastPositionOf('.');
                                     if (!ext.isEmpty() && (ext.equals(".BAT") || ext.equals(".COM")
@@ -1566,7 +1566,7 @@ public final class DOSShell extends DOSShellBase {
                                         // list infront of the normal files
                                         executable.addFirst(name.toString());
                                     else
-                                        _completion.addLast(name.toString());
+                                        completion.addLast(name.toString());
                                 }
                             }
                             res = DOSMain.findNext();
@@ -1574,25 +1574,25 @@ public final class DOSShell extends DOSShellBase {
 
                         /* Add excutable list to front of completion list. */
                         for (String nd : executable) {
-                            _completion.add(0, nd);
+                            completion.add(0, nd);
                         }
 
                         currCmpIdx = 0;
-                        currCmpStr = _completion.getFirst();
+                        currCmpStr = completion.getFirst();
                         DOSMain.DOS.setDTA(saveDTA);
                     }
 
-                    if (_completion.size() > 0 && currCmpStr.length() > 0) {
-                        for (; strIndex > _completionIndex; strIndex--) {
+                    if (completion.size() > 0 && currCmpStr.length() > 0) {
+                        for (; strIndex > completionIndex; strIndex--) {
                             // removes all characters
                             outc(8);
                             outc((byte) ' ');
                             outc(8);
                         }
 
-                        CStringPt.copy(currCmpStr, CStringPt.clone(line, _completionIndex));
+                        CStringPt.copy(currCmpStr, CStringPt.clone(line, completionIndex));
                         len = currCmpStr.length();
-                        strLen = strIndex = _completionIndex + len;
+                        strLen = strIndex = completionIndex + len;
                         size = ShellInner.CMD_MAXLINE - strIndex - 2;
                         DOSMain.writeFile(DOSMain.STDOUT,
                                 CStringPt.create(currCmpStr).getAsciiBytes(), 0, len);
@@ -1605,15 +1605,15 @@ public final class DOSShell extends DOSShellBase {
                     outc((byte) '\\');
                     outc((byte) '\n');
                     line.set(0, (char) 0); // reset the line.
-                    if (_completion.size() > 0)
-                        _completion.clear(); // reset the completion list.
+                    if (completion.size() > 0)
+                        completion.clear(); // reset the completion list.
                     this.inputCommand(line); // Get the NEW line.
                     size = 0; // stop the next loop
                     strLen = 0; // prevent multiple adds of the same line
                     break;
                 default:
-                    if (_completion.size() > 0)
-                        _completion.clear();
+                    if (completion.size() > 0)
+                        completion.clear();
                     // mem_readb(BIOS_KEYBOARD_FLAGS1)&0x80) dev_con.h ?
                     if (strIndex < strLen && true) {
                         outc((byte) ' ');// move cursor one to the right.
@@ -1650,15 +1650,15 @@ public final class DOSShell extends DOSShellBase {
         // remove current command from history if it's there
         if (currentHist) {
             currentHist = false;
-            _history.removeFirst();
+            history.removeFirst();
         }
 
         // add command line to history
-        _history.add(0, line.toString());
+        history.add(0, line.toString());
         currHisIdx = 0;
-        currHisStr = _history.getFirst();
-        if (_completion.size() > 0)
-            _completion.clear();
+        currHisStr = history.getFirst();
+        if (completion.size() > 0)
+            completion.clear();
     }
 
 

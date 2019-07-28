@@ -3,6 +3,7 @@ package org.gutkyu.dosboxj.interrupt.int10;
 import org.gutkyu.dosboxj.cpu.*;
 import org.gutkyu.dosboxj.hardware.io.*;
 import org.gutkyu.dosboxj.hardware.memory.*;
+import org.gutkyu.dosboxj.hardware.video.VGAModes;
 import org.gutkyu.dosboxj.misc.setup.*;
 import org.gutkyu.dosboxj.util.*;
 import org.gutkyu.dosboxj.*;
@@ -33,11 +34,11 @@ public final class INT10 {
     static final int BIOSMEM_CRTCPU_PAGE = 0x8A;
     static final int BIOSMEM_VS_POINTER = 0xA8;
 
-    public static byte[] int10_font_08, int10_font_14, int10_font_16;
+    public static byte[] int10Font08, int10Font14, int10Font16;
     static {
-        int10_font_08 = Resources.get("INT10Font08");
-        int10_font_14 = Resources.get("INT10Font14");
-        int10_font_16 = Resources.get("INT10Font16");
+        int10Font08 = Resources.get("INT10Font08");
+        int10Font14 = Resources.get("INT10Font14");
+        int10Font16 = Resources.get("INT10Font16");
     }
 
     // uint8(uint8)
@@ -151,12 +152,12 @@ public final class INT10 {
                 break;
             }
             case 0x09: /* Write Character & Attribute at cursor CX times */
-                CHAR.writeChar2((byte) Register.getRegAL(), Register.getRegBL(),
-                        Register.getRegBH(), Register.getRegCX(), true);
+                CHAR.writeChar2(Register.getRegAL(), Register.getRegBL(), Register.getRegBH(),
+                        Register.getRegCX(), true);
                 break;
             case 0x0A: /* Write Character at cursor CX times */
-                CHAR.writeChar2((byte) Register.getRegAL(), Register.getRegBL(),
-                        Register.getRegBH(), Register.getRegCX(), false);
+                CHAR.writeChar2(Register.getRegAL(), Register.getRegBL(), Register.getRegBH(),
+                        Register.getRegCX(), false);
                 break;
             case 0x0B: /* Set Background/Border Colour & Set Palette */
                 switch (Register.getRegBH()) {
@@ -175,9 +176,9 @@ public final class INT10 {
                 break;
             case 0x0D: /* Read Graphics Pixel */
             {
-                int regVal =
-                        getPixel(Register.getRegCX(), Register.getRegDX(), Register.getRegBH());
-                Register.setRegAL(regVal);
+                if (canGetPixel())
+                    Register.setRegAL(getPixel(Register.getRegCX(), Register.getRegDX(),
+                            Register.getRegBH()));
                 break;
             }
             case 0x0E: /* Teletype OutPut */
@@ -1011,7 +1012,9 @@ public final class INT10 {
     }
 
     /*--------------------------- begin INT10Memory -----------------------------*/
-    static byte[] staticFunctionality = {/* 0 */ (byte) 0xff, // All modes supported #1
+    static byte[] staticFunctionality = {
+
+            /* 0 */ (byte) 0xff, // All modes supported #1
             /* 1 */ (byte) 0xff, // All modes supported #2
             /* 2 */ 0x0f, // All modes supported #3
             /* 3 */ 0x00, 0x00, 0x00, 0x00, // reserved
@@ -1025,6 +1028,7 @@ public final class INT10 {
             /* d */ 0x00, // reserved
             /* e */ 0x00, // Change to add new functions
             /* f */ 0x00 // reserved
+
     };
 
     static short[] mapOffset = {0x0000, 0x4000, (short) 0x8000, (short) 0xc000, 0x2000, 0x6000,
@@ -1100,26 +1104,26 @@ public final class INT10 {
         int10.RomFont8First = Memory.realMake(0xC000, int10.RomUsed);
 
         for (i = 0; i < 128 * 8; i++) {
-            Memory.physWriteB(rom_base + int10.RomUsed++, int10_font_08[i]);
+            Memory.physWriteB(rom_base + int10.RomUsed++, int10Font08[i]);
         }
         int10.RomFont8Second = Memory.realMake(0xC000, int10.RomUsed);
         for (i = 0; i < 128 * 8; i++) {
-            Memory.physWriteB(rom_base + int10.RomUsed++, int10_font_08[i + 128 * 8]);
+            Memory.physWriteB(rom_base + int10.RomUsed++, int10Font08[i + 128 * 8]);
         }
         int10.RomFont14 = Memory.realMake(0xC000, int10.RomUsed);
         for (i = 0; i < 256 * 14; i++) {
-            Memory.physWriteB(rom_base + int10.RomUsed++, int10_font_14[i]);
+            Memory.physWriteB(rom_base + int10.RomUsed++, int10Font14[i]);
         }
         int10.RomFont16 = Memory.realMake(0xC000, int10.RomUsed);
         for (i = 0; i < 256 * 16; i++) {
-            Memory.physWriteB(rom_base + int10.RomUsed++, int10_font_16[i]);
+            Memory.physWriteB(rom_base + int10.RomUsed++, int10Font16[i]);
         }
         int10.RomStaticState = Memory.realMake(0xC000, int10.RomUsed);
         for (i = 0; i < 0x10; i++) {
             Memory.physWriteB(rom_base + int10.RomUsed++, staticFunctionality[i]);
         }
         for (i = 0; i < 128 * 8; i++) {
-            Memory.physWriteB(Memory.physMake(0xf000, 0xfa6e) + i, int10_font_08[i]);
+            Memory.physWriteB(Memory.physMake(0xf000, 0xfa6e) + i, int10Font08[i]);
         }
         Memory.realSetVec(0x1F, int10.RomFont8Second);
         int10.RomFont14Alternate = Memory.realMake(0xC000, int10.RomUsed);
@@ -1219,21 +1223,21 @@ public final class INT10 {
         // 16x8 font
         int font16pt = Memory.real2Phys(int10.RomFont16);
         for (int i = 0; i < 256 * 16; i++) {
-            Memory.physWriteB(font16pt + i, int10_font_16[i]);
+            Memory.physWriteB(font16pt + i, int10Font16[i]);
         }
         // 14x8 font
         int font14pt = Memory.real2Phys(int10.RomFont14);
         for (int i = 0; i < 256 * 14; i++) {
-            Memory.physWriteB(font14pt + i, int10_font_14[i]);
+            Memory.physWriteB(font14pt + i, int10Font14[i]);
         }
         // 8x8 fonts
         int font8pt = Memory.real2Phys(int10.RomFont8First);
         for (int i = 0; i < 128 * 8; i++) {
-            Memory.physWriteB(font8pt + i, int10_font_08[i]);
+            Memory.physWriteB(font8pt + i, int10Font08[i]);
         }
         font8pt = Memory.real2Phys(int10.RomFont8Second);
         for (int i = 0; i < 128 * 8; i++) {
-            Memory.physWriteB(font8pt + i, int10_font_08[i + 128 * 8]);
+            Memory.physWriteB(font8pt + i, int10Font08[i + 128 * 8]);
         }
     }
 
@@ -1261,8 +1265,6 @@ public final class INT10 {
 
     // public static void PutPixel(short x, short y, byte page, byte color) {
     public static void putPixel(int x, int y, int page, byte color) {
-
-
         switch (INT10Mode.CurMode.Type) {
             case CGA4: {
                 if (Memory.realReadB(BIOSMEM_SEG, BIOSMEM_CURRENT_MODE) <= 5) {
@@ -1275,8 +1277,8 @@ public final class INT10 {
                         color &= 3;
                         old ^= 0xff & (color << (2 * (3 - (x & 3))));
                     } else {
-                        old = 0xff
-                                & ((old & cgaMasks[x & 3]) | ((color & 3) << (2 * (3 - (x & 3)))));
+                        old = 0xff & ((old & (0xff & cgaMasks[x & 3]))
+                                | ((color & 3) << (2 * (3 - (x & 3)))));
                     }
                     Memory.realWriteB(0xb800, off, old);
                 } else {
@@ -1305,7 +1307,8 @@ public final class INT10 {
                     color &= 1;
                     old ^= 0xff & (color << ((7 - (x & 7))));
                 } else {
-                    old = 0xff & ((old & cgaMasks2[x & 7]) | ((color & 1) << ((7 - (x & 7)))));
+                    old = 0xff & ((old & (0xff & cgaMasks2[x & 7]))
+                            | ((color & 1) << ((7 - (x & 7)))));
                 }
                 Memory.realWriteB(0xb800, off, old);
             }
@@ -1409,26 +1412,29 @@ public final class INT10 {
         }
     }
 
-    // public static byte GetPixel(ushort x, ushort y, byte page)
+    public static boolean canGetPixel() {
+        return INT10Mode.CurMode.Type == VGAModes.CGA4 || INT10Mode.CurMode.Type == VGAModes.CGA2
+                || INT10Mode.CurMode.Type == VGAModes.EGA || INT10Mode.CurMode.Type == VGAModes.VGA
+                || INT10Mode.CurMode.Type == VGAModes.LIN8;
+    }
+
+    // public static void GetPixel(uint16 x, uint16 y, uint8 page, uint8 color)
     public static byte getPixel(int x, int y, int page) {
-        byte color = 0;// uint8
         switch (INT10Mode.CurMode.Type) {
             case CGA4: {
                 int off = 0xffff & ((y >>> 1) * 80 + (x >>> 2));
                 if ((y & 1) != 0)
                     off += 8 * 1024;
                 int val = Memory.realReadB(0xb800, off);
-                color = (byte) ((val >>> (((3 - (x & 3))) * 2)) & 3);
+                return (byte) ((val >>> (((3 - (x & 3))) * 2)) & 3);
             }
-                break;
             case CGA2: {
                 int off = 0xffff & ((y >>> 1) * 80 + (x >>> 3));
                 if ((y & 1) != 0)
                     off += 8 * 1024;
                 int val = Memory.realReadB(0xb800, off);
-                color = (byte) ((val >>> (((7 - (x & 7))))) & 1);
+                return (byte) ((val >>> (((7 - (x & 7))))) & 1);
             }
-                break;
             case EGA: {
                 /* Calculate where the pixel is in video memory */
                 if (INT10Mode.CurMode.Plength != Memory.realReadW(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE))
@@ -1443,7 +1449,7 @@ public final class INT10 {
                         + ((y * Memory.realReadW(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8 + x) >>> 3);
                 int shift = 7 - (x & 7);
                 /* Set the read map */
-                color = 0;
+                byte color = 0;
                 IO.write(0x3ce, 0x4);
                 IO.write(0x3cf, 0);
                 color |= (byte) (((Memory.readB(off) >>> shift) & 1) << 0);
@@ -1456,26 +1462,23 @@ public final class INT10 {
                 IO.write(0x3ce, 0x4);
                 IO.write(0x3cf, 3);
                 color |= (byte) (((Memory.readB(off) >>> shift) & 1) << 3);
-                break;
+                return color;
             }
             case VGA:
-                color = (byte) Memory.readB(Memory.physMake(0xa000, 320 * y + x));
-                break;
+                return (byte) Memory.readB(Memory.physMake(0xa000, 320 * y + x));
             case LIN8: {
                 if (INT10Mode.CurMode.SWidth != Memory.realReadW(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8)
                     Log.logging(Log.LogTypes.INT10, Log.LogServerities.Error,
                             "GetPixel_VGA_w: %x!=%x", INT10Mode.CurMode.SWidth,
                             Memory.realReadW(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8);
                 int off = S3_LFB_BASE + y * Memory.realReadW(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8 + x;
-                color = (byte) Memory.readB(off);
-                break;
+                return (byte) Memory.readB(off);
             }
             default:
                 Log.logging(Log.LogTypes.INT10, Log.LogServerities.Error,
                         "GetPixel unhandled mode type %d", INT10Mode.CurMode.Type.toString());
-                break;
+                return 0;
         }
-        return color;// uint8
     }
     /*--------------------------- end INT10PutPixel -----------------------------*/
 
@@ -1497,7 +1500,7 @@ public final class INT10 {
             // CGA mode register
             0x2c, 0x28, 0x2d, 0x29, 0x2a, 0x2e, 0x1e, 0x29};
 
-    private static final byte[] vparams_pcjr = {
+    private static final byte[] vparamsPCjr = {
             // 40x25 mode 0 and 1 crtc registers
             0x38, 0x28, 0x2c, 0x06, 0x1f, 0x06, 0x19, 0x1c, 0x02, 0x07, 0x06, 0x07, 0, 0, 0, 0,
             // 80x25 mode 2 and 3 crtc registers
@@ -1513,7 +1516,7 @@ public final class INT10 {
             // CGA mode register
             0x2c, 0x28, 0x2d, 0x29, 0x2a, 0x2e, 0x1e, 0x29};
 
-    private static final byte[] vparams_tandy = {
+    private static final byte[] vparamsTandy = {
             // 40x25 mode 0 and 1 crtc registers
             0x38, 0x28, 0x2c, 0x08, 0x1f, 0x06, 0x19, 0x1c, 0x02, 0x07, 0x06, 0x07, 0, 0, 0, 0,
             // 80x25 mode 2 and 3 crtc registers
@@ -1529,7 +1532,7 @@ public final class INT10 {
             // CGA mode register
             0x2c, 0x28, 0x2d, 0x29, 0x2a, 0x2e, 0x1e, 0x29};
 
-    private static final byte[] vparams_tandy_td = {
+    private static final byte[] vparamsTandyTD = {
 
             // 40x25 mode 0 and 1 crtc registers
             0x38, 0x28, 0x2d, 0x0a, 0x1f, 0x06, 0x19, 0x1c, 0x02, 0x07, 0x06, 0x07, 0, 0, 0, 0,
@@ -1551,15 +1554,15 @@ public final class INT10 {
     // uint16(uint32)
     private static int setupVideoParameterTable(int basePos) {
         if (DOSBox.isVGAArch()) {
-            byte[] video_parameter_table_vga = Resources.get("VideoParameterTableVGA");
+            byte[] videoParameterTableVGA = Resources.get("VideoParameterTableVGA");
             for (int i = 0; i < 0x40 * 0x1d; i++) {
-                Memory.physWriteB(basePos + i, video_parameter_table_vga[i]);
+                Memory.physWriteB(basePos + i, videoParameterTableVGA[i]);
             }
             return 0x40 * 0x1d;
         } else {
-            byte[] video_parameter_table_ega = Resources.get("VideoParameterTableEGA");
+            byte[] videoParameterTableEGA = Resources.get("VideoParameterTableEGA");
             for (int i = 0; i < 0x40 * 0x17; i++) {
-                Memory.physWriteB(basePos + i, video_parameter_table_ega[i]);
+                Memory.physWriteB(basePos + i, videoParameterTableEGA[i]);
             }
             return 0x40 * 0x17;
         }
@@ -1570,13 +1573,13 @@ public final class INT10 {
         Memory.realSetVec(0x1d, Memory.realMake(0xF000, 0xF0A4));
         switch (DOSBox.Machine) {
             case TANDY:
-                for (short i = 0; i < vparams_tandy.length; i++) {
-                    Memory.physWriteB(0xFF0A4 + i, vparams_tandy[i]);
+                for (short i = 0; i < vparamsTandy.length; i++) {
+                    Memory.physWriteB(0xFF0A4 + i, vparamsTandy[i]);
                 }
                 break;
             case PCJR:
-                for (short i = 0; i < vparams_pcjr.length; i++) {
-                    Memory.physWriteB(0xFF0A4 + i, vparams_pcjr[i]);
+                for (short i = 0; i < vparamsPCjr.length; i++) {
+                    Memory.physWriteB(0xFF0A4 + i, vparamsPCjr[i]);
                 }
                 break;
             default:

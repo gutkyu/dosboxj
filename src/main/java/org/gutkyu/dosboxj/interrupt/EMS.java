@@ -75,41 +75,18 @@ public final class EMS {
 
     public static class EMMMapping {
         // Offset(0)
-        private int handle;// uint16
+        public int handle;// uint16
         // Offset(2)
-        private int page;// uint16
+        public int page;// uint16
 
-        // Offset(0)
-        public byte byte0;
-        // Offset(1)
-        public byte byte1;
-        // Offset(2)
-        public byte byte2;
-        // Offset(3)
-        public byte byte3;
-
-        // (uint16)
-        public void setHandle(int handle) {
-            this.handle = handle;
-            this.byte0 = (byte) handle;
-            this.byte1 = (byte) (handle >>> 8);
+        // (uint8, uint8)
+        public void setHandle(int b0, int b1) {
+            this.handle = b0 | b1 << 8;
         }
 
-        // uint16
-        public int getHandle() {
-            return this.handle;
-        }
-
-        // (uint16)
-        public void setPage(int page) {
-            this.page = page;
-            this.byte2 = (byte) page;
-            this.byte3 = (byte) (page >>> 8);
-        }
-
-        // uint16
-        public int getPage() {
-            return this.page;
+        // (uint8, uint8)
+        public void setPage(int b2, int b3) {
+            this.page = b2 | b3 << 8;
         }
 
         public static final byte Size = 4;

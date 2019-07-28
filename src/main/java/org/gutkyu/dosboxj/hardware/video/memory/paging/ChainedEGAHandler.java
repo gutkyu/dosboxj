@@ -13,7 +13,7 @@ public final class ChainedEGAHandler extends PageHandler {
     }
 
     public int readHandler(int addr) {
-        return vga.Mem.LinearAlloc[addr];
+        return 0xff & vga.Mem.LinearAlloc[addr];
     }
 
     // (int, byte)

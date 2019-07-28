@@ -218,7 +218,7 @@ public final class ImgMount extends Program {
                             return;
                         }
                         diskfile.close();
-                        if ((buf[510] != 0x55) || (buf[511] != 0xaa)) {
+                        if ((buf[510] != 0x55) || (buf[511] != (byte) 0xaa)) {
                             writeOut(Message.get("PROGRAM_IMGMOUNT_INVALID_GEOMETRY"));
                             return;
                         }

@@ -24,7 +24,7 @@ public final class BIOS {
     private static int _sizeExtended;// uint16
     private static int _otherMemSystems = 0;
 
-    private static CallbackHandlerObject[] _tandyDACCallback = new CallbackHandlerObject[2];
+    private static CallbackHandlerObject[] tandyDACCallback = new CallbackHandlerObject[2];
 
     private static class TandySB {
         public short port;
@@ -37,8 +37,8 @@ public final class BIOS {
         public byte dma;
     }
 
-    private static TandySB _tandySb = new TandySB();
-    private static TandyDAC _tandyDAC = new TandyDAC();
+    private static TandySB tandySb = new TandySB();
+    private static TandyDAC tandyDAC = new TandyDAC();
 
     public static final short BIOS_BASE_ADDRESS_COM1 = 0x400;
     public static final short BIOS_BASE_ADDRESS_COM2 = 0x402;
@@ -304,8 +304,8 @@ public final class BIOS {
                 Memory.physWriteB(0xffff5 + i, Convert.toByte(b_date.charAt(i)));
             Memory.physWriteB(0xfffff, 0x55); // signature
 
-            _tandySb.port = 0;
-            _tandyDAC.port = 0;
+            tandySb.port = 0;
+            tandyDAC.port = 0;
             if (useTandyDAC) {
                 /* tandy DAC sound requested, see if soundblaster device is available */
                 int tandyDACType = 0;
@@ -320,11 +320,11 @@ public final class BIOS {
                     Memory.realWriteB(0x40, 0xd4, 0xff); /* tandy DAC init value */
                     Memory.realWriteD(0x40, 0xd6, 0x00000000);
                     /* install the DAC callback handler */
-                    _tandyDACCallback[0] = new CallbackHandlerObject();
-                    _tandyDACCallback[1] = new CallbackHandlerObject();
-                    _tandyDACCallback[0].install(BIOS::IRQTandyDAC, Callback.Symbol.IRET,
+                    tandyDACCallback[0] = new CallbackHandlerObject();
+                    tandyDACCallback[1] = new CallbackHandlerObject();
+                    tandyDACCallback[0].install(BIOS::IRQTandyDAC, Callback.Symbol.IRET,
                             "Tandy DAC IRQ");
-                    _tandyDACCallback[1].install(null, Callback.Symbol.TDE_IRET,
+                    tandyDACCallback[1].install(null, Callback.Symbol.TDE_IRET,
                             "Tandy DAC end transfer");
                     // pseudocode for CB_TDE_IRET:
                     // push ax
@@ -336,12 +336,12 @@ public final class BIOS {
                     // pop ax
                     // iret
 
-                    byte tandyIRQ = 7;
+                    int tandyIRQ = 7;
                     if (tandyDACType == 1)
-                        tandyIRQ = _tandySb.irq;
+                        tandyIRQ = tandySb.irq;
                     else if (tandyDACType == 2)
-                        tandyIRQ = _tandyDAC.irq;
-                    byte tandyIRQVector = tandyIRQ;
+                        tandyIRQ = tandyDAC.irq;
+                    int tandyIRQVector = 0xff & tandyIRQ;
                     if (tandyIRQVector < 8)
                         tandyIRQVector += 8;
                     else
@@ -465,33 +465,33 @@ public final class BIOS {
         // 객체 소멸시 실행
         private void eventOnFinalization() {
             /* abort DAC playing */
-            if (_tandySb.port != 0) {
-                IO.write(_tandySb.port + 0xc, 0xd3);
-                IO.write(_tandySb.port + 0xc, 0xd0);
+            if (tandySb.port != 0) {
+                IO.write(tandySb.port + 0xc, 0xd3);
+                IO.write(tandySb.port + 0xc, 0xd0);
             }
             Memory.realWriteB(0x40, 0xd4, 0x00);
-            if (_tandyDACCallback[0] != null) {
-                int orig_vector = (int) Memory.realReadD(0x40, 0xd6);
-                if (orig_vector == _tandyDACCallback[0].getRealPointer()) {
+            if (tandyDACCallback[0] != null) {
+                int origVector = (int) Memory.realReadD(0x40, 0xd6);
+                if (origVector == tandyDACCallback[0].getRealPointer()) {
                     /* set IRQ vector to old value */
-                    byte tandy_irq = 7;
-                    if (_tandySb.port != 0)
-                        tandy_irq = _tandySb.irq;
-                    else if (_tandyDAC.port != 0)
-                        tandy_irq = _tandyDAC.irq;
-                    byte tandy_irq_vector = tandy_irq;
-                    if (tandy_irq_vector < 8)
-                        tandy_irq_vector += 8;
+                    int tandyIRQ = 7;
+                    if (tandySb.port != 0)
+                        tandyIRQ = tandySb.irq;
+                    else if (tandyDAC.port != 0)
+                        tandyIRQ = tandyDAC.irq;
+                    int tandyIRQVector = 0xff & tandyIRQ;
+                    if (tandyIRQVector < 8)
+                        tandyIRQVector += 8;
                     else
-                        tandy_irq_vector += (0x70 - 8);
+                        tandyIRQVector += (0x70 - 8);
 
-                    Memory.realSetVec(tandy_irq_vector & 0xff, (int) Memory.realReadD(0x40, 0xd6));
+                    Memory.realSetVec(tandyIRQVector, (int) Memory.realReadD(0x40, 0xd6));
                     Memory.realWriteD(0x40, 0xd6, 0x00000000);
                 }
-                _tandyDACCallback[0].dispose();
-                _tandyDACCallback[1].dispose();
-                _tandyDACCallback[0] = null;
-                _tandyDACCallback[1] = null;
+                tandyDACCallback[0].dispose();
+                tandyDACCallback[1].dispose();
+                tandyDACCallback[0] = null;
+                tandyDACCallback[1] = null;
             }
         }
 
@@ -519,14 +519,14 @@ public final class BIOS {
     }
 
     private static int IRQTandyDAC() {
-        if (_tandyDAC.port != 0) {
-            IO.read(_tandyDAC.port);
+        if (tandyDAC.port != 0) {
+            IO.read(tandyDAC.port);
         }
         if (Memory.realReadW(0x40, 0xd0) != 0) { /* play/record next buffer */
             /* acknowledge IRQ */
             IO.write(0x20, 0x20);
-            if (_tandySb.port != 0) {
-                IO.read((0xffff & _tandySb.port) + 0xe);
+            if (tandySb.port != 0) {
+                IO.read((0xffff & tandySb.port) + 0xe);
             }
 
             /* buffer starts at the next page */
@@ -543,29 +543,29 @@ public final class BIOS {
                 TandySetupTransfer(npage << 16, true);
             }
         } else { /* playing/recording is finished */
-            byte tandyIRQ = 7;
-            if (_tandySb.port != 0)
-                tandyIRQ = _tandySb.irq;
-            else if (_tandyDAC.port != 0)
-                tandyIRQ = _tandyDAC.irq;
-            byte tandyIRQVector = tandyIRQ;
+            int tandyIRQ = 7;
+            if (tandySb.port != 0)
+                tandyIRQ = tandySb.irq;
+            else if (tandyDAC.port != 0)
+                tandyIRQ = tandyDAC.irq;
+            int tandyIRQVector = 0xff & tandyIRQ;
             if (tandyIRQVector < 8)
                 tandyIRQVector += 8;
             else
                 tandyIRQVector += (0x70 - 8);
 
-            Memory.realSetVec(tandyIRQVector & 0xff, (int) Memory.realReadD(0x40, 0xd6));
+            Memory.realSetVec(tandyIRQVector, (int) Memory.realReadD(0x40, 0xd6));
 
             /* turn off speaker and acknowledge soundblaster IRQ */
-            if (_tandySb.port != 0) {
-                IO.write((0xffff & _tandySb.port) + 0xc, 0xd3);
-                IO.read((0xffff & _tandySb.port) + 0xe);
+            if (tandySb.port != 0) {
+                IO.write((0xffff & tandySb.port) + 0xc, 0xd3);
+                IO.read((0xffff & tandySb.port) + 0xe);
             }
 
             /* issue BIOS tandy sound device busy callout */
             Register.segSet16(Register.SEG_NAME_CS,
-                    Memory.realSeg(_tandyDACCallback[1].getRealPointer()));
-            Register.setRegIP(Memory.realOff(_tandyDACCallback[1].getRealPointer()));
+                    Memory.realSeg(tandyDACCallback[1].getRealPointer()));
+            Register.setRegIP(Memory.realOff(tandyDACCallback[1].getRealPointer()));
         }
         return Callback.ReturnTypeNone;
     }
@@ -585,7 +585,7 @@ public final class BIOS {
         // else
         // {
         /* no soundblaster accessible, disable Tandy DAC */
-        _tandySb.port = 0;
+        tandySb.port = 0;
         return false;
         // }
     }
@@ -605,7 +605,7 @@ public final class BIOS {
         // else
         // {
         /* no Tandy DAC accessible */
-        _tandyDAC.port = 0;
+        tandyDAC.port = 0;
         return false;
         // }
     }
@@ -617,11 +617,11 @@ public final class BIOS {
         if (Memory.realReadB(0x40, 0xd4) == 0xff)
             return false; /* still in init-state */
 
-        byte tandyDMA = 1;
-        if (_tandySb.port != 0)
-            tandyDMA = _tandySb.dma;
-        else if (_tandyDAC.port != 0)
-            tandyDMA = _tandyDAC.dma;
+        int tandyDMA = 1;
+        if (tandySb.port != 0)
+            tandyDMA = tandySb.dma;
+        else if (tandyDAC.port != 0)
+            tandyDMA = tandyDAC.dma;
 
         IO.write(0x0c, 0x00);
         int dataLen = IO.readB((0xff & tandyDMA) * 2 + 1);
@@ -642,15 +642,15 @@ public final class BIOS {
         if (length == 0)
             return; /* nothing to do... */
 
-        if ((_tandySb.port == 0) && (_tandyDAC.port == 0))
+        if ((tandySb.port == 0) && (tandyDAC.port == 0))
             return;
 
-        byte tandyIRQ = 7;
-        if (_tandySb.port != 0)
-            tandyIRQ = _tandySb.irq;
-        else if (_tandyDAC.port != 0)
-            tandyIRQ = _tandyDAC.irq;
-        byte tandyIRQVector = tandyIRQ;
+        int tandyIRQ = 7;
+        if (tandySb.port != 0)
+            tandyIRQ = tandySb.irq;
+        else if (tandyDAC.port != 0)
+            tandyIRQ = tandyDAC.irq;
+        int tandyIRQVector = 0xff & tandyIRQ;
         if (tandyIRQVector < 8)
             tandyIRQVector += 8;
         else
@@ -658,24 +658,24 @@ public final class BIOS {
 
         /* revector IRQ-handler if necessary */
         int currentIRQ = Memory.realGetVec(tandyIRQVector);
-        if (currentIRQ != _tandyDACCallback[0].getRealPointer()) {
+        if (currentIRQ != tandyDACCallback[0].getRealPointer()) {
             Memory.realWriteD(0x40, 0xd6, currentIRQ);
-            Memory.realSetVec(tandyIRQVector, _tandyDACCallback[0].getRealPointer());
+            Memory.realSetVec(tandyIRQVector, tandyDACCallback[0].getRealPointer());
         }
 
-        byte tandyDMA = 1;
-        if (_tandySb.port != 0)
-            tandyDMA = _tandySb.dma;
-        else if (_tandyDAC.port != 0)
-            tandyDMA = _tandyDAC.dma;
+        int tandyDMA = 1;// uint8
+        if (tandySb.port != 0)
+            tandyDMA = tandySb.dma;
+        else if (tandyDAC.port != 0)
+            tandyDMA = tandyDAC.dma;
 
-        if (_tandySb.port != 0) {
-            IO.write((0xffff & _tandySb.port) + 0xc, 0xd0); /* stop DMA transfer */
+        if (tandySb.port != 0) {
+            IO.write((0xffff & tandySb.port) + 0xc, 0xd0); /* stop DMA transfer */
             IO.write(0x21, 0xff & (IO.read(0x21) & (~(1 << tandyIRQ)))); /* unmask IRQ */
-            IO.write((0xffff & _tandySb.port) + 0xc, 0xd1); /* turn speaker on */
+            IO.write((0xffff & tandySb.port) + 0xc, 0xd1); /* turn speaker on */
         } else {
-            IO.write((0xffff & _tandyDAC.port),
-                    0xff & (IO.read(_tandyDAC.port) & 0x60)); /* disable DAC */
+            IO.write((0xffff & tandyDAC.port),
+                    0xff & (IO.read(tandyDAC.port) & 0x60)); /* disable DAC */
             IO.write(0x21, 0xff & (IO.read(0x21) & (~(1 << tandyIRQ)))); /* unmask IRQ */
         }
 
@@ -718,31 +718,30 @@ public final class BIOS {
 
         int delay = Memory.realReadW(0x40, 0xd2) & 0xfff;
         int amplitude = (Memory.realReadW(0x40, 0xd2) >>> 13) & 0x7;
-        if (_tandySb.port != 0) {
+        if (tandySb.port != 0) {
             IO.write(0x0a, tandyDMA); /* enable DMA channel */
             /* set frequency */
-            IO.write((0xffff & _tandySb.port) + 0xc, 0x40);
-            IO.write((0xffff & _tandySb.port) + 0xc, 0xff & ((int) (256 - delay * 100 / 358)));
+            IO.write((0xffff & tandySb.port) + 0xc, 0x40);
+            IO.write((0xffff & tandySb.port) + 0xc, 0xff & ((int) (256 - delay * 100 / 358)));
             /* set playback type to 8bit */
             if (isplayback)
-                IO.write((0xffff & _tandySb.port) + 0xc, 0x14);
+                IO.write((0xffff & tandySb.port) + 0xc, 0x14);
             else
-                IO.write((0xffff & _tandySb.port) + 0xc, 0x24);
+                IO.write((0xffff & tandySb.port) + 0xc, 0x24);
             /* set transfer size */
-            IO.write((0xffff & _tandySb.port) + 0xc, tlength & 0xff);
-            IO.write((0xffff & _tandySb.port) + 0xc, (tlength >>> 8) & 0xff);
+            IO.write((0xffff & tandySb.port) + 0xc, tlength & 0xff);
+            IO.write((0xffff & tandySb.port) + 0xc, (tlength >>> 8) & 0xff);
         } else {
             if (isplayback)
-                IO.write(0xffff & _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x03));
+                IO.write(0xffff & tandyDAC.port, 0xff & ((IO.read(tandyDAC.port) & 0x7c) | 0x03));
             else
-                IO.write(0xffff & _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x02));
-            IO.write(0xffff & _tandyDAC.port + 2, delay & 0xff);
-            IO.write(0xffff & _tandyDAC.port + 3,
-                    0xff & (((delay >>> 8) & 0xf) | (amplitude << 5)));
+                IO.write(0xffff & tandyDAC.port, 0xff & ((IO.read(tandyDAC.port) & 0x7c) | 0x02));
+            IO.write(0xffff & tandyDAC.port + 2, delay & 0xff);
+            IO.write(0xffff & tandyDAC.port + 3, 0xff & (((delay >>> 8) & 0xf) | (amplitude << 5)));
             if (isplayback)
-                IO.write(0xffff & _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x1f));
+                IO.write(0xffff & tandyDAC.port, 0xff & ((IO.read(tandyDAC.port) & 0x7c) | 0x1f));
             else
-                IO.write(0xffff & _tandyDAC.port, 0xff & ((IO.read(_tandyDAC.port) & 0x7c) | 0x1e));
+                IO.write(0xffff & tandyDAC.port, 0xff & ((IO.read(tandyDAC.port) & 0x7c) | 0x1e));
             IO.write(0x0a, tandyDMA); /* enable DMA channel */
         }
 
@@ -754,12 +753,12 @@ public final class BIOS {
 
     // private static void TandyDACHandler(byte tfunction) {
     private static void TandyDACHandler(int tfunction) {
-        if ((_tandySb.port == 0) && (_tandyDAC.port == 0))
+        if ((tandySb.port == 0) && (tandyDAC.port == 0))
             return;
         switch (tfunction) {
             case 0x81: /* Tandy sound system check */
-                if (_tandyDAC.port == 0) {
-                    Register.setRegAX(_tandyDAC.port);
+                if (tandyDAC.port == 0) {
+                    Register.setRegAX(tandyDAC.port);
                 } else {
                     Register.setRegAX(0xc4);
                 }
@@ -793,8 +792,8 @@ public final class BIOS {
                 Callback.scf(false);
                 break;
             case 0x85: /* Tandy sound system reset */
-                if (_tandyDAC.port != 0) {
-                    IO.write(0xffff & _tandyDAC.port, IO.read(0xffff & _tandyDAC.port) & 0xe0);
+                if (tandyDAC.port != 0) {
+                    IO.write(0xffff & tandyDAC.port, IO.read(0xffff & tandyDAC.port) & 0xe0);
                 }
                 Register.setRegAH(0x00);
                 Callback.scf(false);
@@ -1342,15 +1341,15 @@ public final class BIOS {
         return 0;
     }
 
-    private static BIOSModule _bios = null;
+    private static BIOSModule bios = null;
 
     private static void destroy(Section sec) {
-        _bios.dispose();
-        _bios = null;
+        bios.dispose();
+        bios = null;
     }
 
     public static void init(Section sec) {
-        _bios = (new BIOS()).new BIOSModule(sec);
+        bios = (new BIOS()).new BIOSModule(sec);
         sec.addDestroyFunction(BIOS::destroy, false);
     }
 

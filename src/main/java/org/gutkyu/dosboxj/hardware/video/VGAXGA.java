@@ -237,7 +237,7 @@ public final class VGAXGA {
             case LIN8:
                 if (memAddr >= vga.VMemSize)
                     break;
-                return linearAlloc[memAddr];
+                return 0xff & linearAlloc[memAddr];
             case LIN15:
             case LIN16:
                 if (memAddr * 2 >= vga.VMemSize)

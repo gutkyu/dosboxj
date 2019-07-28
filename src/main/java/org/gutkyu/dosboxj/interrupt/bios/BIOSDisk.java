@@ -44,15 +44,15 @@ public final class BIOSDisk {
             new DiskGeo(1200, 15, 2, 80, 2), new DiskGeo(1440, 18, 2, 80, 4),
             new DiskGeo(2880, 36, 2, 80, 6), new DiskGeo(0, 0, 0, 0, 0)};
 
-    private static int _callInt13;
-    private static int _diskParm0, _diskParm1;
-    private static byte _lastStatus;
-    private static int _lastDrive;
+    private static int callInt13;
+    private static int diskParm0, diskParm1;
+    private static byte lastStatus;
+    private static int lastDrive;
     public static int ImgDTASeg;
     public static int ImgDTAPtr;
     public static DOSDTA ImgDTA;
-    private static boolean _killRead;
-    private static boolean _swappingRequested;
+    private static boolean killRead;
+    private static boolean swappingRequested;
 
     /* 2 floppys and 2 harddrives, max */
     public static ImageDisk[] ImageDiskList = new ImageDisk[BIOSDisk.MAX_DISK_IMAGES];
@@ -83,21 +83,21 @@ public final class BIOSDisk {
         if (driveNum >= (2 + MAX_HDD_IMAGES)) {
             Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error, "Disk %d non-existant",
                     driveNum);
-            _lastStatus = 0x01;
+            lastStatus = 0x01;
             Callback.scf(true);
             return true;
         }
         if (ImageDiskList[driveNum] == null) {
             Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error, "Disk %d not active",
                     driveNum);
-            _lastStatus = 0x01;
+            lastStatus = 0x01;
             Callback.scf(true);
             return true;
         }
         if (!ImageDiskList[driveNum].active) {
             Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error, "Disk %d not active",
                     driveNum);
-            _lastStatus = 0x01;
+            lastStatus = 0x01;
             Callback.scf(true);
             return true;
         }
@@ -109,7 +109,7 @@ public final class BIOSDisk {
         byte[] sectBuf = new byte[512];
         int driveNum;
         int i, t;
-        _lastDrive = Register.getRegDL();
+        lastDrive = Register.getRegDL();
         driveNum = getDosDriveNumber(Register.getRegDL());
         boolean anyImages = false;
         for (i = 0; i < MAX_DISK_IMAGES; i++) {
@@ -137,20 +137,20 @@ public final class BIOSDisk {
                         /* those bioses call floppy drive reset for invalid drive values */
                         if (((ImageDiskList[0] != null) && (ImageDiskList[0].active))
                                 || ((ImageDiskList[1] != null) && (ImageDiskList[1].active))) {
-                            _lastStatus = 0x00;
+                            lastStatus = 0x00;
                             Callback.scf(false);
                         }
                     }
                     return Callback.ReturnTypeNone;
                 }
-                _lastStatus = 0x00;
+                lastStatus = 0x00;
                 Callback.scf(false);
             }
                 break;
             case 0x1: /* Get status of last operation */
 
-                if (_lastStatus != 0x00) {
-                    Register.setRegAH(_lastStatus);
+                if (lastStatus != 0x00) {
+                    Register.setRegAH(lastStatus);
                     Callback.scf(true);
                 } else {
                     Register.setRegAH(0x00);
@@ -181,12 +181,12 @@ public final class BIOSDisk {
                 segAt = Register.segValue(Register.SEG_NAME_ES);
                 bufPtr = Register.getRegBX();
                 for (i = 0; i < Register.getRegAL(); i++) {
-                    _lastStatus = ImageDiskList[driveNum].readSector(Register.getRegDH(),
+                    lastStatus = ImageDiskList[driveNum].readSector(Register.getRegDH(),
                             Register.getRegCH() | ((Register.getRegCL() & 0xc0) << 2),
                             (Register.getRegCL() & 63) + i, sectBuf);
-                    if ((_lastStatus != 0x00) || (_killRead)) {
+                    if ((lastStatus != 0x00) || (killRead)) {
                         Log.logMsg("Error in disk read");
-                        _killRead = false;
+                        killRead = false;
                         Register.setRegAH(0x04);
                         Callback.scf(true);
                         return Callback.ReturnTypeNone;
@@ -216,10 +216,10 @@ public final class BIOSDisk {
                         bufPtr++;
                     }
 
-                    _lastStatus = ImageDiskList[driveNum].writeSector(Register.getRegDH(),
+                    lastStatus = ImageDiskList[driveNum].writeSector(Register.getRegDH(),
                             Register.getRegCH() | ((Register.getRegCL() & 0xc0) << 2),
                             (Register.getRegCL() & 63) + i, sectBuf);
-                    if (_lastStatus != 0x00) {
+                    if (lastStatus != 0x00) {
                         Callback.scf(true);
                         return Callback.ReturnTypeNone;
                     }
@@ -255,8 +255,8 @@ public final class BIOSDisk {
                 break;
             case 0x08: /* Get drive parameters */
                 if (driveInActive(driveNum)) {
-                    _lastStatus = 0x07;
-                    Register.setRegAH(_lastStatus);
+                    lastStatus = 0x07;
+                    Register.setRegAH(lastStatus);
                     Callback.scf(true);
                     return Callback.ReturnTypeNone;
                 }
@@ -280,7 +280,7 @@ public final class BIOSDisk {
                 Register.setRegCH(tmpcyl & 0xff);
                 Register.setRegCL(((tmpcyl >>> 2) & 0xc0) | (tmpsect & 0x3f));
                 Register.setRegDH(tmpheads);
-                _lastStatus = 0x00;
+                lastStatus = 0x00;
                 if ((Register.getRegDL() & 0x80) != 0) { // harddisks
                     Register.setRegDL(0);
                     if (ImageDiskList[2] != null)
@@ -302,7 +302,7 @@ public final class BIOSDisk {
                 break;
             case 0x17: /* Set disk type for format */
                 /* Pirates! needs this to load */
-                _killRead = true;
+                killRead = true;
                 Register.setRegAH(0x00);
                 Callback.scf(false);
                 break;
@@ -319,10 +319,10 @@ public final class BIOSDisk {
 
     public static void setupDisks() {
         /* TODO Start the time correctly */
-        _callInt13 = Callback.allocate();
-        Callback.setup(_callInt13, BIOSDisk::INT13DiskHandler, Callback.Symbol.IRET,
+        callInt13 = Callback.allocate();
+        Callback.setup(callInt13, BIOSDisk::INT13DiskHandler, Callback.Symbol.IRET,
                 "Int 13 Bios disk");
-        Memory.realSetVec(0x13, Callback.realPointer(_callInt13));
+        Memory.realSetVec(0x13, Callback.realPointer(callInt13));
         int i;
         for (i = 0; i < 4; i++) {
             ImageDiskList[i] = null;
@@ -332,15 +332,15 @@ public final class BIOSDisk {
             DiskSwap[i] = null;
         }
 
-        _diskParm0 = Callback.allocate();
-        _diskParm1 = Callback.allocate();
+        diskParm0 = Callback.allocate();
+        diskParm1 = Callback.allocate();
         SwapPosition = 0;
 
-        Memory.realSetVec(0x41, Callback.realPointer(_diskParm0));
-        Memory.realSetVec(0x46, Callback.realPointer(_diskParm1));
+        Memory.realSetVec(0x41, Callback.realPointer(diskParm0));
+        Memory.realSetVec(0x46, Callback.realPointer(diskParm1));
 
-        int dp0physaddr = Callback.physPointer(_diskParm0);
-        int dp1physaddr = Callback.physPointer(_diskParm1);
+        int dp0physaddr = Callback.physPointer(diskParm0);
+        int dp1physaddr = Callback.physPointer(diskParm1);
         for (i = 0; i < 16; i++) {
             Memory.physWriteB(dp0physaddr + i, 0);
             Memory.physWriteB(dp1physaddr + i, 0);
@@ -353,8 +353,8 @@ public final class BIOSDisk {
 
         GUIPlatform.mapper.addKeyHandler(BIOSDisk::swapInNextDisk, MapKeys.F4, Mapper.MMOD1,
                 "swapimg", "Swap Image");
-        _killRead = false;
-        _swappingRequested = false;
+        killRead = false;
+        swappingRequested = false;
     }
 
     private static void swapInNextDisk(boolean pressed) {
@@ -371,13 +371,13 @@ public final class BIOSDisk {
         if (DiskSwap[SwapPosition] == null)
             SwapPosition = 0;
         swapInDisks();
-        _swappingRequested = true;
+        swappingRequested = true;
     }
 
     public static void updateDPT() {
         int tmpHeads = 0, tmpCylinder = 0, tmpSect = 0, tmpSize = 0;
         if (ImageDiskList[2] != null) {
-            int dp0physaddr = Callback.physPointer(_diskParm0);
+            int dp0physaddr = Callback.physPointer(diskParm0);
 
             ImageDisk imgDsk = ImageDiskList[2];
             tmpHeads = imgDsk.getGeometryCylinders();
@@ -399,7 +399,7 @@ public final class BIOSDisk {
             Memory.physWriteB(dp0physaddr + 0xe, tmpSect);
         }
         if (ImageDiskList[3] != null) {
-            int dp1physaddr = Callback.physPointer(_diskParm1);
+            int dp1physaddr = Callback.physPointer(diskParm1);
             ImageDisk imgDsk = ImageDiskList[3];
 
             tmpHeads = imgDsk.getGeometryCylinders();

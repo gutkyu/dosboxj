@@ -148,7 +148,7 @@ final class VESA {
         Arrays.fill(minfo, 0, minfo.length, (byte) 0);
         int buf = Memory.physMake(seg, off);
         int pageSize;
-        byte modeAttributes;
+        int modeAttributes;// uint8
         int i = 0;
 
         mode &= 0x3fff; // vbe2 compatible, ignore lfb and keep screen content bits
@@ -264,8 +264,7 @@ final class VESA {
         minfo[Off_MODE_INFO_WinBAttributes] = 0x7;// Exists/readable/writable
         if (pageSize > VGA.instance().VMemSize) {
             // Mode not supported by current hardware configuration
-            Memory.hostWriteW(minfo, Off_MODE_INFO_ModeAttributes,
-                    0xffff & (modeAttributes & ~0x1));
+            Memory.hostWriteW(minfo, Off_MODE_INFO_ModeAttributes, (modeAttributes & 0xff) & ~0x1);
             Memory.hostWriteW(minfo, Off_MODE_INFO_NumberOfImagePages, 0);
         } else {
             Memory.hostWriteW(minfo, Off_MODE_INFO_ModeAttributes, modeAttributes);

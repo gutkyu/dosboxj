@@ -90,7 +90,7 @@ public final class S3TrioSVGADriverProvider {
                 vga.S3.Reg35 = (byte) (val & 0xf0);
                 if (((vga.SVGA.BankRead & 0xf) ^ (val & 0xf)) != 0) {
                     vga.SVGA.BankRead &= 0xf0;
-                    vga.SVGA.BankRead |= (byte) (val & 0xf);
+                    vga.SVGA.BankRead |= val & 0xf;
                     vga.SVGA.BankWrite = vga.SVGA.BankRead;
                     vga.setupHandlers();
                 }
@@ -147,13 +147,13 @@ public final class S3TrioSVGADriverProvider {
                 vga.S3.HGC.OriginY = 0xffff & ((vga.S3.HGC.OriginY & 0xff00) | val);
                 break;
             case 0x4A: /* HGC foreground stack */
-                if (vga.S3.HGC.ForeStackPos > 2)
+                if ((vga.S3.HGC.ForeStackPos & 0xff) > 2)
                     vga.S3.HGC.ForeStackPos = 0;
                 vga.S3.HGC.ForeStack[vga.S3.HGC.ForeStackPos] = (byte) val;
                 vga.S3.HGC.ForeStackPos++;
                 break;
             case 0x4B: /* HGC background stack */
-                if (vga.S3.HGC.BackStackPos > 2)
+                if ((vga.S3.HGC.BackStackPos & 0xff) > 2)
                     vga.S3.HGC.BackStackPos = 0;
                 vga.S3.HGC.BackStack[vga.S3.HGC.BackStackPos] = (byte) val;
                 vga.S3.HGC.BackStackPos++;
@@ -161,8 +161,7 @@ public final class S3TrioSVGADriverProvider {
             case 0x4c: /* HGC start address high byte */
                 vga.S3.HGC.StartAddr &= 0xff;
                 vga.S3.HGC.StartAddr |= (val & 0xf) << 8;
-                if (((0xffff & vga.S3.HGC.StartAddr) << 10)
-                        + ((64 * 64 * 2) / 8) > vga.VMemSize) {
+                if (((0xffff & vga.S3.HGC.StartAddr) << 10) + ((64 * 64 * 2) / 8) > vga.VMemSize) {
                     vga.S3.HGC.StartAddr &= 0xff; // put it back to some sane area;
                     // if read back of this address is ever implemented this needs to change
                     Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
@@ -219,7 +218,7 @@ public final class S3TrioSVGADriverProvider {
                 vga.Config.DisplayStart |= (val & 3) << 18;
                 if (((vga.SVGA.BankRead & 0x30) ^ ((val & 0xc) << 2)) != 0) {
                     vga.SVGA.BankRead &= 0xcf;
-                    vga.SVGA.BankRead |= (byte) ((val & 0xc) << 2);
+                    vga.SVGA.BankRead |= 0xff & ((val & 0xc) << 2);
                     vga.SVGA.BankWrite = vga.SVGA.BankRead;
                     vga.setupHandlers();
                 }
@@ -250,7 +249,7 @@ public final class S3TrioSVGADriverProvider {
                 // Map or unmap MMIO
                 // bit 4 = MMIO at A0000
                 // bit 3 = MMIO at LFB + 16M (should be fine if its always enabled for now)
-                if (vga.S3.ExtMemCtrl != val) {
+                if ((vga.S3.ExtMemCtrl & 0xff) != val) {
                     vga.S3.ExtMemCtrl = (byte) val;
                     vga.setupHandlers();
                 }
@@ -358,7 +357,7 @@ public final class S3TrioSVGADriverProvider {
                 }
                 break;
             case 0x6a: /* Extended System Control 4 */
-                vga.SVGA.BankRead = (byte) (val & 0x7f);
+                vga.SVGA.BankRead = val & 0x7f;
                 vga.SVGA.BankWrite = vga.SVGA.BankRead;
                 vga.setupHandlers();
                 break;
@@ -413,7 +412,7 @@ public final class S3TrioSVGADriverProvider {
             case 0x45: /* Hardware cursor mode */
                 vga.S3.HGC.BackStackPos = 0;
                 vga.S3.HGC.ForeStackPos = 0;
-                return vga.S3.HGC.CurMode | 0xa0;
+                return (vga.S3.HGC.CurMode & 0xff) | 0xa0;
             case 0x46:
                 return vga.S3.HGC.OriginX >>> 8;
             case 0x47: /* HGC orgX */
@@ -504,17 +503,17 @@ public final class S3TrioSVGADriverProvider {
         }
         switch (reg) {
             case 0x08: /* PLL Unlock */
-                return vga.S3.PLL.Lock;
+                return 0xff & vga.S3.PLL.Lock;
             case 0x10: /* Memory PLL Data Low */
-                return vga.S3.MCLK.n != 0 || (vga.S3.MCLK.r << 5) != 0 ? 1 : 0;
+                return vga.S3.MCLK.n != 0 || ((vga.S3.MCLK.r & 0xff) << 5) != 0 ? 1 : 0;
             case 0x11: /* Memory PLL Data High */
-                return vga.S3.MCLK.m;
+                return 0xff & vga.S3.MCLK.m;
             case 0x12: /* Video PLL Data Low */
-                return vga.S3.CLK[3].n != 0 || (vga.S3.CLK[3].r << 5) != 0 ? 1 : 0;
+                return vga.S3.CLK[3].n != 0 || ((vga.S3.CLK[3].r & 0xff) << 5) != 0 ? 1 : 0;
             case 0x13: /* Video Data High */
-                return vga.S3.CLK[3].m;
+                return 0xff & vga.S3.CLK[3].m;
             case 0x15:
-                return vga.S3.PLL.Cmd;
+                return 0xff & vga.S3.PLL.Cmd;
             default:
                 Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
                         "VGA:S3:SEQ:Read from illegal index %2X", reg);
@@ -531,8 +530,8 @@ public final class S3TrioSVGADriverProvider {
             clock = 28322000;
         else
             // clock=1000*S3_CLOCK(vga.s3.clk[clock].m,vga.s3.clk[clock].n,vga.s3.clk[clock].r);
-            clock = 1000 * ((VGA.S3_CLOCK_REF * ((vga.S3.CLK[clock].m) + 2))
-                    / (((vga.S3.CLK[clock].n) + 2) * (1 << (vga.S3.CLK[clock].r))));
+            clock = 1000 * ((VGA.S3_CLOCK_REF * ((0xff & vga.S3.CLK[clock].m) + 2))
+                    / (((0xff & vga.S3.CLK[clock].n) + 2) * (1 << (0xff & vga.S3.CLK[clock].r))));
         /* Check for dual transfer, master clock/2 */
         if ((vga.S3.PLL.Cmd & 0x10) != 0)
             clock /= 2;

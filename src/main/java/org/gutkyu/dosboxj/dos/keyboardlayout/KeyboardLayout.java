@@ -173,32 +173,32 @@ public final class KeyboardLayout implements Disposable {
             }
         }
 
-        int start_pos;
-        int number_of_codepages;
+        int startPos;
+        int numberOfCodePages;
 
         String nbuf = CdPgFilename;
-        SeekableByteChannel tempfile = openDosboxFile(nbuf);
-        if (tempfile == null) {
+        SeekableByteChannel tempFile = openDosboxFile(nbuf);
+        if (tempFile == null) {
             int strsz = nbuf.length();
             if (strsz > 0) {
                 char plc = Character.toUpperCase(nbuf.charAt(strsz - 1));
                 if (plc == 'I') {
                     // try CPX-extension as well
                     nbuf = nbuf.substring(0, strsz - 1) + 'X';
-                    tempfile = openDosboxFile(nbuf);
+                    tempFile = openDosboxFile(nbuf);
                 } else if (plc == 'X') {
                     // try CPI-extension as well
                     nbuf = nbuf.substring(0, strsz - 1) + 'I';
-                    tempfile = openDosboxFile(nbuf);
+                    tempFile = openDosboxFile(nbuf);
                 }
             }
         }
 
         // static byte cpi_buf[65536];
         int cpiBufSize = 0, cpxDataSize = 0;;
-        boolean upxfound = false;
+        boolean upxFound = false;
         short foundAtPos = 5;
-        if (tempfile == null) {
+        if (tempFile == null) {
             // check if build-in codepage is available
             switch (codepageId) {
                 case 437:
@@ -238,13 +238,13 @@ public final class KeyboardLayout implements Disposable {
                     return DOSMain.KEYB_INVALIDCPFILE;
                 // break;
             }
-            upxfound = true;
+            upxFound = true;
             foundAtPos = 0x29;
             cpxDataSize = cpiBufSize;
         } else {
             ByteBuffer rb = ByteBuffer.wrap(cpiBuf, 0, 5);
             try {
-                int dr = tempfile.read(rb);
+                int dr = tempFile.read(rb);
                 // check if file is valid
                 if (dr < 5) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -252,7 +252,7 @@ public final class KeyboardLayout implements Disposable {
                     return DOSMain.KEYB_INVALIDCPFILE;
                 }
                 // check if non-compressed cpi file
-                if ((cpiBuf[0] != 0xff) || (cpiBuf[1] != 0x46) || (cpiBuf[2] != 0x4f)
+                if ((cpiBuf[0] != (byte) 0xff) || (cpiBuf[1] != 0x46) || (cpiBuf[2] != 0x4f)
                         || (cpiBuf[3] != 0x4e) || (cpiBuf[4] != 0x54)) {
                     // check if dr-dos custom cpi file
                     if ((cpiBuf[0] == 0x7f) && (cpiBuf[1] != 0x44) && (cpiBuf[2] != 0x52)
@@ -265,37 +265,37 @@ public final class KeyboardLayout implements Disposable {
                     byte nextByte = 0;
                     ByteBuffer rb1 = ByteBuffer.allocate(1);
                     for (int i = 0; i < 100; i++) {
-                        tempfile.read(rb1);
+                        tempFile.read(rb1);
                         nextByte = rb1.get();
                         foundAtPos++;
                         while (nextByte == 0x55) {
-                            tempfile.read(rb1);
+                            tempFile.read(rb1);
                             nextByte = rb1.get();
                             foundAtPos++;
                             if (nextByte == 0x50) {
-                                tempfile.read(rb1);
+                                tempFile.read(rb1);
                                 nextByte = rb1.get();
                                 foundAtPos++;
                                 if (nextByte == 0x58) {
-                                    tempfile.read(rb1);
+                                    tempFile.read(rb1);
                                     nextByte = rb1.get();
                                     foundAtPos++;
                                     if (nextByte == 0x21) {
                                         // read version ID
-                                        tempfile.read(rb1);
+                                        tempFile.read(rb1);
                                         nextByte = rb1.get();
                                         foundAtPos++;
                                         foundAtPos++;
-                                        upxfound = true;
+                                        upxFound = true;
                                         break;
                                     }
                                 }
                             }
                         }
-                        if (upxfound)
+                        if (upxFound)
                             break;
                     }
-                    if (!upxfound) {
+                    if (!upxFound) {
                         Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
                                 "Codepage file %s invalid: %x", CdPgFilename, cpiBuf[0]);
                         return DOSMain.KEYB_INVALIDCPFILE;
@@ -305,15 +305,15 @@ public final class KeyboardLayout implements Disposable {
                                     "UPX-compressed cpi file, but upx-version too old");
 
                         // read in compressed CPX-file
-                        tempfile.position(0);
+                        tempFile.position(0);
                         rb = ByteBuffer.wrap(cpiBuf, 0, 65536);
-                        cpxDataSize = tempfile.read(rb);
+                        cpxDataSize = tempFile.read(rb);
                     }
                 } else {
                     // standard uncompressed cpi-file
-                    tempfile.position(0);
+                    tempFile.position(0);
                     rb = ByteBuffer.wrap(cpiBuf, 0, 65536);
-                    cpiBufSize = tempfile.read(rb);
+                    cpiBufSize = tempFile.read(rb);
                 }
             } catch (Exception e) {
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -323,7 +323,7 @@ public final class KeyboardLayout implements Disposable {
             }
         }
 
-        if (upxfound) {
+        if (upxFound) {
             if (cpxDataSize > 0xfe00)
                 Support.exceptionExit("Size of cpx-compressed data too big");
 
@@ -341,10 +341,10 @@ public final class KeyboardLayout implements Disposable {
             Memory.blockWrite((seg << 4) + 0x100, cpiBuf, 0, cpxDataSize);
 
             // setup segments
-            int save_ds = Register.segValue(Register.SEG_NAME_DS);
-            int save_es = Register.segValue(Register.SEG_NAME_ES);
-            int save_ss = Register.segValue(Register.SEG_NAME_SS);
-            int save_esp = Register.getRegESP();
+            int saveDS = Register.segValue(Register.SEG_NAME_DS);
+            int saveES = Register.segValue(Register.SEG_NAME_ES);
+            int saveSS = Register.segValue(Register.SEG_NAME_SS);
+            int saveESP = Register.getRegESP();
             Register.segSet16(Register.SEG_NAME_DS, seg);
             Register.segSet16(Register.SEG_NAME_ES, seg);
             Register.segSet16(Register.SEG_NAME_SS, 0xffff & (seg + 0x1000));
@@ -353,10 +353,10 @@ public final class KeyboardLayout implements Disposable {
             // let UPX unpack the file
             Callback.runRealFar(seg, 0x100);
 
-            Register.segSet16(Register.SEG_NAME_DS, save_ds);
-            Register.segSet16(Register.SEG_NAME_ES, save_es);
-            Register.segSet16(Register.SEG_NAME_SS, save_ss);
-            Register.setRegESP(save_esp);
+            Register.segSet16(Register.SEG_NAME_DS, saveDS);
+            Register.segSet16(Register.SEG_NAME_ES, saveES);
+            Register.segSet16(Register.SEG_NAME_SS, saveSS);
+            Register.setRegESP(saveESP);
 
             // get unpacked content
             Memory.blockRead((seg << 4) + 0x100, cpiBuf, 0, 65536);
@@ -370,79 +370,79 @@ public final class KeyboardLayout implements Disposable {
 
         // start_pos = MEMORY.host_readd(ref cpi_buf, 0x13);
         idx = 0x13;
-        start_pos = ByteConv.getInt(cpiBuf, (int) idx);
+        startPos = ByteConv.getInt(cpiBuf, (int) idx);
 
         // number_of_codepages = MEMORY.host_readw(ref cpi_buf, start_pos);
-        idx = start_pos;
-        number_of_codepages = ByteConv.getShort(cpiBuf, (int) idx);
-        start_pos += 4;
+        idx = startPos;
+        numberOfCodePages = ByteConv.getShort(cpiBuf, (int) idx);
+        startPos += 4;
 
         // search if codepage is provided by file
-        for (int test_codepage = 0; test_codepage < number_of_codepages; test_codepage++) {
-            int device_type, font_codepage, font_type;
+        for (int testCodePage = 0; testCodePage < numberOfCodePages; testCodePage++) {
+            int deviceType, fontCodePage, fontType;
 
             // device type can be display/printer (only the first is supported)
             // device_type = MEMORY.host_readw(ref cpi_buf, start_pos + 0x04);
-            idx = start_pos + 0x04;
-            device_type = ByteConv.getShort(cpiBuf, (int) idx);
+            idx = startPos + 0x04;
+            deviceType = ByteConv.getShort(cpiBuf, (int) idx);
             // font_codepage = MEMORY.host_readw(ref cpi_buf, start_pos + 0x0e);
-            idx = start_pos + 0x0e;
-            font_codepage = ByteConv.getShort(cpiBuf, (int) idx);
+            idx = startPos + 0x0e;
+            fontCodePage = ByteConv.getShort(cpiBuf, (int) idx);
 
-            int font_data_header_pt;
+            int fontDataHeaderPt;
             // font_data_header_pt = MEMORY.host_readd(ref cpi_buf, start_pos + 0x16);
-            idx = start_pos + 0x16;
-            font_data_header_pt = ByteConv.getInt(cpiBuf, (int) idx);
+            idx = startPos + 0x16;
+            fontDataHeaderPt = ByteConv.getInt(cpiBuf, (int) idx);
 
             // font_type = MEMORY.host_readw(ref cpi_buf, font_data_header_pt);
-            idx = font_data_header_pt;
-            font_type = ByteConv.getShort(cpiBuf, (int) idx);
+            idx = fontDataHeaderPt;
+            fontType = ByteConv.getShort(cpiBuf, (int) idx);
 
-            if ((device_type == 0x0001) && (font_type == 0x0001) && (font_codepage == codepageId)) {
+            if ((deviceType == 0x0001) && (fontType == 0x0001) && (fontCodePage == codepageId)) {
                 // valid/matching codepage found
 
-                int number_of_fonts, font_data_length;
+                int numberOfFonts, fontDataLength;
                 // number_of_fonts = MEMORY.host_readw(ref cpi_buf, font_data_header_pt + 0x02);
                 // font_data_length = MEMORY.host_readw(ref cpi_buf, font_data_header_pt + 0x04);
-                idx = font_data_header_pt + 0x02;
-                number_of_fonts = ByteConv.getShort(cpiBuf, (int) idx);
-                idx = font_data_header_pt + 0x04;
-                font_data_length = ByteConv.getShort(cpiBuf, (int) idx);
+                idx = fontDataHeaderPt + 0x02;
+                numberOfFonts = ByteConv.getShort(cpiBuf, (int) idx);
+                idx = fontDataHeaderPt + 0x04;
+                fontDataLength = ByteConv.getShort(cpiBuf, (int) idx);
 
-                boolean font_changed = false;
-                int font_data_start = font_data_header_pt + 0x06;
+                boolean fontChanged = false;
+                int fontDataStart = fontDataHeaderPt + 0x06;
 
                 // load all fonts if possible
-                for (short current_font = 0; current_font < number_of_fonts; current_font++) {
-                    byte font_height = cpiBuf[font_data_start];
-                    font_data_start += 6;
-                    if (font_height == 0x10) {
+                for (int currentFont = 0; currentFont < numberOfFonts; currentFont++) {
+                    int fontHeight = 0xff & cpiBuf[fontDataStart];
+                    fontDataStart += 6;
+                    if (fontHeight == 0x10) {
                         // 16x8 font
                         int font16pt = Memory.real2Phys(INT10.int10.RomFont16);
                         for (int i = 0; i < 256 * 16; i++) {
-                            Memory.physWriteB(font16pt + i, cpiBuf[font_data_start + i]);
+                            Memory.physWriteB(font16pt + i, cpiBuf[fontDataStart + i]);
                         }
-                        font_changed = true;
-                    } else if (font_height == 0x0e) {
+                        fontChanged = true;
+                    } else if (fontHeight == 0x0e) {
                         // 14x8 font
                         int font14pt = Memory.real2Phys(INT10.int10.RomFont14);
                         for (int i = 0; i < 256 * 14; i++) {
-                            Memory.physWriteB(font14pt + i, cpiBuf[font_data_start + i]);
+                            Memory.physWriteB(font14pt + i, cpiBuf[fontDataStart + i]);
                         }
-                        font_changed = true;
-                    } else if (font_height == 0x08) {
+                        fontChanged = true;
+                    } else if (fontHeight == 0x08) {
                         // 8x8 fonts
                         int font8pt = Memory.real2Phys(INT10.int10.RomFont8First);
                         for (int i = 0; i < 128 * 8; i++) {
-                            Memory.physWriteB(font8pt + i, cpiBuf[font_data_start + i]);
+                            Memory.physWriteB(font8pt + i, cpiBuf[fontDataStart + i]);
                         }
                         font8pt = Memory.real2Phys(INT10.int10.RomFont8Second);
                         for (int i = 0; i < 128 * 8; i++) {
-                            Memory.physWriteB(font8pt + i, cpiBuf[font_data_start + i + 128 * 8]);
+                            Memory.physWriteB(font8pt + i, cpiBuf[fontDataStart + i + 128 * 8]);
                         }
-                        font_changed = true;
+                        fontChanged = true;
                     }
-                    font_data_start += font_height * 256;
+                    fontDataStart += fontHeight * 256;
                 }
 
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Normal,
@@ -452,7 +452,7 @@ public final class KeyboardLayout implements Disposable {
                 DOSMain.DOS.LoadedCodepage = codepageId & 0xffff;
 
                 // update font if necessary
-                if (font_changed && (INT10Mode.CurMode.Type == VGAModes.TEXT)
+                if (fontChanged && (INT10Mode.CurMode.Type == VGAModes.TEXT)
                         && (DOSBox.isEGAVGAArch())) {
                     INT10.reloadFont();
                 }
@@ -461,9 +461,9 @@ public final class KeyboardLayout implements Disposable {
                 return DOSMain.KEYB_NOERROR;
             }
             // start_pos = MEMORY.host_readd(ref cpi_buf, start_pos);
-            idx = start_pos;
-            start_pos = ByteConv.getInt(cpiBuf, (int) idx);
-            start_pos += 2;
+            idx = startPos;
+            startPos = ByteConv.getInt(cpiBuf, (int) idx);
+            startPos += 2;
         }
 
         Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error, "Codepage %i not found",
@@ -547,8 +547,8 @@ public final class KeyboardLayout implements Disposable {
 
             try {
                 int dr = tempfile.read(rb);
-                if ((dr < 4) || (readBuf[0] != (byte) 0x4b) || (readBuf[1] != (byte) 0x4c)
-                        || (readBuf[2] != (byte) 0x46)) {
+                if ((dr < 4) || (readBuf[0] != 0x4b) || (readBuf[1] != 0x4c)
+                        || (readBuf[2] != 0x46)) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
                             "Invalid keyboard layout file %s", keyboardFileName);
                     return 437;
@@ -686,7 +686,7 @@ public final class KeyboardLayout implements Disposable {
                     }
                     int diacriticsStart = 0;
                     // search start of subtable
-                    for (short i = 0; i < diacriticsCharacter - 200; i++)
+                    for (int i = 0; i < diacriticsCharacter - 200; i++)
                         diacriticsStart +=
                                 0xffff & ((0xff & diacritics[diacriticsStart + 1]) * 2 + 2);
 
@@ -1074,10 +1074,10 @@ public final class KeyboardLayout implements Disposable {
                             currentLayout[scan * layoutPages + addmap] = (short) kchar;
                             // clear command bit
                             currentLayout[scan * layoutPages + layoutPages - 2] &=
-                                    (short) (~(1 << addmap));
+                                    0xffff & (~(1 << addmap));
                             // add command bit
                             currentLayout[scan * layoutPages + layoutPages - 2] |=
-                                    (short) ((0xff & readBuf[readBufIdx - 1]) & (1 << addmap));
+                                    0xffff & ((0xff & readBuf[readBufIdx - 1]) & (1 << addmap));
                         }
                     }
 
@@ -1195,7 +1195,7 @@ public final class KeyboardLayout implements Disposable {
                 return 0;
             }
 
-            tempfile.position(7 + rbuf[6]);
+            tempfile.position(7 + (0xff & rbuf[6]));
 
             for (;;) {
                 int curPos = (int) tempfile.position();
@@ -1260,7 +1260,7 @@ public final class KeyboardLayout implements Disposable {
             return 0;
         }
 
-        int dpos = 7 + kclData[6];
+        int dpos = 7 + (0xff & kclData[6]);
         long idx;
         for (;;) {
             if (dpos + 5 > kclDataSize)

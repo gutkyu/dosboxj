@@ -30,7 +30,7 @@ final class EGARIL {
             Memory.writeB(save + i, 0);
         /* DCC */
         // MemModule.mem_writeb(save+0x25,MemModule.real_readb(INT10.BIOSMEM_SEG,INT10.BIOSMEM_DCC_INDEX));
-        byte dccode = 0x00;
+        int dccode = 0x00;
         int vsavept = (int) Memory.realReadD(INT10.BIOSMEM_SEG, INT10.BIOSMEM_VS_POINTER);
         int svstable =
                 (int) Memory.realReadD(Memory.realSeg(vsavept), Memory.realOff(vsavept) + 0x10);
@@ -45,9 +45,9 @@ final class EGARIL {
                 int dccentry = Memory.realReadW(Memory.realSeg(dcctable),
                         Memory.realOff(dcctable) + 0x04 + idx * 2);
                 if ((dccentry & 0xff) == 0)
-                    dccode = (byte) ((dccentry >>> 8) & 0xff);
+                    dccode = (dccentry >>> 8) & 0xff;
                 else
-                    dccode = (byte) (dccentry & 0xff);
+                    dccode = dccentry & 0xff;
             }
         }
         Memory.writeB(save + 0x25, dccode);

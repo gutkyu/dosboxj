@@ -255,7 +255,7 @@ public final class CHAR {
         }
         if (!gotoFilling)
             while (start != end) {
-                start += (byte) next;
+                start += 0xff & next;
                 switch (INT10Mode.CurMode.Type) {
                     case TEXT:
                         textCopyRow(0xff & cul, 0xff & clr, 0xff & start, 0xff & (start + nlines),
@@ -306,7 +306,7 @@ public final class CHAR {
         } else {
             // nlines = (sbyte)-nlines;
             nlines = (byte) -nlines;
-            start = (byte) (rlr - nlines + 1);
+            start = 0xff & (rlr - nlines + 1);
         }
         for (; nlines > 0; nlines--) {
             switch (INT10Mode.CurMode.Type) {
@@ -431,13 +431,13 @@ public final class CHAR {
                     }
                     if (first + 2 < last) {
                         if (first > 2) {
-                            first = (byte) ((cheight + 1) / 2);
+                            first = 0xff & ((cheight + 1) / 2);
                             last = cheight;
                         } else {
                             last = cheight;
                         }
                     } else {
-                        first = (byte) ((first - last) + cheight);
+                        first = 0xff & ((first - last) + cheight);
                         last = cheight;
 
                         if (cheight > 0xc) { // vgatest sets 15 15 2x where only one should be
@@ -533,11 +533,11 @@ public final class CHAR {
                     x = 8 * col;
                     y = cheight * row;
                     boolean error = false;
-                    for (byte h = 0; h < cheight; h++) {
+                    for (int h = 0; h < cheight; h++) {
                         int bitsel = 128;
                         int bitline = Memory.readB(fontdata++);
                         byte res = 0;
-                        byte vidline = 0;
+                        int vidline = 0;// uint8
                         int tx = x;
                         while (bitsel != 0) {
                             // Construct bitline in memory
@@ -576,7 +576,7 @@ public final class CHAR {
 
     private static boolean warned_use = false;
 
-    public static void writeChar1(int col, int row, int page, byte chr, int attr, boolean useattr) {
+    public static void writeChar1(int col, int row, int page, int chr, int attr, boolean useattr) {
         /* Externally used by the mouse routine */
         int fontdata;
         int x, y;
@@ -656,7 +656,7 @@ public final class CHAR {
         }
         int bitsel = 0;
         int bitline = 0;
-        for (byte h = 0; h < cheight; h++) {
+        for (int h = 0; h < cheight; h++) {
             bitsel = 128;
             bitline = Memory.readB(Memory.real2Phys(fontdata));
             fontdata = Memory.realMake(Memory.realSeg(fontdata), Memory.realOff(fontdata) + 1);
@@ -674,7 +674,8 @@ public final class CHAR {
     }
 
     // (Bit8u chr,Bit8u attr,Bit8u page,Bit16u count,bool showattr)
-    public static void writeChar2(byte chr, int attr, int page, int count, boolean showattr) {
+    public static void writeChar2(int chr, int attr, int page, int count, boolean showattr) {
+        chr &= 0xff;
         if (INT10Mode.CurMode.Type != VGAModes.TEXT) {
             showattr = true; // Use attr in graphics mode always
             switch (DOSBox.Machine) {
@@ -732,7 +733,7 @@ public final class CHAR {
                 break;
             default:
                 /* Draw the actual Character */
-                writeChar1(curCol, curRow, page, chr, attr, useAttr);
+                writeChar1(curCol, curRow, page, 0xff & chr, attr, useAttr);
                 curCol++;
                 break;
         }

@@ -15,12 +15,12 @@ import org.gutkyu.dosboxj.gui.*;
 
 
 public final class Mouse {
-    private int _callINT33, _callINT74, _int74RetCallback, _callMouseBD;
-    private int _ps2CbSeg, _ps2CbOfs;
-    private boolean _usePs2Callback, _ps2CallbackInit;
-    private int _callPS2;
-    private int _ps2Callback;
-    private short _oldMouseX, _oldMouseY;
+    private int callINT33, callINT74, int74RetCallback, callMouseBD;
+    private int ps2CbSeg, ps2CbOfs;
+    private boolean usePS2Callback, ps2CallbackInit;
+    private int callPS2;
+    private int ps2Callback;
+    private short oldMouseX, oldMouseY;
 
     private static final int QUEUE_SIZE = 32;
     private static final int MOUSE_BUTTONS = 3;
@@ -42,55 +42,55 @@ public final class Mouse {
         mouse = new MouseStruct();
     }
 
-    private static Mouse _mouseObj = null;
+    private static Mouse mouseObj = null;
 
     public static Mouse instance() {
-        return _mouseObj;
+        return mouseObj;
     }
 
     DOSActionBool AutoLock;
 
     public static class AutoLockBinder {
         public AutoLockBinder(MouseAutoLockable autoLockProvider) {
-            if (Mouse._mouseObj == null)
-                _mouseObj = new Mouse();
-            _mouseObj.AutoLock = autoLockProvider::MouseAutoLock;
+            if (Mouse.mouseObj == null)
+                mouseObj = new Mouse();
+            mouseObj.AutoLock = autoLockProvider::MouseAutoLock;
         }
     }
 
     public boolean setPS2State(boolean use) {
-        if (use && (!_ps2CallbackInit)) {
-            _usePs2Callback = false;
+        if (use && (!ps2CallbackInit)) {
+            usePS2Callback = false;
             PIC.setIRQMask(MOUSE_IRQ, true);
             return false;
         }
-        _usePs2Callback = use;
-        AutoLock.run(_usePs2Callback);
-        PIC.setIRQMask(MOUSE_IRQ, !_usePs2Callback);
+        usePS2Callback = use;
+        AutoLock.run(usePS2Callback);
+        PIC.setIRQMask(MOUSE_IRQ, !usePS2Callback);
         return true;
     }
 
     // public void ChangePS2Callback(short pseg, short pofs) {
     public void changePS2Callback(int pseg, int pofs) {
         if ((pseg == 0) && (pofs == 0)) {
-            _ps2CallbackInit = false;
+            ps2CallbackInit = false;
             AutoLock.run(false);
         } else {
-            _ps2CallbackInit = true;
-            _ps2CbSeg = 0xffff & pseg;
-            _ps2CbOfs = 0xffff & pofs;
+            ps2CallbackInit = true;
+            ps2CbSeg = 0xffff & pseg;
+            ps2CbOfs = 0xffff & pofs;
         }
-        AutoLock.run(_ps2CallbackInit);
+        AutoLock.run(ps2CallbackInit);
     }
 
-
-    private void doPS2Callback(short data, short mouseX, short mouseY) {
-        if (_usePs2Callback) {
-            short mDat = (short) ((data & 0x03) | 0x08);
-            short xDiff = (short) (mouseX - _oldMouseX);
-            short yDiff = (short) (_oldMouseY - mouseY);
-            _oldMouseX = mouseX;
-            _oldMouseY = mouseY;
+    // (UInt16 data, Int16 mouseX, Int16 mouseY)
+    private void doPS2Callback(int data, short mouseX, short mouseY) {
+        if (usePS2Callback) {
+            int mDat = (data & 0x03) | 0x08;
+            short xDiff = (short) (mouseX - oldMouseX);
+            short yDiff = (short) (oldMouseY - mouseY);
+            oldMouseX = mouseX;
+            oldMouseY = mouseY;
             if ((xDiff > 0xff) || (xDiff < -0xff))
                 mDat |= 0x40; // x overflow
             if ((yDiff > 0xff) || (yDiff < -0xff))
@@ -109,10 +109,10 @@ public final class Mouse {
             CPU.push16(xDiff % 256);
             CPU.push16(yDiff % 256);
             CPU.push16(0);
-            CPU.push16(Memory.realSeg(_ps2Callback));
-            CPU.push16(Memory.realOff(_ps2Callback));
-            Register.segSet16(Register.SEG_NAME_CS, _ps2CbSeg);
-            Register.setRegIP(_ps2CbOfs);
+            CPU.push16(Memory.realSeg(ps2Callback));
+            CPU.push16(Memory.realOff(ps2Callback));
+            Register.segSet16(Register.SEG_NAME_CS, ps2CbSeg);
+            Register.setRegIP(ps2CbOfs);
         }
     }
 
@@ -153,7 +153,7 @@ public final class Mouse {
                     mouse.EventQueue[i] = mouse.EventQueue[i - 1];
             }
             mouse.EventQueue[0].Type = type;
-            mouse.EventQueue[0].Buttons = mouse.Buttons;
+            mouse.EventQueue[0].Buttons = 0xff & mouse.Buttons;
             mouse.Events++;
         }
         if (!mouse.TimerInProgress) {
@@ -163,25 +163,25 @@ public final class Mouse {
         }
     }
 
-    private short _defaultTextAndMask = 0x77FF;
-    private short _defaultTextXorMask = 0x7700;
+    private short defaultTextAndMask = 0x77FF;
+    private short defaultTextXorMask = 0x7700;
 
-    private short[] _defaultScreenMask =
+    private short[] defaultScreenMask =
             {0x3FFF, 0x1FFF, 0x0FFF, 0x07FF, 0x03FF, 0x01FF, 0x00FF, 0x007F, 0x003F, 0x001F, 0x01FF,
                     0x00FF, 0x30FF, (short) 0xF87F, (short) 0xF87F, (short) 0xFCFF};
 
-    private short[] _defaultCursorMask = {0x0000, 0x4000, 0x6000, 0x7000, 0x7800, 0x7C00, 0x7E00,
+    private short[] defaultCursorMask = {0x0000, 0x4000, 0x6000, 0x7000, 0x7800, 0x7C00, 0x7E00,
             0x7F00, 0x7F80, 0x7C00, 0x6C00, 0x4600, 0x0600, 0x0300, 0x0300, 0x0000};
 
 
     // -- #region mouse
     private static class ButtonEvent {
         public int Type;// uint8
-        public byte Buttons;// uint8
+        public int Buttons;// uint8
     }
 
-    private short[] _userdefScreenMask = new short[CURSORY];
-    private short[] _userdefCursorMask = new short[CURSORY];
+    private short[] userdefScreenMask = new short[CURSORY];
+    private short[] userdefCursorMask = new short[CURSORY];
 
     private class MouseStruct implements ByteSequence {
         //
@@ -199,7 +199,7 @@ public final class Mouse {
         public float MickeyX, MickeyY; // 4,4
         public float X, Y; // 4,4
         public ButtonEvent[] EventQueue; // 64
-        public byte Events;// Increase if QUEUE_SIZE >255 (currently 32) // 1
+        public int Events;// Increase if QUEUE_SIZE >255 (currently 32) // 1
         public short SubSeg, SubOfs; // 2,2
         public short SubMask; // 2
         //
@@ -242,7 +242,7 @@ public final class Mouse {
         public boolean InhibitDraw; // 1
         public boolean TimerInProgress; // 1
         public boolean InUIR; // 1
-        public byte Mode; // 1
+        public int Mode; // 1
         public short GranMask; // 2
 
         private static final int MASK_B0 = 0xff;
@@ -420,7 +420,7 @@ public final class Mouse {
                 case 70:
                     return MASK_B0 & (tmpF2I >>> SHIFT_B3);
                 case 135:
-                    return Events;
+                    return MASK_B0 & Events;
                 case 136:
                     return MASK_B0 & SubSeg;
                 case 137:
@@ -597,7 +597,7 @@ public final class Mouse {
                 case 473:
                     return MASK_B0 & (InUIR ? 1 : 0);
                 case 474:
-                    return Mode;
+                    return MASK_B0 & Mode;
                 case 475:
                     return MASK_B0 & GranMask;
                 case 476:
@@ -612,7 +612,7 @@ public final class Mouse {
                     }
                     if (index < 403) {
                         int idx = index - 147;
-                        return BackData[idx - (idx & 0b0001)];
+                        return MASK_B0 & BackData[idx - (idx & 0b0001)];
                     }
                     throw new DOSException("");
 
@@ -960,25 +960,25 @@ public final class Mouse {
                 Register.setRegDX((short) posY());
                 Register.setRegSI((short) ((short) (mouse.MickeyX * mouse.MickeysPerPixelX)));
                 Register.setRegDI((short) ((short) (mouse.MickeyY * mouse.MickeysPerPixelY)));
-                CPU.push16(Memory.realSeg(Callback.realPointer(_int74RetCallback)));
-                CPU.push16(Memory.realOff(Callback.realPointer(_int74RetCallback)));
+                CPU.push16(Memory.realSeg(Callback.realPointer(int74RetCallback)));
+                CPU.push16(Memory.realOff(Callback.realPointer(int74RetCallback)));
                 Register.segSet16(Register.SEG_NAME_CS, mouse.SubSeg);
                 Register.setRegIP(mouse.SubOfs);
                 // if (mouse.in_UIR) LOG(LOG_MOUSE, LOG_ERROR)("Already in UIR!");
                 mouse.InUIR = true;
-            } else if (_usePs2Callback) {
-                CPU.push16(Memory.realSeg(Callback.realPointer(_int74RetCallback)));
-                CPU.push16(Memory.realOff(Callback.realPointer(_int74RetCallback)));
+            } else if (usePS2Callback) {
+                CPU.push16(Memory.realSeg(Callback.realPointer(int74RetCallback)));
+                CPU.push16(Memory.realOff(Callback.realPointer(int74RetCallback)));
                 doPS2Callback(mouse.EventQueue[mouse.Events].Buttons, posX(), posY());
             } else {
                 Register.segSet16(Register.SEG_NAME_CS,
-                        Memory.realSeg(Callback.realPointer(_int74RetCallback)));
-                Register.setRegIP(Memory.realOff(Callback.realPointer(_int74RetCallback)));
+                        Memory.realSeg(Callback.realPointer(int74RetCallback)));
+                Register.setRegIP(Memory.realOff(Callback.realPointer(int74RetCallback)));
             }
         } else {
             Register.segSet16(Register.SEG_NAME_CS,
-                    Memory.realSeg(Callback.realPointer(_int74RetCallback)));
-            Register.setRegIP(Memory.realOff(Callback.realPointer(_int74RetCallback)));
+                    Memory.realSeg(Callback.realPointer(int74RetCallback)));
+            Register.setRegIP(Memory.realOff(Callback.realPointer(int74RetCallback)));
         }
         return Callback.ReturnTypeNone;
     }
@@ -1043,7 +1043,7 @@ public final class Mouse {
     public void newVideoMode() {
         mouse.InhibitDraw = false;
         /* Get the correct resolution from the current video mode */
-        byte mode = (byte) Memory.readB(BIOS.BIOS_VIDEO_MODE);
+        int mode = Memory.readB(BIOS.BIOS_VIDEO_MODE);
         if (mode == mouse.Mode) {
             // LOG(LOG_MOUSE,LOG_NORMAL)("New video is the same as the old"); /*return;*/
         }
@@ -1097,14 +1097,14 @@ public final class Mouse {
         mouse.HotX = 0;
         mouse.HotY = 0;
         mouse.Background = false;
-        mouse.ScreenMask = _defaultScreenMask;
+        mouse.ScreenMask = defaultScreenMask;
         mouse.ScreenMaskIsDefault = 0;// screenMask가 Default 정의된 값을 사용한다고 표시, 메모리에
                                       // blockwrite,blockread할때 적용
-        mouse.CursorMask = _defaultCursorMask;
+        mouse.CursorMask = defaultCursorMask;
         mouse.CursorMaskIsDefault = 0;// cursorMask가 Default 정의된 값을 사용한다고 표시, 메모리에
                                       // blockwrite,blockread할때 적용
-        mouse.TextAndMask = _defaultTextAndMask;
-        mouse.TextXorMask = _defaultTextXorMask;
+        mouse.TextAndMask = defaultTextAndMask;
+        mouse.TextXorMask = defaultTextXorMask;
         mouse.Language = 0;
         mouse.Page = 0;
         mouse.DoubleSpeedThreshold = 64;
@@ -1116,8 +1116,8 @@ public final class Mouse {
         mouse.Enabled = true;
         mouse.OldHidden = 1;
 
-        _oldMouseX = (short) mouse.X;
-        _oldMouseY = (short) mouse.Y;
+        oldMouseX = (short) mouse.X;
+        oldMouseY = (short) mouse.Y;
 
 
     }
@@ -1136,7 +1136,7 @@ public final class Mouse {
             // mouse.BackData[1], true);
             CHAR.writeChar1(mouse.BackPosX, mouse.BackPosY,
                     Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE),
-                    mouse.BackData[0], 0xff & mouse.BackData[1], true);
+                    0xff & mouse.BackData[0], 0xff & mouse.BackData[1], true);
             mouse.Background = false;
         }
     }
@@ -1151,15 +1151,15 @@ public final class Mouse {
         mouse.BackPosY = (short) (posY() >>> 3);
 
         // use current page (CV program)
-        byte page = (byte) Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE);
-        int result = CHAR.readCharAttr((short) mouse.BackPosX, (short) mouse.BackPosY, page);
+        int page = Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE);
+        int result = CHAR.readCharAttr(0xffff & mouse.BackPosX, 0xffff & mouse.BackPosY, page);
         mouse.BackData[0] = (byte) (result & 0xFF);
         mouse.BackData[1] = (byte) (result >>> 8);
         mouse.Background = true;
         // Write Cursor
-        result = (short) ((result & mouse.TextAndMask) ^ mouse.TextXorMask);
-        CHAR.writeChar1(mouse.BackPosX, mouse.BackPosY, page, (byte) (result & 0xFF),
-                0xff & (result >>> 8), true);
+        result = 0xffff & ((result & mouse.TextAndMask) ^ mouse.TextXorMask);
+        CHAR.writeChar1(mouse.BackPosX, mouse.BackPosY, page, result & 0xFF, 0xff & (result >>> 8),
+                true);
     }
 
 
@@ -1170,7 +1170,7 @@ public final class Mouse {
     private byte[] gfxReg3CE = new byte[9];
     int index3C4, gfxReg3C5;// uint8
 
-    private void aaveVgaRegisters() {
+    private void saveVgaRegisters() {
         if (DOSBox.isVGAArch()) {
             for (byte i = 0; i < 9; i++) {
                 IO.write(0x3CE, i);
@@ -1194,45 +1194,37 @@ public final class Mouse {
         }
     }
 
-    short[] cursorArea2 = new short[7];
-
     private void restoreCursorBackground() {
         if (mouse.Hidden != 0 || mouse.InhibitDraw)
             return;
 
-        aaveVgaRegisters();
+        saveVgaRegisters();
         if (mouse.Background) {
             // Restore background
             short x, y;
-            short addx1 = 0, addx2 = 0, addy = 0;
-            short dataPos = 0;
+            int addX1 = 0, addX2 = 0, addY = 0;// uint16
+            int dataPos = 0;// uint16
             short x1 = mouse.BackPosX;
             short y1 = mouse.BackPosY;
             short x2 = (short) (x1 + CURSORX - 1);
             short y2 = (short) (y1 + CURSORY - 1);
 
-            cursorArea2[0] = x1;
-            cursorArea2[1] = x2;
-            cursorArea2[2] = y1;
-            cursorArea2[3] = y2;
-            cursorArea2[4] = addx1;
-            cursorArea2[5] = addx2;
-            cursorArea2[6] = addy;
-            clipCursorArea(cursorArea2);
-            x1 = cursorArea2[0];
-            x2 = cursorArea2[1];
-            y1 = cursorArea2[2];
-            y2 = cursorArea2[3];
-            addx1 = cursorArea2[4];
-            addx2 = cursorArea2[5];
-            addy = cursorArea2[6];
-            dataPos = (short) (addy * CURSORX);
+            clipCursorArea(x1, x2, y1, y2, addX1, addX2, addY);
+            x1 = returnedClipCursorAreaX1;
+            x2 = returnedClipCursorAreaX2;
+            y1 = returnedClipCursorAreaY1;
+            y2 = returnedClipCursorAreaY2;
+            addX1 = returnedClipCursorAreaAddX1;
+            addX2 = returnedClipCursorAreaAddX2;
+            addY = returnedClipCursorAreaAddY;
+
+            dataPos = 0xffff & (addY * CURSORX);
             for (y = y1; y <= y2; y++) {
-                dataPos += addx1;
+                dataPos += addX1;
                 for (x = x1; x <= x2; x++) {
-                    INT10.putPixel(x, y, mouse.Page, mouse.BackData[dataPos++]);
+                    INT10.putPixel(0xffff & x, 0xffff & y, mouse.Page, mouse.BackData[dataPos++]);
                 }
-                dataPos += addx2;
+                dataPos += addX2;
             }
             mouse.Background = false;
         }
@@ -1253,19 +1245,20 @@ public final class Mouse {
         }
     }
 
-    private void clipCursorArea(short[] cursorArea) {
-        short x1 = cursorArea[0];
-        short x2 = cursorArea[1];
-        short y1 = cursorArea[2];
-        short y2 = cursorArea[3];
-        short addx1 = cursorArea[4];
-        short addx2 = cursorArea[5];
-        short addy = cursorArea[6];
+    private short returnedClipCursorAreaX1, returnedClipCursorAreaX2, returnedClipCursorAreaY1,
+            returnedClipCursorAreaY2;// int16
 
+    private int returnedClipCursorAreaAddX1, returnedClipCursorAreaAddX2,
+            returnedClipCursorAreaAddY;// uint16
+    // (ref Int16 x1, ref Int16 x2, ref Int16 y1, ref Int16 y2, ref UInt16 addx1, ref UInt16 addx2,
+    // ref UInt16 addy)
+
+    private void clipCursorArea(short x1, short x2, short y1, short y2, int addx1, int addx2,
+            int addy) {
         addx1 = addx2 = addy = 0;
         // Clip up
         if (y1 < 0) {
-            addy += -y1;
+            addy += 0xffff & -y1;
             y1 = 0;
         }
         // Clip down
@@ -1274,24 +1267,22 @@ public final class Mouse {
         }
         // Clip left
         if (x1 < 0) {
-            addx1 += -x1;
+            addx1 += 0xffff & -x1;
             x1 = 0;
         }
         // Clip right
         if (x2 > mouse.ClipX) {
-            addx2 = (short) (x2 - mouse.ClipX);
+            addx2 = 0xffff & (x2 - mouse.ClipX);
             x2 = mouse.ClipX;
         }
-        cursorArea[0] = x1;
-        cursorArea[1] = x2;
-        cursorArea[2] = y1;
-        cursorArea[3] = y2;
-        cursorArea[4] = addx1;
-        cursorArea[5] = addx2;
-        cursorArea[6] = addy;
+        returnedClipCursorAreaX1 = x1;
+        returnedClipCursorAreaX2 = x2;
+        returnedClipCursorAreaY1 = y1;
+        returnedClipCursorAreaY2 = y2;
+        returnedClipCursorAreaAddX1 = addx1;
+        returnedClipCursorAreaAddX2 = addx2;
+        returnedClipCursorAreaAddY = addy;
     }
-
-    short[] cursorArea1 = new short[7];
 
     private void drawCursor() {
         if (mouse.Hidden != 0 || mouse.InhibitDraw)
@@ -1330,55 +1321,49 @@ public final class Mouse {
 
         restoreCursorBackground();
 
-        aaveVgaRegisters();
+        saveVgaRegisters();
 
         // Save Background
         short x, y;
-        short addx1 = 0, addx2 = 0, addy = 0;
-        short dataPos = 0;
+        int addX1 = 0, addX2 = 0, addY = 0;// uint16
+        int dataPos = 0;// uint16
         short x1 = (short) (posX() / xratio - mouse.HotX);
         short y1 = (short) (posY() - mouse.HotY);
         short x2 = (short) (x1 + CURSORX - 1);
         short y2 = (short) (y1 + CURSORY - 1);
 
-        cursorArea1[0] = x1;
-        cursorArea1[1] = x2;
-        cursorArea1[2] = y1;
-        cursorArea1[3] = y2;
-        cursorArea1[4] = addx1;
-        cursorArea1[5] = addx2;
-        cursorArea1[6] = addy;
-        clipCursorArea(cursorArea1);
-        x1 = cursorArea1[0];
-        x2 = cursorArea1[1];
-        y1 = cursorArea1[2];
-        y2 = cursorArea1[3];
-        addx1 = cursorArea1[4];
-        addx2 = cursorArea1[5];
-        addy = cursorArea1[6];
+        clipCursorArea(x1, x2, y1, y2, addX1, addX2, addY);
+        x1 = returnedClipCursorAreaX1;
+        x2 = returnedClipCursorAreaX2;
+        y1 = returnedClipCursorAreaY1;
+        y2 = returnedClipCursorAreaY2;
+        addX1 = returnedClipCursorAreaAddX1;
+        addX2 = returnedClipCursorAreaAddX2;
+        addY = returnedClipCursorAreaAddY;
 
-        dataPos = (short) (addy * CURSORX);
-        byte tmpColor = 0;
-        for (y = y1; y <= y2; y++) {
-            dataPos += addx1;
-            for (x = x1; x <= x2; x++) {
-                mouse.BackData[dataPos++] = INT10.getPixel(x, y, mouse.Page);
+        dataPos = 0xffff & (addY * CURSORX);
+        if (INT10.canGetPixel()) {
+            for (y = y1; y <= y2; y++) {
+                dataPos += addX1;
+                for (x = x1; x <= x2; x++) {
+                    mouse.BackData[dataPos++] = INT10.getPixel(x, y, mouse.Page);
+                }
+                dataPos += addX2;
             }
-            dataPos += addx2;
         }
         mouse.Background = true;
         mouse.BackPosX = (short) (posX() / xratio - mouse.HotX);
         mouse.BackPosY = (short) (posY() - mouse.HotY);
 
         // Draw Mousecursor
-        dataPos = (short) (addy * CURSORX);
+        dataPos = 0xffff & (addY * CURSORX);
         for (y = y1; y <= y2; y++) {
-            short scMask = mouse.ScreenMask[addy + y - y1];
-            short cuMask = mouse.CursorMask[addy + y - y1];
-            if (addx1 > 0) {
-                scMask <<= addx1;
-                cuMask <<= addx1;
-                dataPos += addx1;
+            int scMask = 0xffff & mouse.ScreenMask[addY + y - y1];// uint16
+            int cuMask = 0xffff & mouse.CursorMask[addY + y - y1];// uint16
+            if (addX1 > 0) {
+                scMask <<= addX1;
+                cuMask <<= addX1;
+                dataPos += addX1;
             }
             for (x = x1; x <= x2; x++) {
                 byte pixel = 0;
@@ -1391,10 +1376,10 @@ public final class Mouse {
                     pixel = (byte) (pixel ^ 0x0F);
                 cuMask <<= 1;
                 // Set Pixel
-                INT10.putPixel((short) x, (short) y, mouse.Page, pixel);
+                INT10.putPixel(0xffff & x, 0xffff & y, mouse.Page, pixel);
                 dataPos++;
             }
-            dataPos += addx2;
+            dataPos += addX2;
         }
         restoreVGARegisters();
     }
@@ -1408,7 +1393,7 @@ public final class Mouse {
             dx *= mouse.SenvX;
         if ((Math.abs(yRel) > 1.0) || (mouse.SenvY < 1.0))
             dy *= mouse.SenvY;
-        if (_usePs2Callback)
+        if (usePS2Callback)
             dy *= 2;
 
         mouse.MickeyX += dx;
@@ -1439,7 +1424,7 @@ public final class Mouse {
 
         /* ignore constraints if using PS2 mouse callback in the bios */
 
-        if (!_usePs2Callback) {
+        if (!usePS2Callback) {
             if (mouse.X > mouse.MaxX)
                 mouse.X = mouse.MaxX;
             if (mouse.X < mouse.MinX)
@@ -1449,7 +1434,7 @@ public final class Mouse {
             if (mouse.Y < mouse.MinY)
                 mouse.Y = mouse.MinY;
         }
-        addEvent((byte) MOUSE_HAS_MOVED);
+        addEvent(MOUSE_HAS_MOVED);
         drawCursor();
     }
 
@@ -1531,16 +1516,16 @@ public final class Mouse {
 
     public void init(Section sec) {
         // Callback for mouse interrupt 0x33
-        _callINT33 = Callback.allocate();
+        callINT33 = Callback.allocate();
         // RealPt i33loc=RealMake(CB_SEG+1,(call_int33*CB_SIZE)-0x10);
         int i33Loc = Memory.realMake(DOSMain.getMemory(0x1) - 1, 0x10);
-        Callback.setup(_callINT33, this::INT33Handler, Callback.Symbol.MOUSE,
+        Callback.setup(callINT33, this::INT33Handler, Callback.Symbol.MOUSE,
                 Memory.real2Phys(i33Loc), "Mouse");
         // Wasteland needs low(seg(int33))!=0 and low(ofs(int33))!=0
         Memory.realWriteD(0, 0x33 << 2, i33Loc);
 
-        _callMouseBD = Callback.allocate();
-        Callback.setup(_callMouseBD, this::BD_Handler, Callback.Symbol.RETF8, Memory.physMake(
+        callMouseBD = Callback.allocate();
+        Callback.setup(callMouseBD, this::BD_Handler, Callback.Symbol.RETF8, Memory.physMake(
                 0xffff & Memory.realSeg(i33Loc), 0xffff & (Memory.realOff(i33Loc) + 2)), "MouseBD");
         // pseudocode for CB_MOUSE (including the special backdoor entry point):
         // jump near i33hd
@@ -1552,8 +1537,8 @@ public final class Mouse {
 
 
         // Callback for ps2 irq
-        _callINT74 = Callback.allocate();
-        Callback.setup(_callINT74, this::INT74Handler, Callback.Symbol.IRQ12, "int 74");
+        callINT74 = Callback.allocate();
+        Callback.setup(callINT74, this::INT74Handler, Callback.Symbol.IRQ12, "int 74");
         // pseudocode for CB_IRQ12:
         // push ds
         // push es
@@ -1563,8 +1548,8 @@ public final class Mouse {
         // doesn't return here, but rather to CB_IRQ12_RET
         // (ps2 callback/user callback inbetween if requested)
 
-        _int74RetCallback = Callback.allocate();
-        Callback.setup(_int74RetCallback, this::UserIntCBHandler, Callback.Symbol.IRQ12_RET,
+        int74RetCallback = Callback.allocate();
+        Callback.setup(int74RetCallback, this::UserIntCBHandler, Callback.Symbol.IRQ12_RET,
                 "int 74 ret");
         // pseudocode for CB_IRQ12_RET:
         // callback MOUSE_UserInt_CB_Handler
@@ -1577,22 +1562,22 @@ public final class Mouse {
         // pop ds
         // iret
 
-        byte hwvec = (MOUSE_IRQ > 7) ? (0x70 + MOUSE_IRQ - 8) : (0x8 + MOUSE_IRQ);
-        Memory.realSetVec(hwvec, Callback.realPointer(_callINT74));
+        int hwVec = 0xff & ((MOUSE_IRQ > 7) ? (0x70 + MOUSE_IRQ - 8) : (0x8 + MOUSE_IRQ));
+        Memory.realSetVec(hwVec, Callback.realPointer(callINT74));
 
         // Callback for ps2 user callback handling
-        _usePs2Callback = false;
-        _ps2CallbackInit = false;
-        _callPS2 = Callback.allocate();
-        Callback.setup(_callPS2, this::PS2Handler, Callback.Symbol.RETF, "ps2 bios callback");
-        _ps2Callback = Callback.realPointer(_callPS2);
+        usePS2Callback = false;
+        ps2CallbackInit = false;
+        callPS2 = Callback.allocate();
+        Callback.setup(callPS2, this::PS2Handler, Callback.Symbol.RETF, "ps2 bios callback");
+        ps2Callback = Callback.realPointer(callPS2);
 
         // memset(&mouse,0,sizeof(mouse));
         mouse = new MouseStruct();
 
         mouse.Hidden = 1; // Hide mouse on startup
         mouse.TimerInProgress = false;
-        mouse.Mode = (byte) 0xFF; // Non existing mode
+        mouse.Mode = 0xFF; // Non existing mode
 
         mouse.SubMask = 0;
         mouse.SubSeg = 0x6362; // magic value

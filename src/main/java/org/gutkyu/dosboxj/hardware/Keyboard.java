@@ -42,8 +42,8 @@ public final class Keyboard {
     private int used;
     private int pos;
 
-    private KBDKeys _repeat_key;
-    private int _repeat_wait;
+    private KBDKeys repeatKey;
+    private int repeatWait;
     private int _repeat_pause, _repeat_rate;
     private KeyCommands _command;
     private byte p60data;
@@ -181,21 +181,21 @@ public final class Keyboard {
         }
     }
 
-    private byte port_61_data = 0;
+    private byte port61Data = 0;
 
     private int readP61(int port, int iolen) {
-        port_61_data ^= 0x20;
-        port_61_data ^= 0x10;
-        return port_61_data;
+        port61Data ^= 0x20;
+        port61Data ^= 0x10;
+        return 0xff & port61Data;
     }
 
     private void writeP61(int port, int val, int iolen) {
-        if (((port_61_data ^ val) & 3) != 0) {
-            if (((port_61_data ^ val) & 1) != 0)
+        if (((port61Data ^ val) & 3) != 0) {
+            if (((port61Data ^ val) & 1) != 0)
                 Timer.setGate2((val & 0x1) != 0);
             PCSpeaker.setType(val & 3);
         }
-        port_61_data = (byte) val;
+        port61Data = (byte) val;
     }
 
     private void writeP64(int port, int val, int iolen) {
@@ -229,7 +229,7 @@ public final class Keyboard {
     }
 
     public void addKey(KBDKeys keytype, boolean pressed) {
-        byte ret = 0;
+        int ret = 0;// uint8
         boolean extend = false;
         switch (keytype) {
             case KBD_esc:
@@ -568,14 +568,14 @@ public final class Keyboard {
         }
         /* Add the actual key in the keyboard queue */
         if (pressed) {
-            if (_repeat_key == keytype)
-                _repeat_wait = _repeat_rate;
+            if (repeatKey == keytype)
+                repeatWait = _repeat_rate;
             else
-                _repeat_wait = _repeat_pause;
-            _repeat_key = keytype;
+                repeatWait = _repeat_pause;
+            repeatKey = keytype;
         } else {
-            _repeat_key = KBDKeys.KBD_NONE;
-            _repeat_wait = 0;
+            repeatKey = KBDKeys.KBD_NONE;
+            repeatWait = 0;
             ret += 128;
         }
         if (extend)
@@ -584,10 +584,10 @@ public final class Keyboard {
     }
 
     private void tickHandler() {
-        if (_repeat_wait != 0) {
-            _repeat_wait--;
-            if (_repeat_wait == 0)
-                addKey(_repeat_key, true);
+        if (repeatWait != 0) {
+            repeatWait--;
+            if (repeatWait == 0)
+                addKey(repeatKey, true);
         }
     }
 
@@ -609,10 +609,10 @@ public final class Keyboard {
         _kbd.scanning = true;
         _kbd._command = KeyCommands.CMD_NONE;
         _kbd.p60changed = false;
-        _kbd._repeat_key = KBDKeys.KBD_NONE;
+        _kbd.repeatKey = KBDKeys.KBD_NONE;
         _kbd._repeat_pause = 500;
         _kbd._repeat_rate = 33;
-        _kbd._repeat_wait = 0;
+        _kbd.repeatWait = 0;
         _kbd.clrBuffer();
     }
 

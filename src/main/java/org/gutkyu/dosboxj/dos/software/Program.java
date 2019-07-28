@@ -21,8 +21,8 @@ public abstract class Program implements Disposable {
         envscan += 3;
         byte[] tail = new byte[DOSMain.CommandTailSize];
         Memory.blockRead(Memory.physMake(DOSMain.DOS.getPSP(), 128), tail, 0, 128);
-        if (tail[DOSMain.CommandTailOffCount] < 127)
-            tail[DOSMain.CommandTailOffBuffer + tail[DOSMain.CommandTailOffCount]] = 0;
+        if ((tail[DOSMain.CommandTailOffCount] & 0xff) < 127)
+            tail[DOSMain.CommandTailOffBuffer + (tail[DOSMain.CommandTailOffCount] & 0xff)] = 0;
         else
             tail[DOSMain.CommandTailOffBuffer + 126] = 0;
         byte[] filename = new byte[256 + 1];
@@ -153,7 +153,7 @@ public abstract class Program implements Disposable {
             byte outByte = 0;
             short s = 1;
             if (buf.charAt(i) == 0xA && i > 0 && buf.charAt(i - 1) != 0xD) {
-                outByte = (byte) 0xD;
+                outByte = 0xD;
                 DOSMain.writeFile(DOSMain.STDOUT, outByte);
             }
             outByte = (byte) buf.charAt(i);

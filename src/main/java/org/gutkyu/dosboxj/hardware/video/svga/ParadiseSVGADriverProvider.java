@@ -9,20 +9,20 @@ import org.gutkyu.dosboxj.interrupt.int10.INT10Mode;
 
 // PVGA1a
 public final class ParadiseSVGADriverProvider {
-    private int _pr0A = 0;
-    private int _pr0B = 0;
-    private int _pr1 = 0;
-    private int _pr2 = 0;
-    private int _pr3 = 0;
-    private int _pr4 = 0;
-    private int _pr5 = 0;
+    private int pr0A = 0;
+    private int pr0B = 0;
+    private int pr1 = 0;
+    private int pr2 = 0;
+    private int pr3 = 0;
+    private int pr4 = 0;
+    private int pr5 = 0;
 
     private boolean locked() {
-        return (_pr5 & 7) != 5;
+        return (pr5 & 7) != 5;
     }
 
-    private int[] _clockFreq = new int[] {0, 0, 0, 0};
-    private int _biosMode = 0;
+    private int[] clockFreq = new int[] {0, 0, 0, 0};
+    private int biosMode = 0;
 
     private VGA vga = null;
 
@@ -48,12 +48,12 @@ public final class ParadiseSVGADriverProvider {
 
         if (vga.VMemSize < 512 * 1024) {
             vga.VMemSize = 256 * 1024;
-            _pr1 = 1 << 6;
+            pr1 = 1 << 6;
         } else if (vga.VMemSize > 512 * 1024) {
             vga.VMemSize = 1024 * 1024;
-            _pr1 = 3 << 6;
+            pr1 = 3 << 6;
         } else {
-            _pr1 = 2 << 6;
+            pr1 = 2 << 6;
         }
 
         // Paradise ROM signature
@@ -76,12 +76,12 @@ public final class ParadiseSVGADriverProvider {
         // assumes that the eighth bit was actually wired and could be used. This does not conflict
         // with
         // anything and actually works in WHATVGA just fine.
-        if ((_pr1 & 0x08) != 0) {
+        if ((pr1 & 0x08) != 0) {
             // TODO: Dual bank function is not supported yet
             // TODO: Requirements are not compatible with vga_memory implementation.
         } else {
             // Single bank config is straightforward
-            vga.SVGA.BankRead = vga.SVGA.BankWrite = (byte) _pr0A;
+            vga.SVGA.BankRead = vga.SVGA.BankWrite = 0xff & pr0A;
             vga.SVGA.BankSize = 4 * 1024;
             vga.setupHandlers();
         }
@@ -96,43 +96,43 @@ public final class ParadiseSVGADriverProvider {
                 // Bank A, 4K granularity, not using bit 7
                 // Maps to A800h-AFFFh if PR1 bit 3 set and 64k config B000h-BFFFh if 128k config.
                 // A000h-AFFFh otherwise.
-                _pr0A = val;
+                pr0A = val;
                 setupBank();
                 break;
             case 0x0a:
                 // Bank B, 4K granularity, not using bit 7
                 // Maps to A000h-A7FFh if PR1 bit 3 set and 64k config, A000h-AFFFh if 128k
-                _pr0B = val;
+                pr0B = val;
                 setupBank();
                 break;
             case 0x0b:
                 // Memory size. We only allow to mess with bit 3 here (enable bank B) - this may
                 // break some detection schemes
-                _pr1 = (_pr1 & ~0x08) | (val & 0x08);
+                pr1 = (pr1 & ~0x08) | (val & 0x08);
                 setupBank();
                 break;
             case 0x0c:
                 // Video configuration
                 // TODO: Figure out if there is anything worth implementing here.
-                _pr2 = val;
+                pr2 = val;
                 break;
             case 0x0d:
                 // CRT control. int 3-4 contain bits 16-17 of CRT start.
                 // TODO: Implement bit 2 (CRT address doubling - this mechanism is present in other
                 // chipsets as well,
                 // but not implemented in DosBox core)
-                _pr3 = val;
+                pr3 = val;
                 vga.Config.DisplayStart = (vga.Config.DisplayStart & 0xffff) | ((val & 0x18) << 13);
                 vga.Config.CursorStart = (vga.Config.CursorStart & 0xffff) | ((val & 0x18) << 13);
                 break;
             case 0x0e:
                 // Video control
                 // TODO: Figure out if there is anything worth implementing here.
-                _pr4 = val;
+                pr4 = val;
                 break;
             case 0x0f:
                 // Enable extended registers
-                _pr5 = val;
+                pr5 = val;
                 break;
             default:
                 Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
@@ -147,19 +147,19 @@ public final class ParadiseSVGADriverProvider {
 
         switch (reg) {
             case 0x09:
-                return _pr0A;
+                return pr0A;
             case 0x0a:
-                return _pr0B;
+                return pr0B;
             case 0x0b:
-                return _pr1;
+                return pr1;
             case 0x0c:
-                return _pr2;
+                return pr2;
             case 0x0d:
-                return _pr3;
+                return pr3;
             case 0x0e:
-                return _pr4;
+                return pr4;
             case 0x0f:
-                return _pr5;
+                return pr5;
             default:
                 Log.logging(Log.LogTypes.VGAMISC, Log.LogServerities.Normal,
                         "VGA:GFX:PVGA1A:Read from illegal index %2X", reg);
@@ -170,7 +170,7 @@ public final class ParadiseSVGADriverProvider {
     }
 
     private void finishSetMode(int crtcBase, ModeExtraData modeData) {
-        _biosMode = modeData.ModeNo;
+        biosMode = modeData.ModeNo;
 
         // Reset to single bank and set it to 0. May need to unlock first (DPaint locks on exit)
         IO.write(0x3ce, 0x0f);
@@ -212,13 +212,13 @@ public final class ParadiseSVGADriverProvider {
         // merge them.
         if ((vga.Attr.ModeControl & 1) != 0) {
             if ((vga.GFX.Mode & 0x40) != 0)
-                vga.setMode((_biosMode <= 0x13) ? VGAModes.VGA : VGAModes.LIN8);
+                vga.setMode((biosMode <= 0x13) ? VGAModes.VGA : VGAModes.LIN8);
             else if ((vga.GFX.Mode & 0x20) != 0)
                 vga.setMode(VGAModes.CGA4);
             else if ((vga.GFX.Miscellaneous & 0x0c) == 0x0c)
                 vga.setMode(VGAModes.CGA2);
             else
-                vga.setMode((_biosMode <= 0x13) ? VGAModes.EGA : VGAModes.LIN4);
+                vga.setMode((biosMode <= 0x13) ? VGAModes.EGA : VGAModes.LIN4);
         } else {
             vga.setMode(VGAModes.TEXT);
         }
@@ -226,13 +226,13 @@ public final class ParadiseSVGADriverProvider {
 
     private void setClock(int which, int target) {
         if (which < 4) {
-            _clockFreq[which] = 1000 * target;
+            clockFreq[which] = 1000 * target;
             vga.startResize();
         }
     }
 
     private int getClock() {
-        return _clockFreq[(vga.MiscOutput >>> 2) & 3];
+        return clockFreq[(vga.MiscOutput >>> 2) & 3];
     }
 
     private boolean acceptsMode(int mode) {

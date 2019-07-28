@@ -19,7 +19,7 @@ public final class ChangesHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
-        return vga.Mem.LinearAlloc[addr];
+        return 0xff & vga.Mem.LinearAlloc[addr];
     }
 
     @Override

@@ -125,7 +125,7 @@ public final class VGADac {
                     default:
                         /* Check for attributes and DAC entry link */
                         for (int i = 0; i < 16; i++) {
-                            if (Combine[i] == WriteIndex) {
+                            if ((Combine[i] & 0xff) == WriteIndex) {
                                 sendColor(i, WriteIndex);
                             }
                         }
@@ -195,7 +195,7 @@ public final class VGADac {
         RGB[entry].Green = green;
         RGB[entry].Blue = blue;
         for (int i = 0; i < 16; i++)
-            if (Combine[i] == entry)
+            if ((0xff & Combine[i]) == entry)
                 sendColor(i, i);
     }
 

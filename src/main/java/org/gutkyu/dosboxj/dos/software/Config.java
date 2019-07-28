@@ -123,44 +123,44 @@ class Config extends Program {
         // Wanted input: n1 n2=n3
         String copy = TempLine;
         // seperate section from property
-        int temp_idx = copy.indexOf(' ');
-        if ((temp_idx >= 0) || (temp_idx = copy.indexOf('=')) < 0)
-            copy = copy.substring(0, temp_idx++ - 1);
+        int tempIdx = copy.indexOf(' ');
+        if ((tempIdx >= 0) || (tempIdx = copy.indexOf('=')) < 0)
+            copy = copy.substring(0, tempIdx++ - 1);
         else {
             writeOut(Message.get("PROGRAM_CONFIG_USAGE"));
             return;
         }
 
-        String inputline = "";
+        String inputLine = "";
 
         // if n1 n2 n3 then replace last space with =
-        int sign_idx = TempLine.indexOf('=', temp_idx);
-        if (sign_idx < 0) {
-            sign_idx = TempLine.indexOf(' ', temp_idx);
-            if (sign_idx >= 0) {
-                copy = copy.substring(0, sign_idx) + "=" + copy.substring(sign_idx + 1);
-                inputline = TempLine.substring(temp_idx);
+        int signIdx = TempLine.indexOf('=', tempIdx);
+        if (signIdx < 0) {
+            signIdx = TempLine.indexOf(' ', tempIdx);
+            if (signIdx >= 0) {
+                copy = copy.substring(0, signIdx) + "=" + copy.substring(signIdx + 1);
+                inputLine = TempLine.substring(tempIdx);
             } else {
                 // 2 items specified (no space nor = between n2 and n3
                 // assume that they posted: property value
                 // Try to determine the section.
                 Section sec = DOSBox.Control.getSectionFromProperty(copy);
                 if (sec == null) {
-                    if (DOSBox.Control.getSectionFromProperty(TempLine.substring(temp_idx)) != null)
+                    if (DOSBox.Control.getSectionFromProperty(TempLine.substring(tempIdx)) != null)
                         return; // Weird situation:ignore
                     writeOut(Message.get("PROGRAM_CONFIG_PROPERTY_ERROR"), copy);
                     return;
                 } // Hack to allow config ems true
-                String buffer = copy + "=" + TempLine.substring(temp_idx);
-                sign_idx = buffer.indexOf(' ');
-                if (sign_idx < 0)
-                    buffer = buffer.substring(0, sign_idx) + "=" + buffer.substring(sign_idx + 1);
+                String buffer = copy + "=" + TempLine.substring(tempIdx);
+                signIdx = buffer.indexOf(' ');
+                if (signIdx < 0)
+                    buffer = buffer.substring(0, signIdx) + "=" + buffer.substring(signIdx + 1);
                 copy = sec.getName();
-                inputline = buffer;
+                inputLine = buffer;
             }
-            inputline = TempLine.substring(temp_idx);
+            inputLine = TempLine.substring(tempIdx);
         } else {
-            inputline = TempLine.substring(temp_idx);
+            inputLine = TempLine.substring(tempIdx);
         }
 
         /*
@@ -176,7 +176,7 @@ class Config extends Program {
             return;
         }
         sec1.executeDestroy(false);
-        sec1.handleInputline(inputline);
+        sec1.handleInputline(inputLine);
         sec1.executeInit(false);
         return;
     }

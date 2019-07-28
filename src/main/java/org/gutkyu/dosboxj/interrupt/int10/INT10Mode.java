@@ -495,7 +495,7 @@ public final class INT10Mode {
                     {0x15, 0x15, 0x15}, {0x15, 0x15, 0x3f}, {0x15, 0x3f, 0x15}, {0x15, 0x3f, 0x3f},
                     {0x3f, 0x15, 0x15}, {0x3f, 0x15, 0x3f}, {0x3f, 0x3f, 0x15}, {0x3f, 0x3f, 0x3f}};
 
-    static byte[][] cga_palette = {{0x00, 0x00, 0x00}, {0x00, 0x00, 0x2a}, {0x00, 0x2a, 0x00},
+    static byte[][] cgaPalette = {{0x00, 0x00, 0x00}, {0x00, 0x00, 0x2a}, {0x00, 0x2a, 0x00},
             {0x00, 0x2a, 0x2a}, {0x2a, 0x00, 0x00}, {0x2a, 0x00, 0x2a}, {0x2a, 0x15, 0x00},
             {0x2a, 0x2a, 0x2a}, {0x15, 0x15, 0x15}, {0x15, 0x15, 0x3f}, {0x15, 0x3f, 0x15},
             {0x15, 0x3f, 0x3f}, {0x3f, 0x15, 0x15}, {0x3f, 0x15, 0x3f}, {0x3f, 0x3f, 0x15},
@@ -765,8 +765,8 @@ public final class INT10Mode {
         IO.writeW(crtcBase, 0x09 | (scanline - 1) << 8);
         // Setup the CGA palette using VGA DAC palette
         for (byte ct = 0; ct < 16; ct++)
-            VGA.instance().Dac.setEntry(ct, cga_palette[ct][0], cga_palette[ct][1],
-                    cga_palette[ct][2]);
+            VGA.instance().Dac.setEntry(ct, cgaPalette[ct][0], cgaPalette[ct][1],
+                    cgaPalette[ct][2]);
         // Setup the tandy palette
         for (byte ct = 0; ct < 16; ct++)
             VGA.instance().Dac.combineColor(ct, ct);
@@ -1079,9 +1079,9 @@ public final class INT10Mode {
             IO.write(crtcBase, ct);
             IO.write(crtcBase + 1, 0);
         }
-        byte overflow = 0;
-        byte maxScanline = 0;
-        byte verOverflow = 0;
+        int overflow = 0;// uint8
+        int maxScanline = 0;// uint8
+        int verOverflow = 0;// uint8
         int horOverflow = 0;// uint8
         /* Horizontal Total */
         IO.write(crtcBase, 0x00);
@@ -1132,9 +1132,9 @@ public final class INT10Mode {
         /* Vertical Total */
         IO.write(crtcBase, 0x06);
         IO.write(crtcBase + 1, 0xff & (CurMode.VTotal - 2));
-        overflow |= 0xff & (((CurMode.VTotal - 2) & 0x100) >>> 8);
-        overflow |= 0xff & (((CurMode.VTotal - 2) & 0x200) >>> 4);
-        verOverflow |= 0xff & (((CurMode.VTotal - 2) & 0x400) >>> 10);
+        overflow |= ((CurMode.VTotal - 2) & 0x100) >>> 8;
+        overflow |= ((CurMode.VTotal - 2) & 0x200) >>> 4;
+        verOverflow |= ((CurMode.VTotal - 2) & 0x400) >>> 10;
 
         int vretrace;
         if (DOSBox.isVGAArch()) {
@@ -1166,9 +1166,9 @@ public final class INT10Mode {
         /* Vertical Retrace Start */
         IO.write(crtcBase, 0x10);
         IO.write(crtcBase + 1, 0xff & vretrace);
-        overflow |= 0xff & ((vretrace & 0x100) >>> 6);
-        overflow |= 0xff & ((vretrace & 0x200) >>> 2);
-        verOverflow |= 0xff & ((vretrace & 0x400) >>> 6);
+        overflow |= (vretrace & 0x100) >>> 6;
+        overflow |= (vretrace & 0x200) >>> 2;
+        verOverflow |= (vretrace & 0x400) >>> 6;
 
         /* Vertical Retrace End */
         IO.write(crtcBase, 0x11);
@@ -1177,9 +1177,9 @@ public final class INT10Mode {
         /* Vertical Display End */
         IO.write(crtcBase, 0x12);
         IO.write(crtcBase + 1, 0xff & (CurMode.VDispend - 1));
-        overflow |= 0xff & (((CurMode.VDispend - 1) & 0x100) >>> 7);
-        overflow |= 0xff & (((CurMode.VDispend - 1) & 0x200) >>> 3);
-        verOverflow |= 0xff & (((CurMode.VDispend - 1) & 0x400) >>> 9);
+        overflow |= ((CurMode.VDispend - 1) & 0x100) >>> 7;
+        overflow |= ((CurMode.VDispend - 1) & 0x200) >>> 3;
+        verOverflow |= ((CurMode.VDispend - 1) & 0x400) >>> 9;
 
         int vblankTrim;
         if (DOSBox.isVGAArch()) {
@@ -1211,9 +1211,9 @@ public final class INT10Mode {
         /* Vertical Blank Start */
         IO.write(crtcBase, 0x15);
         IO.write(crtcBase + 1, 0xff & (CurMode.VDispend + vblankTrim));
-        overflow |= 0xff & (((CurMode.VDispend + vblankTrim) & 0x100) >>> 5);
-        maxScanline |= 0xff & (((CurMode.VDispend + vblankTrim) & 0x200) >>> 4);
-        verOverflow |= 0xff & (((CurMode.VDispend + vblankTrim) & 0x400) >>> 8);
+        overflow |= ((CurMode.VDispend + vblankTrim) & 0x100) >>> 5;
+        maxScanline |= ((CurMode.VDispend + vblankTrim) & 0x200) >>> 4;
+        verOverflow |= ((CurMode.VDispend + vblankTrim) & 0x400) >>> 8;
 
         /* Vertical Blank End */
         IO.write(crtcBase, 0x16);
@@ -1223,9 +1223,9 @@ public final class INT10Mode {
         int lineCompare = (CurMode.VTotal < 1024) ? 1023 : 2047;
         IO.write(crtcBase, 0x18);
         IO.write(crtcBase + 1, lineCompare & 0xff);
-        overflow |= 0xff & ((lineCompare & 0x100) >>> 4);
-        maxScanline |= 0xff & ((lineCompare & 0x200) >>> 3);
-        verOverflow |= 0xff & ((lineCompare & 0x400) >>> 4);
+        overflow |= (lineCompare & 0x100) >>> 4;
+        maxScanline |= (lineCompare & 0x200) >>> 3;
+        verOverflow |= (lineCompare & 0x400) >>> 4;
         int underline = 0;
         /* Maximum scanline / Underline Location */
         if ((CurMode.Special & EGA_LINE_DOUBLE) != 0) {
@@ -1234,7 +1234,7 @@ public final class INT10Mode {
         }
         switch (CurMode.Type) {
             case TEXT:
-                maxScanline |= 0xff & (CurMode.CHeight - 1);
+                maxScanline |= CurMode.CHeight - 1;
                 // mode 7 uses a diff underline position
                 underline = monoMode ? 0x0f : 0x1f;
                 break;
@@ -1384,44 +1384,44 @@ public final class INT10Mode {
         /* Write Misc Output */
         IO.write(0x3c2, miscOutput);
         /* Program Graphics controller */
-        byte[] gfx_data = new byte[GFX_REGS];
-        Arrays.fill(gfx_data, 0, GFX_REGS, (byte) 0);
-        gfx_data[0x7] = 0xf; /* Color don't care */
-        gfx_data[0x8] = (byte) 0xff; /* BitMask */
+        byte[] gfxData = new byte[GFX_REGS];
+        Arrays.fill(gfxData, 0, GFX_REGS, (byte) 0);
+        gfxData[0x7] = 0xf; /* Color don't care */
+        gfxData[0x8] = (byte) 0xff; /* BitMask */
         switch (CurMode.Type) {
             case TEXT:
-                gfx_data[0x5] |= 0x10; // Odd-Even Mode
-                gfx_data[0x6] |= (byte) (monoMode ? 0x0a : 0x0e); // Either b800 or b000
+                gfxData[0x5] |= 0x10; // Odd-Even Mode
+                gfxData[0x6] |= monoMode ? 0x0a : 0x0e; // Either b800 or b000
                 break;
             case LIN8:
             case LIN15:
             case LIN16:
             case LIN32:
             case VGA:
-                gfx_data[0x5] |= 0x40; // 256 color mode
-                gfx_data[0x6] |= 0x05; // graphics mode at 0xa000-affff
+                gfxData[0x5] |= 0x40; // 256 color mode
+                gfxData[0x6] |= 0x05; // graphics mode at 0xa000-affff
                 break;
             case LIN4:
             case EGA:
-                gfx_data[0x6] |= 0x05; // graphics mode at 0xa000-affff
+                gfxData[0x6] |= 0x05; // graphics mode at 0xa000-affff
                 break;
             case CGA4:
-                gfx_data[0x5] |= 0x20; // CGA mode
-                gfx_data[0x6] |= 0x0f; // graphics mode at at 0xb800=0xbfff
+                gfxData[0x5] |= 0x20; // CGA mode
+                gfxData[0x6] |= 0x0f; // graphics mode at at 0xb800=0xbfff
                 if (DOSBox.Machine == DOSBox.MachineType.EGA)
-                    gfx_data[0x5] |= 0x10;
+                    gfxData[0x5] |= 0x10;
                 break;
             case CGA2:
                 if (DOSBox.Machine == DOSBox.MachineType.EGA) {
-                    gfx_data[0x6] |= 0x0d; // graphics mode at at 0xb800=0xbfff
+                    gfxData[0x6] |= 0x0d; // graphics mode at at 0xb800=0xbfff
                 } else {
-                    gfx_data[0x6] |= 0x0f; // graphics mode at at 0xb800=0xbfff
+                    gfxData[0x6] |= 0x0f; // graphics mode at at 0xb800=0xbfff
                 }
                 break;
         }
         for (byte ct = 0; ct < GFX_REGS; ct++) {
             IO.write(0x3ce, ct);
-            IO.write(0x3cf, gfx_data[ct]);
+            IO.write(0x3cf, gfxData[ct]);
         }
         byte[] attData = new byte[ATT_REGS];
         Arrays.fill(attData, 0, ATT_REGS, (byte) 0);

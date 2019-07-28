@@ -195,12 +195,12 @@ public final class CMOSModule extends ModuleBase {
                 CMOSInfo.timer.acknowledged = true;
                 if (CMOSInfo.timer.enabled) {
                     /* In periodic interrupt mode only care for those flags */
-                    byte val = CMOSInfo.regs[0xc];
+                    int val = 0xff & CMOSInfo.regs[0xc];
                     CMOSInfo.regs[0xc] = 0;
                     return val;
                 } else {
                     /* Give correct values at certain times */
-                    byte val = 0;
+                    int val = 0;
                     double index = PIC.getFullIndex();
                     if (index >= (CMOSInfo.last.timer + CMOSInfo.timer.delay)) {
                         CMOSInfo.last.timer = index;

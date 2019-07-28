@@ -15,7 +15,7 @@ final class DMAController implements Disposable {
     protected DMAController(int num) {
         flipFlop = false;
         ctrlNum = num; /* first or second DMA controller */
-        for (byte i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             dmaChannels[i] = new DMAChannel(i + ctrlNum * 4, ctrlNum == 1);
         }
         for (int i = 0; i < readHandler.length; i++) {
@@ -34,7 +34,7 @@ final class DMAController implements Disposable {
         if (disposing) {
         }
 
-        for (byte i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             dmaChannels[i] = null;
         }
     }

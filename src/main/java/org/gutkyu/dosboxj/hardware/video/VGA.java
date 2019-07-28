@@ -356,7 +356,7 @@ public final class VGA {
         int baseAddr = Tandy.DrawBase + ((line & Tandy.LineMask) << Tandy.LineShift);
         int drawAddr = 0;
         for (int x = Draw.Blocks; x > 0; x--, vidStart++) {
-            int val = Tandy.DrawAlloc[baseAddr + (vidStart & (8 * 1024 - 1))];
+            int val = 0xff & Tandy.DrawAlloc[baseAddr + (vidStart & (8 * 1024 - 1))];
             ByteConv.setInt(TempLine, drawAddr, CGA2Table[val >>> 4]);
             drawAddr += 4;
             ByteConv.setInt(TempLine, drawAddr, CGA2Table[val & 0xf]);
@@ -370,7 +370,7 @@ public final class VGA {
         int baseAddr = Tandy.DrawBase + ((line & Tandy.LineMask) << Tandy.LineShift);
         int drawAddr = 0;
         for (int x = 0; x < Draw.Blocks; x++) {
-            int val = Tandy.DrawAlloc[baseAddr + (vidStart & Tandy.AddrMask)];
+            int val = 0xff & Tandy.DrawAlloc[baseAddr + (vidStart & Tandy.AddrMask)];
             vidStart++;
             ByteConv.setInt(TempLine, drawAddr, CGA4Table[val]);
             drawAddr += 4;
@@ -384,9 +384,9 @@ public final class VGA {
         int drawAddr = 0;
         // ByteConvert drawVal = ¸new ByteConvert();
         for (int x = 0; x < Draw.Blocks; x++) {
-            int val1 = Tandy.DrawAlloc[baseAddr + (vidStart & Tandy.AddrMask)];
+            int val1 = 0xff & Tandy.DrawAlloc[baseAddr + (vidStart & Tandy.AddrMask)];
             ++vidStart;
-            int val2 = Tandy.DrawAlloc[baseAddr + (vidStart & Tandy.AddrMask)];
+            int val2 = 0xff & Tandy.DrawAlloc[baseAddr + (vidStart & Tandy.AddrMask)];
             ++vidStart;
             ByteConv.setInt(TempLine, drawAddr, CGA4HiResTable[(val1 >>> 4) | (val2 & 0xf0)]);
             drawAddr += 4;
@@ -413,11 +413,11 @@ public final class VGA {
         // in the upperpart to keep them from interfering the regular cga stuff
 
         for (int x = 0; x < 640; x++)
-            temp[x + 2] = ((reader[readerAddr + (x >>> 3)] >>> (7 - (x & 7))) & 1) << 4;
+            temp[x + 2] = (((0xff & reader[readerAddr + (x >>> 3)]) >>> (7 - (x & 7))) & 1) << 4;
         // shift 4 as that is for the index.
         int i = 0, temp1, temp2, temp3, temp4;
         for (int x = 0; x < Draw.Blocks; x++) {
-            int val1 = reader[readerAddr++];
+            int val1 = 0xff & reader[readerAddr++];
             int val2 = val1 & 0xf;
             val1 >>>= 4;
 
@@ -450,13 +450,13 @@ public final class VGA {
     }
 
     private void draw4BPPLine(int vidStart, int line) {
-        byte[] Base = Tandy.DrawAlloc;
+        byte[] base = Tandy.DrawAlloc;
         int baseAddr = Tandy.DrawBase + ((line & Tandy.LineMask) << Tandy.LineShift);
         int drawAddr = 0;
         for (int x = 0; x < Draw.Blocks; x++) {
-            int val1 = Base[baseAddr + (vidStart & Tandy.AddrMask)];
+            int val1 = 0xff & base[baseAddr + (vidStart & Tandy.AddrMask)];
             ++vidStart;
-            int val2 = Base[baseAddr + (vidStart & Tandy.AddrMask)];
+            int val2 = 0xff & base[baseAddr + (vidStart & Tandy.AddrMask)];
             ++vidStart;
             ByteConv.setInt(TempLine, drawAddr, (val1 & 0x0f) << 8 | (val1 & 0xf0) >>> 4
                     | (val2 & 0x0f) << 24 | (val2 & 0xf0) << 12);
@@ -467,11 +467,11 @@ public final class VGA {
     }
 
     private void draw4BPPLineDouble(int vidStart, int line) {
-        byte[] Base = Tandy.DrawAlloc;
+        byte[] base = Tandy.DrawAlloc;
         int baseAddr = Tandy.DrawBase + ((line & Tandy.LineMask) << Tandy.LineShift);
         int drawAddr = 0;
         for (int x = 0; x < Draw.Blocks; x++) {
-            int val = Base[baseAddr + (vidStart & Tandy.AddrMask)];
+            int val = 0xff & base[baseAddr + (vidStart & Tandy.AddrMask)];
             ++vidStart;
             ByteConv.setInt(TempLine, drawAddr, (val & 0xf0) >>> 4 | (val & 0xf0) << 4
                     | (val & 0x0f) << 16 | (val & 0x0f) << 24);
@@ -929,8 +929,8 @@ public final class VGA {
         int col = 0xff & vidmem[1];
         // byte font = (byte)((vga.draw.font_tables[(col >>>3) & 1][chr * 32 + line]) <<
         // pel_pan);
-        int font =
-                0xff & (Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32 + line] << pelPan);
+        int font = 0xff & ((0xff
+                & Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32 + line]) << pelPan);
         if (underline && ((col & 0x07) == 0x01))
             font = 0xff;
         int fg = col & 0xf;
@@ -979,7 +979,7 @@ public final class VGA {
                 if (underline && ((col & 0x07) == 0x01))
                     font = 0xff;
                 else
-                    font = 0xff & ((Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32
+                    font = 0xff & ((0xff & Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32
                             + line]) << pelPan);
             }
         }
@@ -2275,7 +2275,7 @@ public final class VGA {
     /*--------------------------- end VGAMemory -----------------------------*/
     /*--------------------------- begin VGAMisc -----------------------------*/
     public int readP3DA(int port, int iolen) {
-        byte retval = 0;
+        int retval = 0;
         double timeInFrame = PIC.getFullIndex() - Draw.Delay.FrameStart;
 
         Internal.AttrIndex = false;
@@ -2351,7 +2351,7 @@ public final class VGA {
     }
 
     private int readP3C2(int port, int iolen) {
-        byte retval = 0;
+        int retval = 0;
 
         if (DOSBox.Machine == DOSBox.MachineType.EGA)
             retval = 0x0F;
@@ -2979,7 +2979,7 @@ public final class VGA {
         // 7 Vertical sync inverted
 
         double timeInFrame = PIC.getFullIndex() - Draw.Delay.FrameStart;
-        byte retval = 0x72; // Hercules ident; from a working card (Winbond W86855AF)
+        int retval = 0x72; // Hercules ident; from a working card (Winbond W86855AF)
         // Another known working card has 0x76 ("KeysoGood", full-length)
         if (timeInFrame < Draw.Delay.VRStart || timeInFrame > Draw.Delay.VREnd)
             retval |= 0x80;
@@ -3014,14 +3014,14 @@ public final class VGA {
         if (DOSBox.Machine == DOSBox.MachineType.CGA || DOSBox.isTANDYArch()) {
             // extern byte int10_font_08[256 * 8];
             for (i = 0; i < 256; i++)
-                ArrayHelper.copy(INT10.int10_font_08, i * 8, Draw.Font, i * 32, 8);
+                ArrayHelper.copy(INT10.int10Font08, i * 8, Draw.Font, i * 32, 8);
             // vga.draw.font_tables[0] = vga.draw.font_tables[1] = vga.draw.font;
             Draw.FontTablesIdx[0] = Draw.FontTablesIdx[1] = 0;
         }
         if (DOSBox.Machine == DOSBox.MachineType.HERC) {
             // extern byte int10_font_14[256 * 14];
             for (i = 0; i < 256; i++)
-                ArrayHelper.copy(INT10.int10_font_14, i * 14, Draw.Font, i * 32, 14);
+                ArrayHelper.copy(INT10.int10Font14, i * 14, Draw.Font, i * 32, 14);
             // vga.draw.font_tables[0] = vga.draw.font_tables[1] = vga.draw.font;
             Draw.FontTablesIdx[0] = Draw.FontTablesIdx[1] = 0;
             GUIPlatform.mapper.addKeyHandler(this::cycleHercPal, MapKeys.F11, 0, "hercpal",
@@ -3289,9 +3289,9 @@ public final class VGA {
         public int BankMask;
         public int BankFeadFull;
         public int BankWriteFull;
-        public byte BankRead;
-        public byte BankWrite;
-        public int BankSize;
+        public int BankRead;// uint8
+        public int BankWrite;// uint8
+        public int BankSize;// uint32
     }
 
     final static class VGAHerc {

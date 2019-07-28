@@ -25,14 +25,14 @@ public final class Render {
 
     public ScalerLineHandler DrawLine;
 
-    private IGFX _video = null;
+    private IGFX video = null;
 
     private static final int SIZE_UINT = 4;
     private static final int SIZE_USHORT = 2;
     private static final int SIZE_UBYTE = 1;
 
     private Render(IGFX video) {
-        _video = video;
+        this.video = video;
 
         ScaleNormal1x = new ScalerSimpleBlock();
 
@@ -73,18 +73,18 @@ public final class Render {
     private void increaseFrameSkip(boolean pressed) {
         if (!pressed)
             return;
-        if (_frameSkipMax < 10)
-            _frameSkipMax++;
-        Log.logMsg("Frame Skip at %d", _frameSkipMax);
+        if (frameSkipMax < 10)
+            frameSkipMax++;
+        Log.logMsg("Frame Skip at %d", frameSkipMax);
         // _video.GFX_SetTitle(-1, frameskip_max, false);
     }
 
     private void decreaseFrameSkip(boolean pressed) {
         if (!pressed)
             return;
-        if (_frameSkipMax > 0)
-            _frameSkipMax--;
-        Log.logMsg("Frame Skip at %d", _frameSkipMax);
+        if (frameSkipMax > 0)
+            frameSkipMax--;
+        Log.logMsg("Frame Skip at %d", frameSkipMax);
         // _video.GFX_SetTitle(-1, frameskip_max, false);
     }
     /*
@@ -97,33 +97,33 @@ public final class Render {
 
     private void checkPalette() {
         /* Clean up any previous changed palette data */
-        if (_pal.changed) {
-            Arrays.fill(_pal.modified, 0, _pal.modified.length, (byte) 0);
-            _pal.changed = false;
+        if (pal.changed) {
+            Arrays.fill(pal.modified, 0, pal.modified.length, (byte) 0);
+            pal.changed = false;
         }
-        if (_pal.first > _pal.last)
+        if (pal.first > pal.last)
             return;
         int i;
-        switch (_scaleOutMode) {
+        switch (scaleOutMode) {
 
             case SCALER_MODE8:
             default:
-                for (i = _pal.first; i <= _pal.last; i++) {
-                    Color rgb = _pal.rgb[i];
-                    int newPal = _video.getRGB(rgb.getRed(), rgb.getGreen(), rgb.getBlue());
-                    if (newPal != _pal.lut[i]) {
-                        _pal.changed = true;
-                        _pal.modified[i] = 1;
-                        _pal.lut[i] = newPal;
-                        _pal.lutBytes[i] = new byte[] {(byte) rgb.getRed(), (byte) rgb.getGreen(),
+                for (i = pal.first; i <= pal.last; i++) {
+                    Color rgb = pal.rgb[i];
+                    int newPal = video.getRGB(rgb.getRed(), rgb.getGreen(), rgb.getBlue());
+                    if (newPal != pal.lut[i]) {
+                        pal.changed = true;
+                        pal.modified[i] = 1;
+                        pal.lut[i] = newPal;
+                        pal.lutBytes[i] = new byte[] {(byte) rgb.getRed(), (byte) rgb.getGreen(),
                                 (byte) rgb.getBlue(), (byte) 0xff};
                     }
                 }
                 break;
         }
         /* Setup pal index to startup values */
-        _pal.first = 256;
-        _pal.last = 0;
+        pal.first = 256;
+        pal.last = 0;
     }
 
     private int makeAspectTable(int skip, int height, double scaley, int miny) {
@@ -131,7 +131,7 @@ public final class Render {
         double lines = 0;
         int linesadded = 0;
         for (i = 0; i < skip; i++)
-            Scaler_Aspect[i] = 0;
+            ScalerAspect[i] = 0;
 
         height += skip;
         for (i = skip; i < height; i++) {
@@ -140,9 +140,9 @@ public final class Render {
                 int templines = (int) lines;
                 lines -= templines;
                 linesadded += templines;
-                Scaler_Aspect[i] = (byte) templines;
+                ScalerAspect[i] = (byte) templines;
             } else {
-                Scaler_Aspect[i] = 0;
+                ScalerAspect[i] = 0;
             }
         }
         return linesadded;
@@ -150,11 +150,11 @@ public final class Render {
 
     // -- #region RENDER_prefix
     public void setPal(int entry, int red, int green, int blue) {
-        _pal.rgb[entry] = new Color(red, green, blue);
-        if (_pal.first > entry)
-            _pal.first = entry;
-        if (_pal.last < entry)
-            _pal.last = entry;
+        pal.rgb[entry] = new Color(red, green, blue);
+        if (pal.first > entry)
+            pal.first = entry;
+        if (pal.last < entry)
+            pal.last = entry;
     }
 
     private ScalerLineHandler emptyLineHandlerWrap = this::emptyLineHandler;
@@ -168,20 +168,20 @@ public final class Render {
 
     private void startLineHandler(byte[] src, int index) {
         if (src != null) {
-            int sidx = index, cidx = _scaleCacheReadIndex;
-            byte[] cache = _scaleCacheRead;
-            for (int x = _srcStart; x > 0;) {
+            int sidx = index, cidx = scaleCacheReadIndex;
+            byte[] cache = scaleCacheRead;
+            for (int x = srcStart; x > 0;) {
                 if (src[sidx] != cache[cidx] || src[sidx + 1] != cache[cidx + 1]
                         || src[sidx + 2] != cache[cidx + 2] || src[sidx + 3] != cache[cidx + 3]) {
-                    if (!_video.startUpdate()) {
+                    if (!video.startUpdate()) {
                         DrawLine = emptyLineHandlerWrap;
                         return;
                     }
-                    _scaleOutWrite = _video.getPixels();
-                    _scaleOutWriteIndex = (int) _video.getCurrentPixelIndex();
-                    _scaleOutPitch = _video.getPitch();
-                    _scaleOutWriteIndex += _scaleOutPitch * Scaler_ChangedLines[0];
-                    DrawLine = _scaleLineHandler;
+                    scaleOutWrite = video.getPixels();
+                    scaleOutWriteIndex = (int) video.getCurrentPixelIndex();
+                    scaleOutPitch = video.getPitch();
+                    scaleOutWriteIndex += scaleOutPitch * ScalerChangedLines[0];
+                    DrawLine = scaleLineHandler;
                     DrawLine.draw(src, index);
                     return;
                 }
@@ -190,10 +190,10 @@ public final class Render {
                 cidx += 4;
             }
         }
-        _scaleCacheReadIndex += _scaleCachePitch;
-        Scaler_ChangedLines[0] += Scaler_Aspect[_scaleInLine];
-        _scaleInLine++;
-        _scaleOutLine++;
+        scaleCacheReadIndex += scaleCachePitch;
+        ScalerChangedLines[0] += ScalerAspect[scaleInLine];
+        scaleInLine++;
+        scaleOutLine++;
     }
 
     // private void FinishLineHandler(byte[] src, int index)
@@ -201,94 +201,94 @@ public final class Render {
 
     private void finishLineHandler(byte[] src, int index) {
         if (src != null) {
-            ArrayHelper.copy(src, index, _scaleCacheRead, _scaleCacheReadIndex, _srcStart * 4);// sizeof(int)
+            ArrayHelper.copy(src, index, scaleCacheRead, scaleCacheReadIndex, srcStart * 4);// sizeof(int)
         }
-        _scaleCacheReadIndex += _scaleCachePitch;
+        scaleCacheReadIndex += scaleCachePitch;
     }
 
     ScalerLineHandler clearCacheHandlerWrap = this::clearCacheHandler;
 
     private void clearCacheHandler(byte[] src, int index) {
         int idx;
-        int srcLineIdx = index, cacheLineIdx = _scaleCacheReadIndex;
+        int srcLineIdx = index, cacheLineIdx = scaleCacheReadIndex;
         // 소스의 bpp가 32일 경우를 전제로 계산하는듯, 그러나 구형 PC의 가로 픽셀 수는 4의
         // 배수(허큘리스:720,CGA:320,EGA:640,VGA:640)이므로 4로 나누어 처리해도 문제가 되지 않음
         // width = scale_cachePitch / 4; //src_start와 동일
-        for (idx = 0; idx < _scaleCachePitch; idx++) {
-            _scaleCacheRead[cacheLineIdx + idx] = (byte) ~src[srcLineIdx + idx];
+        for (idx = 0; idx < scaleCachePitch; idx++) {
+            scaleCacheRead[cacheLineIdx + idx] = (byte) ~src[srcLineIdx + idx];
         }
-        _scaleLineHandler.draw(src, index);
+        scaleLineHandler.draw(src, index);
     }
 
     public boolean startUpdate() {
-        if (_updating)
+        if (updating)
             return false;
-        if (!_active)
+        if (!active)
             return false;
-        if (_frameSkipCount < _frameSkipMax) {
-            _frameSkipCount++;
+        if (frameSkipCount < frameSkipMax) {
+            frameSkipCount++;
             return false;
         }
-        _frameSkipCount = 0;
-        if (_scaleInMode == SCALER_MODE8) {
+        frameSkipCount = 0;
+        if (scaleInMode == SCALER_MODE8) {
             checkPalette();
         }
-        _scaleInLine = 0;
-        _scaleOutLine = 0;
-        _scaleCacheRead = scalerSourceCache;
-        _scaleCacheReadIndex = scalerSourceCacheIndex;
-        _scaleOutWrite = null;
-        _scaleOutWriteIndex = 0;
-        _scaleOutPitch = 0;
-        Scaler_ChangedLines[0] = 0;
-        Scaler_ChangedLineIndex = 0;
+        scaleInLine = 0;
+        scaleOutLine = 0;
+        scaleCacheRead = scalerSourceCache;
+        scaleCacheReadIndex = scalerSourceCacheIndex;
+        scaleOutWrite = null;
+        scaleOutWriteIndex = 0;
+        scaleOutPitch = 0;
+        ScalerChangedLines[0] = 0;
+        ScalerChangedLineIndex = 0;
         /*
          * Clearing the cache will first process the line to make sure it's never the same
          */
-        if (_scaleClearCache) {
+        if (scaleClearCache) {
             // Log.LOG_MSG("Clearing cache");
             // Will always have to update the screen with this one anyway, so let's update
             // already
-            if (!_video.startUpdate())
+            if (!video.startUpdate())
                 return false;
-            _scaleOutWrite = _video.getPixels();
-            _scaleOutWriteIndex = (int) _video.getCurrentPixelIndex();
-            _scaleOutPitch = _video.getPitch();
+            scaleOutWrite = video.getPixels();
+            scaleOutWriteIndex = (int) video.getCurrentPixelIndex();
+            scaleOutPitch = video.getPitch();
 
-            _fullFrame = true;
-            _scaleClearCache = false;
+            fullFrame = true;
+            scaleClearCache = false;
             DrawLine = clearCacheHandlerWrap;
         } else {
-            if (_pal.changed) {
+            if (pal.changed) {
                 /* Assume pal changes always do a full screen update anyway */
-                if (!_video.startUpdate())
+                if (!video.startUpdate())
                     return false;
-                _scaleOutWrite = _video.getPixels();
-                _scaleOutWriteIndex = (int) _video.getCurrentPixelIndex();
-                _scaleOutPitch = _video.getPitch();
-                DrawLine = _scaleLinePalHandler;
-                _fullFrame = true;
+                scaleOutWrite = video.getPixels();
+                scaleOutWriteIndex = (int) video.getCurrentPixelIndex();
+                scaleOutPitch = video.getPitch();
+                DrawLine = scaleLinePalHandler;
+                fullFrame = true;
             } else {
                 DrawLine = startLineHandlerWrap;
                 // if ((CaptureState & (CAPTURE_IMAGE|CAPTURE_VIDEO)))
                 // fullFrame = true;
                 // else
-                _fullFrame = false;
+                fullFrame = false;
             }
         }
-        _updating = true;
+        updating = true;
         return true;
     }
 
     private void halt() {
         DrawLine = emptyLineHandlerWrap;
-        _video.endUpdate(null);
-        _updating = false;
-        _active = false;
+        video.endUpdate(null);
+        updating = false;
+        active = false;
     }
 
     public void endUpdate(boolean abort) {
-        if (!_updating)
+        if (!updating)
             return;
         DrawLine = emptyLineHandlerWrap;
         // if (GCC_UNLIKELY(CaptureState & (CAPTURE_IMAGE|CAPTURE_VIDEO))) {
@@ -305,9 +305,9 @@ public final class Render {
         // CAPTURE_AddImage( src_width, src_height, src.bpp, pitch,
         // flags, fps, (byte *)&scalerSourceCache, (byte*)&pal.rgb );
         // }
-        if (_scaleOutWrite != null) {
-            _video.endUpdate(abort ? null : Scaler_ChangedLines);
-            _frameSkipHadSkip[_frameSkipIndex] = 0;
+        if (scaleOutWrite != null) {
+            video.endUpdate(abort ? null : ScalerChangedLines);
+            frameSkipHadSkip[frameSkipIndex] = 0;
         } else {
             // #if 0
             // int total = 0, i;
@@ -318,15 +318,15 @@ public final class Render {
             // RENDER_SKIP_CACHE );
             // #endif
         }
-        _frameSkipIndex = (_frameSkipIndex + 1) & (RENDER_SKIP_CACHE - 1);
-        _updating = false;
+        frameSkipIndex = (frameSkipIndex + 1) & (RENDER_SKIP_CACHE - 1);
+        updating = false;
     }
 
     private void reset() {
-        int width = _srcWidth;
-        int height = _srcHeight;
-        boolean dblw = _srcDblw;
-        boolean dblh = _srcDblh;
+        int width = srcWidth;
+        int height = srcHeight;
+        boolean dblw = srcDblW;
+        boolean dblh = srcDblH;
 
         double gfx_scalew;
         double gfx_scaleh;
@@ -335,23 +335,23 @@ public final class Render {
         int xscale, yscale;
         ScalerSimpleBlock simpleBlock = ScaleNormal1x;
         ScalerComplexBlock complexBlock = null;
-        if (_aspect) {
-            if (_srcRatio > 1.0) {
+        if (aspect) {
+            if (srcRatio > 1.0) {
                 gfx_scalew = 1;
-                gfx_scaleh = _srcRatio;
+                gfx_scaleh = srcRatio;
             } else {
-                gfx_scalew = (1 / _srcRatio);
+                gfx_scalew = (1 / srcRatio);
                 gfx_scaleh = 1;
             }
         } else {
             gfx_scalew = 1;
             gfx_scaleh = 1;
         }
-        if ((dblh && dblw) || (_scaleForced && !dblh && !dblw)) {
+        if ((dblh && dblw) || (scaleForced && !dblh && !dblw)) {
             /* Initialize always working defaults */
-            if (_scaleSize == 2)
+            if (scaleSize == 2)
                 simpleBlock = ScaleNormal2x;
-            else if (_scaleSize == 3)
+            else if (scaleSize == 3)
                 // simpleBlock = ScaleNormal3x;
                 throw new DOSException("3x scale 미구현");
             else
@@ -451,31 +451,31 @@ public final class Render {
                 yscale = simpleBlock.yscale;
                 // Log.LOG_MSG("Scaler:%s",simpleBlock.name);
             }
-            switch (_srcBpp) {
+            switch (srcBpp) {
                 case 8:
-                    _srcStart = (_srcWidth * 1) / SIZE_UINT;
+                    srcStart = (srcWidth * 1) / SIZE_UINT;
                     if ((gfx_flags & GFXFlag.CAN8) == GFXFlag.CAN8)
                         gfx_flags |= GFXFlag.LOVE8;
                     else
                         gfx_flags |= GFXFlag.LOVE32;
                     break;
                 case 15:
-                    _srcStart = (_srcWidth * 2) / SIZE_UINT;
+                    srcStart = (srcWidth * 2) / SIZE_UINT;
                     gfx_flags |= GFXFlag.LOVE15;
                     gfx_flags = (gfx_flags & ~GFXFlag.CAN8) | GFXFlag.RGBONLY;
                     break;
                 case 16:
-                    _srcStart = (_srcWidth * 2) / SIZE_UINT;
+                    srcStart = (srcWidth * 2) / SIZE_UINT;
                     gfx_flags |= GFXFlag.LOVE16;
                     gfx_flags = (gfx_flags & ~GFXFlag.CAN8) | GFXFlag.RGBONLY;
                     break;
                 case 32:
-                    _srcStart = (_srcWidth * 4) / SIZE_UINT;
+                    srcStart = (srcWidth * 4) / SIZE_UINT;
                     gfx_flags |= GFXFlag.LOVE32;
                     gfx_flags = (gfx_flags & ~GFXFlag.CAN8) | GFXFlag.RGBONLY;
                     break;
             }
-            gfx_flags = _video.getBestMode(gfx_flags);
+            gfx_flags = video.getBestMode(gfx_flags);
             if (gfx_flags == 0) {
                 if (complexBlock == null && simpleBlock == ScaleNormal1x)
                     Support.exceptionExit("Failed to create a rendering output");
@@ -490,26 +490,26 @@ public final class Render {
         width *= xscale;
         int skip = complexBlock != null ? 1 : 0;
         if ((gfx_flags & GFXFlag.SCALING) == GFXFlag.SCALING) {
-            height = makeAspectTable(skip, _srcHeight, yscale, yscale);
+            height = makeAspectTable(skip, srcHeight, yscale, yscale);
         } else {
             if ((gfx_flags & GFXFlag.CAN_RANDOM) == GFXFlag.CAN_RANDOM && gfx_scaleh > 1) {
                 gfx_scaleh *= yscale;
-                height = makeAspectTable(skip, _srcHeight, gfx_scaleh, yscale);
+                height = makeAspectTable(skip, srcHeight, gfx_scaleh, yscale);
             } else {
                 gfx_flags &= ~GFXFlag.CAN_RANDOM; // Hardware surface when possible
-                height = makeAspectTable(skip, _srcHeight, yscale, yscale);
+                height = makeAspectTable(skip, srcHeight, yscale, yscale);
             }
         }
         /* Setup the scaler variables */
-        gfx_flags = _video.setSize(width, height, gfx_flags, gfx_scalew, gfx_scaleh, callbackWrap);
+        gfx_flags = video.setSize(width, height, gfx_flags, gfx_scalew, gfx_scaleh, callbackWrap);
         if ((gfx_flags & GFXFlag.CAN8) == GFXFlag.CAN8)
-            _scaleOutMode = SCALER_MODE8;
+            scaleOutMode = SCALER_MODE8;
         else if ((gfx_flags & GFXFlag.CAN15) == GFXFlag.CAN15)
-            _scaleOutMode = SCALER_MODE15;
+            scaleOutMode = SCALER_MODE15;
         else if ((gfx_flags & GFXFlag.CAN16) == GFXFlag.CAN16)
-            _scaleOutMode = SCALER_MODE16;
+            scaleOutMode = SCALER_MODE16;
         else if ((gfx_flags & GFXFlag.CAN32) == GFXFlag.CAN32)
-            _scaleOutMode = SCALER_MODE32;
+            scaleOutMode = SCALER_MODE32;
         else
             Support.exceptionExit("Failed to create a rendering output");
         ScalerLineHandler[][] lineBlock;
@@ -521,7 +521,7 @@ public final class Render {
             // } else
             // #endif
             {
-                _scaleComplexHandler = null;
+                scaleComplexHandler = null;
                 lineBlock = simpleBlock.Linear;
             }
         } else {
@@ -532,54 +532,54 @@ public final class Render {
             // } else
             // #endif
             {
-                _scaleComplexHandler = null;
+                scaleComplexHandler = null;
                 lineBlock = simpleBlock.Random;
             }
         }
-        switch (_srcBpp) {
+        switch (srcBpp) {
             case 8:
-                _scaleLineHandler = lineBlock[0][_scaleOutMode];
-                _scaleLinePalHandler = lineBlock[4][_scaleOutMode];
-                _scaleInMode = SCALER_MODE8;
-                _scaleCachePitch = _srcWidth * 1;
+                scaleLineHandler = lineBlock[0][scaleOutMode];
+                scaleLinePalHandler = lineBlock[4][scaleOutMode];
+                scaleInMode = SCALER_MODE8;
+                scaleCachePitch = srcWidth * 1;
                 break;
             case 15:
-                _scaleLineHandler = lineBlock[1][_scaleOutMode];
-                _scaleLinePalHandler = null;
-                _scaleInMode = SCALER_MODE15;
-                _scaleCachePitch = _srcWidth * 2;
+                scaleLineHandler = lineBlock[1][scaleOutMode];
+                scaleLinePalHandler = null;
+                scaleInMode = SCALER_MODE15;
+                scaleCachePitch = srcWidth * 2;
                 break;
             case 16:
-                _scaleLineHandler = lineBlock[2][_scaleOutMode];
-                _scaleLinePalHandler = null;
-                _scaleInMode = SCALER_MODE16;
-                _scaleCachePitch = _srcWidth * 2;
+                scaleLineHandler = lineBlock[2][scaleOutMode];
+                scaleLinePalHandler = null;
+                scaleInMode = SCALER_MODE16;
+                scaleCachePitch = srcWidth * 2;
                 break;
             case 32:
-                _scaleLineHandler = lineBlock[3][_scaleOutMode];
-                _scaleLinePalHandler = null;
-                _scaleInMode = SCALER_MODE32;
-                _scaleCachePitch = _srcWidth * 4;
+                scaleLineHandler = lineBlock[3][scaleOutMode];
+                scaleLinePalHandler = null;
+                scaleInMode = SCALER_MODE32;
+                scaleCachePitch = srcWidth * 4;
                 break;
             default:
-                Support.exceptionExit("RENDER:Wrong source bpp %d", _srcBpp);
+                Support.exceptionExit("RENDER:Wrong source bpp %d", srcBpp);
                 break;
         }
-        _scaleBlocks = _srcWidth / SCALER_BLOCKSIZE;
-        _scaleLastBlock = _srcWidth % SCALER_BLOCKSIZE;
-        _scaleInHeight = _srcHeight;
+        scaleBlocks = srcWidth / SCALER_BLOCKSIZE;
+        scaleLastBlock = srcWidth % SCALER_BLOCKSIZE;
+        scaleInHeight = srcHeight;
         /* Reset the palette change detection to it's initial value */
-        _pal.first = 0;
-        _pal.last = 255;
-        _pal.changed = false;
-        Arrays.fill(_pal.modified, 0, _pal.modified.length, (byte) 0);
+        pal.first = 0;
+        pal.last = 255;
+        pal.changed = false;
+        Arrays.fill(pal.modified, 0, pal.modified.length, (byte) 0);
         // Finish this frame using a copy only handler
         DrawLine = finishLineHandlerWrap;
-        _scaleOutWrite = null;
-        _scaleOutWriteIndex = 0;
+        scaleOutWrite = null;
+        scaleOutWriteIndex = 0;
         /* Signal the next frame to first reinit the cache */
-        _scaleClearCache = true;
-        _active = true;
+        scaleClearCache = true;
+        active = true;
     }
 
     GFXCallback callbackWrap = this::callBack;
@@ -592,10 +592,10 @@ public final class Render {
         // GFX_Events에서 VGA_Expose를 할일이 없기 때문에 RENDER_ClearCacheHandler를 사용할 일이 없음
         // 아마도 SDL 창이 숨겨졌다 나타날때 다시 그리는 부분이 아닐까?
         else if (function == GFXCallbackType.Redraw) {
-            _scaleClearCache = true;
+            scaleClearCache = true;
             return;
         } else if (function == GFXCallbackType.Reset) {
-            _video.endUpdate(null);
+            video.endUpdate(null);
             reset();
         } else {
             Support.exceptionExit("Unhandled GFX_CallBackReset %d", function.name());
@@ -615,13 +615,13 @@ public final class Render {
             // This would alter the width of the screen, we don't care about rounding errors
             // here
         }
-        _srcWidth = width;
-        _srcHeight = height;
-        _srcBpp = bpp;
-        _srcDblw = dblw;
-        _srcDblh = dblh;
-        _srcFps = fps;
-        _srcRatio = ratio;
+        srcWidth = width;
+        srcHeight = height;
+        srcBpp = bpp;
+        srcDblW = dblw;
+        srcDblH = dblh;
+        srcFps = fps;
+        srcRatio = ratio;
         reset();
     }
 
@@ -632,16 +632,16 @@ public final class Render {
         SectionProperty section = (SectionProperty) (sec);
 
         // static boolean running = false;
-        boolean aspect1 = _aspect;
-        int scalersize = _scaleSize;
-        boolean scalerforced = _scaleForced;
-        scalerOperation scalerOp = _scaleOp;
+        boolean aspect1 = aspect;
+        int scalersize = scaleSize;
+        boolean scalerforced = scaleForced;
+        scalerOperation scalerOp = scaleOp;
 
-        _pal.first = 256;
-        _pal.last = 0;
+        pal.first = 256;
+        pal.last = 0;
         aspect1 = section.getBool("aspect");
-        _frameSkipMax = section.getInt("frameskip");
-        _frameSkipCount = 0;
+        frameSkipMax = section.getInt("frameskip");
+        frameSkipCount = 0;
         String cline = "";
         String scaler;
         // Check for commandline paramters and parse them through the configclass so they get
@@ -655,19 +655,19 @@ public final class Render {
         PropertyMultival prop = section.getMultival("scaler");
         scaler = prop.getSection().getString("type");
         String f = prop.getSection().getString("force");
-        _scaleForced = false;
+        scaleForced = false;
         if (f == "forced")
-            _scaleForced = true;
+            scaleForced = true;
 
         if (scaler == "none") {
-            _scaleOp = scalerOperation.scalerOpNormal;
-            _scaleSize = 1;
+            scaleOp = scalerOperation.scalerOpNormal;
+            scaleSize = 1;
         } else if (scaler == "normal2x") {
-            _scaleOp = scalerOperation.scalerOpNormal;
-            _scaleSize = 2;
+            scaleOp = scalerOperation.scalerOpNormal;
+            scaleSize = 2;
         } else if (scaler == "normal3x") {
-            _scaleOp = scalerOperation.scalerOpNormal;
-            _scaleSize = 3;
+            scaleOp = scalerOperation.scalerOpNormal;
+            scaleSize = 3;
         }
         // #if RENDER_USE_ADVANCED_SCALERS>2
         // else if (scaler == "advmame2x") { scale.op = scalerOpAdvMame;scale_size = 2; }
@@ -692,12 +692,12 @@ public final class Render {
         // If something changed that needs a ReInit
         // Only ReInit when there is a src.bpp (fixes crashes on startup and directly changing the
         // scaler without a screen specified yet)
-        if (running && _srcBpp != 0 && ((_aspect != aspect1) || (scalerOp != _scaleOp)
-                || (_scaleSize != scalersize) || (_scaleForced != scalerforced) || _scaleForced))
+        if (running && srcBpp != 0 && ((aspect != aspect1) || (scalerOp != scaleOp)
+                || (scaleSize != scalersize) || (scaleForced != scalerforced) || scaleForced))
             callBack(GFXCallbackType.Reset);
 
         if (!running)
-            _updating = true;
+            updating = true;
         running = true;
 
         GUIPlatform.mapper.addKeyHandler(this::decreaseFrameSkip, MapKeys.F7, Mapper.MMOD1,
@@ -811,20 +811,20 @@ public final class Render {
     // #endif
 
 
-    byte[] Scaler_Aspect = new byte[SCALER_MAXHEIGHT];
-    short[] Scaler_ChangedLines = new short[SCALER_MAXHEIGHT];
-    int Scaler_ChangedLineIndex;
+    byte[] ScalerAspect = new byte[SCALER_MAXHEIGHT];
+    short[] ScalerChangedLines = new short[SCALER_MAXHEIGHT];
+    int ScalerChangedLineIndex;
 
     // 8, 16, 32 bit 범위를 모두 포괄하기 위해 가장 큰 자료구조를 기준으로 생성
     int[] scalerWriteCache = new int[4 * SCALER_MAXWIDTH * 3];
 
     private void ScalerAddLines(int changed, int count) {
-        if ((Scaler_ChangedLineIndex & 1) == changed) {
-            Scaler_ChangedLines[Scaler_ChangedLineIndex] += (short) count;
+        if ((ScalerChangedLineIndex & 1) == changed) {
+            ScalerChangedLines[ScalerChangedLineIndex] += (short) count;
         } else {
-            Scaler_ChangedLines[++Scaler_ChangedLineIndex] = (short) count;
+            ScalerChangedLines[++ScalerChangedLineIndex] = (short) count;
         }
-        _scaleOutWriteIndex += _scaleOutPitch * count;
+        scaleOutWriteIndex += scaleOutPitch * count;
     }
 
     // -- #region Normal1x
@@ -837,15 +837,15 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         byte S = 0;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -868,7 +868,7 @@ public final class Render {
                     cidx++;
                     //// const PTYPE P = PMAKE(S);
                     // Color P = pal.lut[S];
-                    P = _pal.lut[S];
+                    P = pal.lut[S];
                     //// SCALERFUNC;
                     // line0[line0idx] = P;
                     line0[line0idx] = P;
@@ -894,20 +894,20 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         byte S = 0;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             // 있는 단위가 32비트라서?
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]
-                    && (_pal.modified[src[sidx]] | _pal.modified[src[sidx + 1]]
-                            | _pal.modified[src[sidx + 2]] | _pal.modified[src[sidx + 3]]) == 0) {
+                    && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
+                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
                 x -= 4;
                 sidx += 4;
                 cidx += 4;
@@ -928,7 +928,7 @@ public final class Render {
                     cidx++;
                     //// const PTYPE P = PMAKE(S);
                     // Color P = pal.lut[S];
-                    P = _pal.lut[S];
+                    P = pal.lut[S];
                     //// SCALERFUNC;
                     // line0[line0idx] = P;
                     line0[line0idx] = P;
@@ -953,14 +953,14 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         int srcVal = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1009,14 +1009,14 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         int srcVal = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1063,14 +1063,14 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         int S = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1116,15 +1116,15 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         byte S = 0;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1146,7 +1146,7 @@ public final class Render {
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
-                    P = _pal.lut[S];
+                    P = pal.lut[S];
                     // SCALERFUNC;
                     line0[line0idx] = P;
                     // line0idx += SCALERWIDTH;
@@ -1158,12 +1158,12 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - 1) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * (1 - 1),
-                    _scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * 1, _srcWidth * 1);
+            ArrayHelper.copy(scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * (1 - 1),
+                    scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * 1, srcWidth * 1);
         }
         ScalerAddLines(hadChange, scaleLines);
     }
@@ -1175,19 +1175,19 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         byte S = 0;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]
-                    && (_pal.modified[src[sidx]] | _pal.modified[src[sidx + 1]]
-                            | _pal.modified[src[sidx + 2]] | _pal.modified[src[sidx + 3]]) == 0) {
+                    && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
+                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
                 x -= 4;
                 sidx += 4;
                 cidx += 4;
@@ -1207,7 +1207,7 @@ public final class Render {
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
-                    P = _pal.lut[S];
+                    P = pal.lut[S];
                     // SCALERFUNC;
                     line0[line0idx] = P;
                     // line0idx += SCALERWIDTH;
@@ -1219,12 +1219,12 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - 1) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * (1 - 1),
-                    _scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * 1, _srcWidth * 1);
+            ArrayHelper.copy(scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * (1 - 1),
+                    scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * 1, srcWidth * 1);
         }
         ScalerAddLines(hadChange, scaleLines);
     }
@@ -1236,14 +1236,14 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         int srcVal = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1278,12 +1278,12 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - 1) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * (1 - 1),
-                    _scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * 1, _srcWidth * 1);
+            ArrayHelper.copy(scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * (1 - 1),
+                    scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * 1, srcWidth * 1);
         }
         ScalerAddLines(hadChange, scaleLines);
     }
@@ -1295,14 +1295,14 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         int srcVal = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1337,12 +1337,12 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - 1) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * (1 - 1),
-                    _scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * 1, _srcWidth * 1);
+            ArrayHelper.copy(scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * (1 - 1),
+                    scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * 1, srcWidth * 1);
         }
         ScalerAddLines(hadChange, scaleLines);
     }
@@ -1354,13 +1354,13 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1393,12 +1393,12 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - 1) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * (1 - 1),
-                    _scaleOutWrite, _scaleOutWriteIndex + _scaleOutPitch * 1, _srcWidth * 1);
+            ArrayHelper.copy(scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * (1 - 1),
+                    scaleOutWrite, scaleOutWriteIndex + scaleOutPitch * 1, srcWidth * 1);
         }
         ScalerAddLines(hadChange, scaleLines);
     }
@@ -1415,20 +1415,20 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         // 원래는 출력buffer가 byte배열로 정의 되었을 경우 1라인당 byte갯수였으나
         // 출력buffer를 uint(4bytes)로 고정했기 때문에(기본 단위를 uint로 했기 때문에) uint갯수를 기준으로 함
-        int PixelsPerScaleOutLine = _scaleOutPitch;
+        int PixelsPerScaleOutLine = scaleOutPitch;
         int scalerwidth = 2;
         int scalerheight = 2;
         Byte S = 0;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             // 있는 단위가 32비트라서?
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
@@ -1448,7 +1448,7 @@ public final class Render {
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
-                    P = _pal.lut[S];
+                    P = pal.lut[S];
                     // SCALERFUNC;
                     line0[line0idx] = P;
                     line0[line0idx + 1] = P;
@@ -1476,22 +1476,22 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        int scaleOutLinePixels = _scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
+        int scaleOutLinePixels = scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
         int scalerwidth = 2;
         int scalerheight = 2;
         byte S = 0;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]
-                    && (_pal.modified[src[sidx]] | _pal.modified[src[sidx + 1]]
-                            | _pal.modified[src[sidx + 2]] | _pal.modified[src[sidx + 3]]) == 0) {
+                    && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
+                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
                 x -= 4;
                 sidx += 4;
                 cidx += 4;
@@ -1509,7 +1509,7 @@ public final class Render {
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
-                    P = _pal.lut[S];
+                    P = pal.lut[S];
                     // SCALERFUNC;
                     line0[line0idx] = P;
                     line0[line0idx + 1] = P;
@@ -1538,18 +1538,18 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        int scaleOutLinePixels = _scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
+        int scaleOutLinePixels = scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
         int scalerwidth = 2;
         int scalerheight = 2;
         int srcVal = 0;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1600,17 +1600,17 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        int scaleOutLinePixels = _scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
+        int scaleOutLinePixels = scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
         int scalerwidth = 2;
         int scalerheight = 2;
         int srcVal = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1663,17 +1663,17 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        int scaleOutLinePixels = _scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
+        int scaleOutLinePixels = scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
         int scalerwidth = 2;
         int scalerheight = 2;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1722,20 +1722,20 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
         // 원래는 출력buffer가 byte배열로 정의 되었을 경우 1라인당 byte갯수였으나
         // 출력buffer를 uint(4bytes)로 고정했기 때문에(기본 단위를 uint로 했기 때문에) uint갯수를 기준으로 함
-        int PixelsPerScaleOutLine = _scaleOutPitch;
+        int PixelsPerScaleOutLine = scaleOutPitch;
         int scalerwidth = 2;
         int scalerheight = 2;
         byte S = 0;
         int P = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1754,7 +1754,7 @@ public final class Render {
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
-                    P = _pal.lut[S];
+                    P = pal.lut[S];
                     // SCALERFUNC;
                     line0[line0idx] = P;
                     line0[line0idx + 1] = P;
@@ -1769,14 +1769,14 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - scalerheight) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite,
-                    _scaleOutWriteIndex + PixelsPerScaleOutLine * (scalerheight - 1),
-                    _scaleOutWrite, _scaleOutWriteIndex + PixelsPerScaleOutLine * scalerheight,
-                    _srcWidth * scalerheight);
+            ArrayHelper.copy(scaleOutWrite,
+                    scaleOutWriteIndex + PixelsPerScaleOutLine * (scalerheight - 1), scaleOutWrite,
+                    scaleOutWriteIndex + PixelsPerScaleOutLine * scalerheight,
+                    srcWidth * scalerheight);
         }
 
         ScalerAddLines(hadChange, scaleLines);
@@ -1789,23 +1789,23 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         // 원래는 출력buffer가 byte배열로 정의 되었을 경우 1라인당 byte갯수였으나
         // 출력buffer를 uint(4bytes)로 고정했기 때문에(기본 단위를 uint로 했기 때문에) uint갯수를 기준으로 함
-        int PixelsPerScaleOutLine = _scaleOutPitch;
+        int PixelsPerScaleOutLine = scaleOutPitch;
         int scalerwidth = 2;
         int scalerheight = 2;
         int P = 0;
         byte S = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]
-                    && (_pal.modified[src[sidx]] | _pal.modified[src[sidx + 1]]
-                            | _pal.modified[src[sidx + 2]] | _pal.modified[src[sidx + 3]]) == 0) {
+                    && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
+                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
                 x -= 4;
                 sidx += 4;
                 cidx += 4;
@@ -1822,7 +1822,7 @@ public final class Render {
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
-                    P = _pal.lut[S];
+                    P = pal.lut[S];
                     // SCALERFUNC;
                     line0[line0idx] = P;
                     line0[line0idx + 1] = P;
@@ -1837,14 +1837,14 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - scalerheight) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite,
-                    _scaleOutWriteIndex + PixelsPerScaleOutLine * (scalerheight - 1),
-                    _scaleOutWrite, _scaleOutWriteIndex + PixelsPerScaleOutLine * scalerheight,
-                    _srcWidth * scalerheight);
+            ArrayHelper.copy(scaleOutWrite,
+                    scaleOutWriteIndex + PixelsPerScaleOutLine * (scalerheight - 1), scaleOutWrite,
+                    scaleOutWriteIndex + PixelsPerScaleOutLine * scalerheight,
+                    srcWidth * scalerheight);
         }
 
         ScalerAddLines(hadChange, scaleLines);
@@ -1857,17 +1857,17 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        int scaleOutLinePixels = _scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
+        int scaleOutLinePixels = scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
         int scalerwidth = 2;
         int scalerheight = 2;
         int srcVal = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1903,13 +1903,13 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - 1) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite,
-                    _scaleOutWriteIndex + scaleOutLinePixels * (scalerheight - 1), _scaleOutWrite,
-                    _scaleOutWriteIndex + scalerheight, _srcWidth * scalerheight);
+            ArrayHelper.copy(scaleOutWrite,
+                    scaleOutWriteIndex + scaleOutLinePixels * (scalerheight - 1), scaleOutWrite,
+                    scaleOutWriteIndex + scalerheight, srcWidth * scalerheight);
         }
 
         ScalerAddLines(hadChange, scaleLines);
@@ -1922,17 +1922,17 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        int scaleOutLinePixels = _scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
+        int scaleOutLinePixels = scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
         int scalerwidth = 2;
         int scalerheight = 2;
         int srcVal = 0;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -1968,13 +1968,13 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - 1) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite,
-                    _scaleOutWriteIndex + scaleOutLinePixels * (scalerheight - 1), _scaleOutWrite,
-                    _scaleOutWriteIndex + scalerheight, _srcWidth * scalerheight);
+            ArrayHelper.copy(scaleOutWrite,
+                    scaleOutWriteIndex + scaleOutLinePixels * (scalerheight - 1), scaleOutWrite,
+                    scaleOutWriteIndex + scalerheight, srcWidth * scalerheight);
         }
 
         ScalerAddLines(hadChange, scaleLines);
@@ -1987,16 +1987,16 @@ public final class Render {
         int hadChange = 0;
         // const SRCTYPE *src = (SRCTYPE*)s;
         int sidx = index;
-        byte[] cache = _scaleCacheRead;
-        int cidx = _scaleCacheReadIndex;
-        _scaleCacheReadIndex += _scaleCachePitch;
-        int[] line0 = _scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
-        int line0idx = _scaleOutWriteIndex;
+        byte[] cache = scaleCacheRead;
+        int cidx = scaleCacheReadIndex;
+        scaleCacheReadIndex += scaleCachePitch;
+        int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+        int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        int scaleOutLinePixels = _scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
+        int scaleOutLinePixels = scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
         int scalerwidth = 2;
         int scalerheight = 2;
-        for (int x = _srcWidth; x > 0;) {
+        for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]) {
                 x -= sizeOfUnit;
@@ -2034,13 +2034,13 @@ public final class Render {
             }
         }
 
-        int scaleLines = Scaler_Aspect[_scaleOutLine++];
+        int scaleLines = ScalerAspect[scaleOutLine++];
         // if ( scaleLines - SCALERHEIGHT && hadChange ) {
 
         if ((scaleLines - 1) != 0 && hadChange != 0) {
-            ArrayHelper.copy(_scaleOutWrite,
-                    _scaleOutWriteIndex + scaleOutLinePixels * (scalerheight - 1), _scaleOutWrite,
-                    _scaleOutWriteIndex + scalerheight, _srcWidth * scalerheight);
+            ArrayHelper.copy(scaleOutWrite,
+                    scaleOutWriteIndex + scaleOutLinePixels * (scalerheight - 1), scaleOutWrite,
+                    scaleOutWriteIndex + scalerheight, srcWidth * scalerheight);
         }
 
         ScalerAddLines(hadChange, scaleLines);
@@ -2067,40 +2067,40 @@ public final class Render {
     }
 
     // src
-    int _srcWidth /* 소스의 가로 픽셀 */, _srcStart;
-    int _srcHeight;// 소스의 세로 픽셀
-    int _srcBpp;
-    boolean _srcDblw, _srcDblh;
-    double _srcRatio;
-    float _srcFps;
+    int srcWidth /* 소스의 가로 픽셀 */, srcStart;
+    int srcHeight;// 소스의 세로 픽셀
+    int srcBpp;
+    boolean srcDblW, srcDblH;
+    double srcRatio;
+    float srcFps;
     // frameskip
-    int _frameSkipCount;
-    int _frameSkipMax;
-    int _frameSkipIndex;
-    byte[] _frameSkipHadSkip = new byte[RENDER_SKIP_CACHE];
+    int frameSkipCount;
+    int frameSkipMax;
+    int frameSkipIndex;
+    byte[] frameSkipHadSkip = new byte[RENDER_SKIP_CACHE];
     // scale;
-    int _scaleSize;
-    int _scaleInMode;
-    int _scaleOutMode;
-    scalerOperation _scaleOp;
-    boolean _scaleClearCache;
-    boolean _scaleForced;
-    ScalerLineHandler _scaleLineHandler;
-    ScalerLineHandler _scaleLinePalHandler;
-    ScalerComplexHandler _scaleComplexHandler;
-    int _scaleBlocks, _scaleLastBlock;
-    int _scaleOutPitch;// 원래는 출력쪽 한줄당 byte수
-    int[] _scaleOutWrite;// 픽셀당 32비트로 고정
-    int _scaleOutWriteIndex;// uint
-    int _scaleCachePitch;// 한줄당 byte 수
-    byte[] _scaleCacheRead;
-    int _scaleCacheReadIndex;// uint
-    int _scaleInHeight, _scaleInLine, _scaleOutLine;
-    RenderPal _pal = new RenderPal();
-    boolean _updating;
-    boolean _active;
-    boolean _aspect;
-    boolean _fullFrame;
+    int scaleSize;
+    int scaleInMode;
+    int scaleOutMode;
+    scalerOperation scaleOp;
+    boolean scaleClearCache;
+    boolean scaleForced;
+    ScalerLineHandler scaleLineHandler;
+    ScalerLineHandler scaleLinePalHandler;
+    ScalerComplexHandler scaleComplexHandler;
+    int scaleBlocks, scaleLastBlock;
+    int scaleOutPitch;// 원래는 출력쪽 한줄당 byte수
+    int[] scaleOutWrite;// 픽셀당 32비트로 고정
+    int scaleOutWriteIndex;// uint
+    int scaleCachePitch;// 한줄당 byte 수
+    byte[] scaleCacheRead;
+    int scaleCacheReadIndex;// uint
+    int scaleInHeight, scaleInLine, scaleOutLine;
+    RenderPal pal = new RenderPal();
+    boolean updating;
+    boolean active;
+    boolean aspect;
+    boolean fullFrame;
     /*--------------------------- end Render_t -----------------------------*/
 
 }

@@ -54,7 +54,7 @@ public final class PIC {
         public boolean RotateOnAutoEOI;
         public boolean Single;
         public boolean RequestISSR;
-        public byte vector_base;
+        public byte vectorBase;
     }
 
     private static int Ticks = 0;
@@ -253,39 +253,39 @@ public final class PIC {
 
     private static int readCommand(int port, int iolen) {
         PICController pic = pics[port == 0x20 ? 0 : 1];
-        int irq_base = (port == 0x20) ? 0 : 8;
+        int irqBase = (port == 0x20) ? 0 : 8;
         int i;
-        byte ret = 0;
-        byte b = 1;
+        int ret = 0;// uint8
+        int b = 1;// uint8
         if (pic.RequestISSR) {
-            for (i = irq_base; i < irq_base + 8; i++) {
+            for (i = irqBase; i < irqBase + 8; i++) {
                 if (irqs[i].inservice)
                     ret |= b;
                 b <<= 1;
             }
         } else {
-            for (i = irq_base; i < irq_base + 8; i++) {
+            for (i = irqBase; i < irqBase + 8; i++) {
                 if (irqs[i].active)
                     ret |= b;
                 b <<= 1;
             }
-            if (irq_base == 0 && (IRQCheck & 0xff00) != 0)
+            if (irqBase == 0 && (IRQCheck & 0xff00) != 0)
                 ret |= 4;
         }
-        return ret;
+        return 0xff & ret;
     }
 
     private static int readData(int port, int iolen) {
-        int irq_base = (port == 0x21) ? 0 : 8;
+        int irqBase = (port == 0x21) ? 0 : 8;
         int i;
-        byte ret = 0;
-        byte b = 1;
-        for (i = irq_base; i <= irq_base + 7; i++) {
+        int ret = 0;
+        int b = 1;
+        for (i = irqBase; i <= irqBase + 7; i++) {
             if (irqs[i].masked)
                 ret |= b;
             b <<= 1;
         }
-        return ret;
+        return 0xff & ret;
     }
 
     public static void increaseTick() {

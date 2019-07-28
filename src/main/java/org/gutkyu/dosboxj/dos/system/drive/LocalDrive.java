@@ -21,17 +21,17 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     // totalClusters, byte mediaId)
     public LocalDrive(String startDir, int bytesSector, int sectorsCluster, int totalClusters,
             int freeClusters, int mediaId) {
-        for (int i = 0; i < _srchInfo.length; i++) {
-            _srchInfo[i] = new SrchInfo();
+        for (int i = 0; i < srchInfo.length; i++) {
+            srchInfo[i] = new SrchInfo();
         }
 
         CStringPt.copy(startDir, basedir);
         info = String.format("local directory %s", startDir);
-        _allocation.bytesSector = 0xffff & bytesSector;
-        _allocation.sectorsCluster = 0xff & sectorsCluster;
-        _allocation.totalClusters = 0xffff & totalClusters;
-        _allocation.freeClusters = 0xffff & freeClusters;
-        _allocation.mediaId = 0xff & mediaId;
+        allocation.bytesSector = 0xffff & bytesSector;
+        allocation.sectorsCluster = 0xff & sectorsCluster;
+        allocation.totalClusters = 0xffff & totalClusters;
+        allocation.freeClusters = 0xffff & freeClusters;
+        allocation.mediaId = 0xff & mediaId;
 
         dirCache.setBaseDir(basedir);
     }
@@ -284,7 +284,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         CStringPt.copy(basedir, tempDir);
         tempDir.concat(dir);
 
-        if (_allocation.mediaId == 0xF0) {
+        if (allocation.mediaId == 0xF0) {
             emptyCache(); // rescan floppie-content on each findfirst
         }
 
@@ -297,7 +297,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
             DOSMain.setError(DOSMain.DOSERR_PATH_NOT_FOUND);
             return false;
         }
-        CStringPt.copy(tempDir, _srchInfo[id].srchDir);
+        CStringPt.copy(tempDir, srchInfo[id].srchDir);
         dta.setDirID(id);
 
         int sAttr = dta.getSearchParams(tempDir);
@@ -362,7 +362,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
             if (!Drives.compareWildFile(dirEnt.toString(), srchPattern.toString()))
                 continue again;// goto again;
 
-            CStringPt.copy(_srchInfo[id].srchDir, fullName);
+            CStringPt.copy(srchInfo[id].srchDir, fullName);
             fullName.concat(dirEnt);
 
             // GetExpandName might indirectly destroy dir_ent (by caching in a new directory
@@ -462,10 +462,10 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     public boolean allocationInfo(DriveAllocationInfo alloc) {
         /* Always report 100 mb free should be enough */
         /* Total size is always 1 gb */
-        alloc.bytesSector = _allocation.bytesSector;
-        alloc.sectorsCluster = _allocation.sectorsCluster;
-        alloc.totalClusters = _allocation.totalClusters;
-        alloc.freeClusters = _allocation.freeClusters;
+        alloc.bytesSector = allocation.bytesSector;
+        alloc.sectorsCluster = allocation.sectorsCluster;
+        alloc.totalClusters = allocation.totalClusters;
+        alloc.freeClusters = allocation.freeClusters;
         return true;
     }
 
@@ -510,7 +510,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public int getMediaByte() {
-        return 0xff & _allocation.mediaId;
+        return 0xff & allocation.mediaId;
     }
 
     @Override
@@ -540,7 +540,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         }
     }
 
-    private SrchInfo[] _srchInfo = new SrchInfo[DOSSystem.MAX_OPENDIRS];
+    private SrchInfo[] srchInfo = new SrchInfo[DOSSystem.MAX_OPENDIRS];
 
     private class Allocation {
         public int bytesSector;// uint16
@@ -550,5 +550,5 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         public int mediaId;// uint8
     }
 
-    private Allocation _allocation = new Allocation();
+    private Allocation allocation = new Allocation();
 }

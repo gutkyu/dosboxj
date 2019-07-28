@@ -246,15 +246,15 @@ public final class TsengET3KSVGADriverProvider {
      * not supported
      */
     private void writeP3CD(int port, int val, int iolen) {
-        vga.SVGA.BankWrite = (byte) (val & 0x07);
-        vga.SVGA.BankRead = (byte) ((val >>> 3) & 0x07);
+        vga.SVGA.BankWrite = val & 0x07;
+        vga.SVGA.BankRead = (val >>> 3) & 0x07;
         vga.SVGA.BankSize = (val & 0x40) != 0 ? 64 * 1024 : 128 * 1024;
         vga.setupHandlers();
     }
 
     private int readP3CD(int port, int iolen) {
-        return ((vga.SVGA.BankRead & 0xff) << 3) | vga.SVGA.BankWrite
-                | (((vga.SVGA.BankSize & 0xff) == 128 * 1024) ? 0 : 0x40);
+        return (vga.SVGA.BankRead << 3) | vga.SVGA.BankWrite
+                | (vga.SVGA.BankSize == 128 * 1024 ? 0 : 0x40);
     }
 
     private void writeP3C0(int reg, int val, int iolen) {

@@ -14,8 +14,8 @@ public class ChainedVGAHandler extends PageHandler {
         this.vga = vga;
     }
 
-    private byte readBHandler(int addr) {
-        return vga.Mem.LinearAlloc[((addr & ~3) << 2) + (addr & 3)];
+    private int readBHandler(int addr) {
+        return 0xff & vga.Mem.LinearAlloc[((addr & ~3) << 2) + (addr & 3)];
     }
 
     private int readWHandler(int addr) {
@@ -70,7 +70,7 @@ public class ChainedVGAHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
-        return readBHandler(addr) & 0xff;
+        return readBHandler(addr);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class ChainedVGAHandler extends PageHandler {
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
         if ((addr & 1) != 0)
-            return ((readBHandler(addr + 0) & 0xff) << 0) | ((readBHandler(addr + 1) & 0xff) << 8);
+            return (readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8);
         else
             return readWHandler(addr);
     }
@@ -90,9 +90,8 @@ public class ChainedVGAHandler extends PageHandler {
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
         if ((addr & 3) != 0)
-            return ((readBHandler(addr + 0) & 0xff) << 0) | ((readBHandler(addr + 1) & 0xff) << 8)
-                    | ((readBHandler(addr + 2) & 0xff) << 16)
-                    | ((readBHandler(addr + 3) & 0xff) << 24);
+            return (readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8)
+                    | (readBHandler(addr + 2) << 16) | (readBHandler(addr + 3) << 24);
         else
             return readDHandler(addr);
     }

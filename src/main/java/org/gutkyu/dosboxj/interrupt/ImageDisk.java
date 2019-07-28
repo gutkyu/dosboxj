@@ -85,7 +85,7 @@ public final class ImageDisk implements Disposable {
     // uint8
     public int getBiosType() {
         if (!hardDrive) {
-            return 0xff & BIOSDisk.DiskGeometryList[floppytype].BiosValue;
+            return 0xff & BIOSDisk.DiskGeometryList[floppyType].BiosValue;
         } else
             return 0;
     }
@@ -103,7 +103,7 @@ public final class ImageDisk implements Disposable {
         active = false;
         hardDrive = isHardDisk;
         if (!isHardDisk) {
-            byte i = 0;
+            int i = 0;
             boolean founddisk = false;
             while (BIOSDisk.DiskGeometryList[i].KSize != 0x0) {
                 if ((BIOSDisk.DiskGeometryList[i].KSize == imgSizeK)
@@ -112,7 +112,7 @@ public final class ImageDisk implements Disposable {
                         Log.logMsg("ImageLoader: image file with additional data, might not load!");
                     founddisk = true;
                     active = true;
-                    floppytype = i;
+                    floppyType = i;
                     heads = BIOSDisk.DiskGeometryList[i].HeadsCylinder;
                     cylinders = BIOSDisk.DiskGeometryList[i].CylinderCount;
                     sectors = BIOSDisk.DiskGeometryList[i].SectorsTrack;
@@ -161,7 +161,7 @@ public final class ImageDisk implements Disposable {
     public boolean active;
     public SeekableByteChannel diskimg;
     public String diskname = "";
-    public byte floppytype;
+    public int floppyType;// uint8
 
     public int sector_size;
     public int heads, cylinders, sectors;

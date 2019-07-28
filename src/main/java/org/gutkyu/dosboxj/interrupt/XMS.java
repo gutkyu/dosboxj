@@ -63,7 +63,7 @@ public final class XMS {
     private class XMSBlock {
         public int Size;
         public int Mem;
-        public byte Locked;
+        public int Locked;// uint8
         public boolean Free;
     }
 
@@ -224,13 +224,13 @@ public final class XMS {
         return invalidHandle(handle) ? XMS_INVALID_HANDLE : 0;
     }
 
-    private static byte getHandleLockCount(int handle) {
+    private static int getHandleLockCount(int handle) {
         return xmsHandles[handle].Locked;
     }
 
-    private static byte getHandleAvailBlocks(int handle) {
+    private static int getHandleAvailBlocks(int handle) {
         /* Find available blocks */
-        byte numFree = 0;
+        int numFree = 0;
         for (int i = 1; i < XMS_HANDLES; i++) {
             if (xmsHandles[i].Free)
                 numFree++;
@@ -357,7 +357,7 @@ public final class XMS {
             {
                 int handle = Register.getRegDX();
                 int result = checkHandle(handle);
-                byte regVal0 = 0, regVal1 = 0;
+                int regVal0 = 0, regVal1 = 0;
                 int regVal2 = 0;
                 setResult(result, false);
                 if (result == 0) {
@@ -452,9 +452,9 @@ public final class XMS {
             }
                 break;
             case XMS_GET_EMB_HANDLE_INFORMATION_EXT: { /* 8e */
-                byte regVal0 = 0, regVal1 = 0;
+                int regVal0 = 0, regVal1 = 0;
                 int regVal2 = 0;
-                byte free_handles;
+                int freeHandles;
                 int handle = Register.getRegDX();
 
                 int result = checkHandle(handle);
@@ -464,13 +464,13 @@ public final class XMS {
                     regVal2 = getHandleSize(handle);
                 }
                 Register.setRegBH(regVal0);
-                free_handles = regVal1;
+                freeHandles = regVal1;
                 Register.setRegDX(regVal2);
                 if (result != 0)
                     Register.setRegBL(result);
                 else {
                     Register.setRegEDX(Register.getRegEDX() & 0xffff);
-                    Register.setRegCX(free_handles);
+                    Register.setRegCX(freeHandles);
                 }
                 Register.setRegAX(result == 0 ? 1 : 0);
             }
@@ -486,15 +486,15 @@ public final class XMS {
         return Callback.ReturnTypeNone;
     }
 
-    static XMSModule _xms;
+    static XMSModule xms;
 
     private static void destroy(Section sec) {
-        _xms.dispose();
-        _xms = null;
+        xms.dispose();
+        xms = null;
     }
 
     public static void init(Section sec) throws WrongType {
-        _xms = (new XMS()).new XMSModule(sec);
+        xms = (new XMS()).new XMSModule(sec);
         sec.addDestroyFunction(XMS::destroy, true);
     }
 

@@ -8,7 +8,7 @@ import org.gutkyu.dosboxj.hardware.video.VGAModes;
 import org.gutkyu.dosboxj.interrupt.int10.INT10Mode;
 
 public final class TsengET4KSVGADriverProvider {
-    public byte _extensionsEnabled;
+    public byte extensionsEnabled;
 
     // Stored exact values of some registers. Documentation only specifies some bits but hardware
     // checks may
@@ -94,7 +94,7 @@ public final class TsengET4KSVGADriverProvider {
 
     // Tseng ET4K implementation
     private void writeP3D5(int reg, int val, int iolen) {
-        if (_extensionsEnabled == 0 && reg != 0x33)
+        if (extensionsEnabled == 0 && reg != 0x33)
             return;
 
         switch (reg) {
@@ -211,7 +211,7 @@ public final class TsengET4KSVGADriverProvider {
     }
 
     private int readP3D5(int reg, int iolen) {
-        if (_extensionsEnabled == 0 && reg != 0x33)
+        if (extensionsEnabled == 0 && reg != 0x33)
             return 0x0;
         switch (reg) {
             // RESTORE_ET4K(3d4, 31);
@@ -294,13 +294,13 @@ public final class TsengET4KSVGADriverProvider {
      * (0..15)
      */
     private void writeP3CD(int port, int val, int iolen) {
-        vga.SVGA.BankWrite = (byte) (val & 0x0f);
-        vga.SVGA.BankRead = (byte) ((val >>> 4) & 0x0f);
+        vga.SVGA.BankWrite = val & 0x0f;
+        vga.SVGA.BankRead = (val >>> 4) & 0x0f;
         vga.setupHandlers();
     }
 
     private int readP3CD(int port, int iolen) {
-        return ((vga.SVGA.BankRead & 0xff) << 4) | (vga.SVGA.BankWrite & 0xff);
+        return (vga.SVGA.BankRead << 4) | vga.SVGA.BankWrite;
     }
 
     private void writeP3C0(int reg, int val, int iolen) {

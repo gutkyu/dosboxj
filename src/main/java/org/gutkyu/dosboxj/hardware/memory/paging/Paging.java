@@ -308,7 +308,7 @@ public final class Paging {
         if (entry.Write != NullState)
             Memory.hostWriteB(entry.WMemAlloc, entry.Write + address, val);
         else
-            (getTLBWriteHandler(address)).writeB(address, val);
+            getTLBWriteHandler(address).writeB(address, val);
     }
 
     public static void memWriteWInlineW(int address, int val) {
@@ -411,7 +411,7 @@ public final class Paging {
     }
 
     private static InitPageHandler _initPageHandler = new InitPageHandler();
-    private static InitPageUserROHandler _initPageHandlerUserRO = new InitPageUserROHandler();
+    private static InitPageUserROHandler initPageHandlerUserRO = new InitPageUserROHandler();
 
     public static int getDirBase() {
         return (int) paging.CR3;
@@ -458,16 +458,16 @@ public final class Paging {
         paging.Links.Used = 0;
     }
 
-    private static void unlinkPages(int lin_page, int pages) {
+    private static void unlinkPages(int linPage, int pages) {
         for (; pages > 0; pages--) {
-            TLBEntry entry = getTLBEntry(lin_page << 12);
+            TLBEntry entry = getTLBEntry(linPage << 12);
             entry.RMemAlloc = null;
             entry.Read = NullState;
             entry.WMemAlloc = null;
             entry.Write = NullState;
             entry.ReadHandler = _initPageHandler;
             entry.WriteHandler = _initPageHandler;
-            lin_page++;
+            linPage++;
         }
     }
 
@@ -547,7 +547,7 @@ public final class Paging {
 
         paging.Links.Entries[(int) paging.Links.Used++] = linPage;
         entry.ReadHandler = handler;
-        entry.WriteHandler = _initPageHandlerUserRO;
+        entry.WriteHandler = initPageHandlerUserRO;
     }
 
     public static void setDirBase(int cr3) {

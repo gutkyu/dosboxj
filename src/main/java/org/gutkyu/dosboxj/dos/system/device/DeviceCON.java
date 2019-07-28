@@ -14,7 +14,7 @@ public final class DeviceCON extends DOSDevice {
     public DeviceCON() {
         setName(CStringPt.create("CON"));
         readCache = 0;
-        lastwrite = 0;
+        lastWrite = 0;
         ansi.enabled = false;
         ansi.attr = 0x7;
         // should be updated once set/reset modeis implemented
@@ -140,11 +140,11 @@ public final class DeviceCON extends DOSDevice {
                      * Some sort of "hack" now that \n doesn't set col to 0 (int10_char.cpp old
                      * chessgame)
                      */
-                    if ((buf[count + offset] == '\n') && (lastwrite != '\r'))
+                    if ((buf[count + offset] == (byte) '\n') && (lastWrite != (byte) '\r'))
                         CHAR.teletypeOutputAttr((byte) '\r', ansi.attr, ansi.enabled);
                     /* pass attribute only if ansi is enabled */
                     CHAR.teletypeOutputAttr(buf[count + offset], ansi.attr, ansi.enabled);
-                    lastwrite = buf[count++];
+                    lastWrite = buf[count++];
                     continue;
                 }
             }
@@ -183,7 +183,7 @@ public final class DeviceCON extends DOSDevice {
                 case (byte) '8':
                 case (byte) '9':
                     ansi.data[ansi.numberOfArg] = (byte) (10 * (ansi.data[ansi.numberOfArg] & 0xff)
-                            + (buf[count + offset] - '0'));
+                            + ((buf[count + offset] & 0xff) - '0'));
                     break;
                 case (byte) ';': /* till a max of NUMBER_ANSI_DATA */
                     ansi.numberOfArg++;
@@ -384,7 +384,7 @@ public final class DeviceCON extends DOSDevice {
                     col = INT10.getCursorPosCol(page);
                     row = INT10.getCursorPosRow(page);
                     // Use this one to prevent scrolling when end of screen is reached
-                    CHAR.writeChar2((byte) ' ', ansi.attr, page, ansi.nCols - col, true);
+                    CHAR.writeChar2(' ', ansi.attr, page, ansi.nCols - col, true);
                     // for(i = col;i<(int) ansi.ncols; i++) INT10_TeletypeOutputAttr('
                     // ',ansi.attr,true);
                     CHAR.setCursorPos(row, col, page);
@@ -486,7 +486,7 @@ public final class DeviceCON extends DOSDevice {
     }
 
     private byte readCache;
-    private byte lastwrite;
+    private byte lastWrite;
 
     class ANSI { /* should create a constructor which fills them with the appriorate values */
         public boolean esc;
