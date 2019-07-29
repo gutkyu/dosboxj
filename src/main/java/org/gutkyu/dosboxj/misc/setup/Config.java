@@ -12,7 +12,7 @@ import org.gutkyu.dosboxj.misc.*;
 import org.gutkyu.dosboxj.util.*;
 
 public final class Config {
-    private String _currentConfigDir = null;
+    private String currentConfigDir = null;
 
     public CommandLine CmdLine;
     private LinkedList<Section> SectionList = new LinkedList<Section>();
@@ -180,27 +180,27 @@ public final class Config {
 
     }
 
-    private static boolean _firstConfigFile = true;
+    private static boolean firstConfigFile = true;
 
     public boolean parseConfigFile(String configFileName) {
         // static boolean first_configfile = true;
         try {
             try (BufferedReader fileReader = Files.newBufferedReader(Paths.get(configFileName))) {
-                String settings_type = _firstConfigFile ? "primary" : "additional";
-                _firstConfigFile = false;
-                Log.logMsg("CONFIG:Loading %s settings from config file %s", settings_type, configFileName);
+                String settingsType = firstConfigFile ? "primary" : "additional";
+                firstConfigFile = false;
+                Log.logMsg("CONFIG:Loading %s settings from config file %s", settingsType, configFileName);
 
                 // Get directory from configfilename, used with relative paths.
-                _currentConfigDir = configFileName;
-                int pos = _currentConfigDir.lastIndexOf(Cross.FILESPLIT);
+                currentConfigDir = configFileName;
+                int pos = currentConfigDir.lastIndexOf(Cross.FILESPLIT);
                 if (pos < 0)
                     pos = 0; // No directory then erase string
-                _currentConfigDir = _currentConfigDir.substring(0, pos);
+                currentConfigDir = currentConfigDir.substring(0, pos);
                 // current_config_dir.erase(pos);
 
                 String gegevens;
-                Section currentsection = null;
-                Section testsec = null;
+                Section currentSection = null;
+                Section testSec = null;
                 while ((gegevens = fileReader.readLine()) != null) {
 
                     /* strip leading/trailing whitespace */
@@ -220,22 +220,22 @@ public final class Config {
                         if (loc < 0)
                             continue;
                         gegevens = gegevens.substring(1, loc);
-                        testsec = getSection(gegevens);
-                        if (testsec != null)
-                            currentsection = testsec;
-                        testsec = null;
+                        testSec = getSection(gegevens);
+                        if (testSec != null)
+                            currentSection = testSec;
+                        testSec = null;
                         break;
                     }
                     default:
                         try {
-                            if (currentsection != null)
-                                currentsection.handleInputline(gegevens);
+                            if (currentSection != null)
+                                currentSection.handleInputline(gegevens);
                         } catch (Exception e) {// EXIT with message
                         }
                         break;
                     }
                 }
-                _currentConfigDir = "";// So internal changes don't use the path information
+                currentConfigDir = "";// So internal changes don't use the path information
                 return true;
             }
         } catch (Exception e) {
