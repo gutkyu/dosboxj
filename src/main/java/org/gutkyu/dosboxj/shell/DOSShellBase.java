@@ -3,7 +3,6 @@ package org.gutkyu.dosboxj.shell;
 import org.gutkyu.dosboxj.dos.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import org.gutkyu.dosboxj.*;
 import org.gutkyu.dosboxj.misc.*;
 import org.gutkyu.dosboxj.dos.software.*;
 import org.gutkyu.dosboxj.util.*;
@@ -31,7 +30,7 @@ public abstract class DOSShellBase extends Program {
         _completionStart = null;
     }
 
-    abstract protected void doCommand(CStringPt line);
+    abstract protected void doCommand(String line);
 
     abstract protected void inputCommand(CStringPt line);
 
@@ -145,8 +144,8 @@ public abstract class DOSShellBase extends Program {
             normalstdout = (PSP.getFileHandle(1) != 0xff);
         }
         if (!inPt.isEmpty()) {
-            if (DOSMain.openFile(inPt.toString(), DOSSystem.OPEN_READ)) { // Test if file
-                                                                          // exists
+            // Test if file exists
+            if (DOSMain.openFile(inPt.toString(), DOSSystem.OPEN_READ)) {
                 DOSMain.closeFile(DOSMain.returnFileHandle);
                 Log.logMsg("SHELL:Redirect input from %s", inPt);
                 if (normalstdin)
@@ -167,24 +166,23 @@ public abstract class DOSShellBase extends Program {
                 if ((status = DOSMain.openFile(outPt.toString(), DOSSystem.OPEN_READWRITE))) {
                     DOSMain.seekFile(1, 0, DOSSystem.DOS_SEEK_END);
                 } else {
-                    status = DOSMain.createFile(outPt.toString(), DOSSystem.DOS_ATTR_ARCHIVE); // Create
-                                                                                               // if
-                                                                                               // not
-                                                                                               // exists.
+                    // Create if not exists.
+                    status = DOSMain.createFile(outPt.toString(), DOSSystem.DOS_ATTR_ARCHIVE);
                 }
             } else {
                 status = DOSMain.openFileExtended(outPt.toString(), DOSSystem.OPEN_READWRITE,
                         DOSSystem.DOS_ATTR_ARCHIVE, 0x12);
             }
 
-            if (!status && normalstdout)
-                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE); // Read only file, open
-                                                                   // con again
+            if (!status && normalstdout) {
+                // Read only file, open con again
+                DOSMain.openFile("con", DOSSystem.OPEN_READWRITE);
+            }
             if (!normalstdin && inPt.isEmpty())
                 DOSMain.closeFile(0);
         }
         /* Run the actual command */
-        doCommand(line);
+        doCommand(line.toString());
         /* Restore handles */
         if (!inPt.isEmpty()) {
             DOSMain.closeFile(0);
@@ -533,6 +531,5 @@ public abstract class DOSShellBase extends Program {
     }
 
     /*--------------------------- end DOSShellPartial -----------------------------*/
-
 
 }

@@ -60,7 +60,7 @@ public final class LoadFix extends Program {
                 } while (ok);
                 // Use shell to start program
                 DOSShell shell = new DOSShell();
-                shell.execute(filename, args);
+                shell.execute(filename.toString(), args.toString());
                 DOSMain.freeMemory(segment);
                 writeOut(Message.get("PROGRAM_LOADFIX_DEALLOC"), kb);
             }

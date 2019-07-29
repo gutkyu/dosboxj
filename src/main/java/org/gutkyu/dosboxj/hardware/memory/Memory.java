@@ -186,7 +186,6 @@ public final class Memory {
         writeB(((seg << 4) + off), val);
     }
 
-
     // public static void RealWriteW(int seg, int off, uint16 val) {
     public static void realWriteW(int seg, int off, int val) {
         writeW((seg << 4) + off, val);
@@ -356,13 +355,13 @@ public final class Memory {
         }
     }
 
+    public static void blockWrite(int pt, byte[] write) {
+        blockWrite(pt, write, 0, write.length);
+    }
+
     // cspt : ASCII, terminated with null
     public static void blockWrite(int pt, CStringPt cspt) {
-        int size = cspt.lengthWithNull();
-        int i = 0;
-        while (size-- > 0) {
-            Paging.memWriteBInlineB(pt++, cspt.get(i++));
-        }
+        blockWrite(pt, cspt, cspt.lengthWithNull());
     }
 
     public static void blockWrite(int pt, CStringPt cspt, int size) {

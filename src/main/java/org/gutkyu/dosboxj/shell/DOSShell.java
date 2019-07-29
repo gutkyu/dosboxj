@@ -1,6 +1,7 @@
 package org.gutkyu.dosboxj.shell;
 
 import org.gutkyu.dosboxj.dos.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import org.gutkyu.dosboxj.*;
 import org.gutkyu.dosboxj.misc.*;
@@ -10,7 +11,6 @@ import org.gutkyu.dosboxj.dos.system.drive.*;
 import org.gutkyu.dosboxj.dos.mem_block.*;
 import org.gutkyu.dosboxj.misc.setup.*;
 import org.gutkyu.dosboxj.cpu.*;
-
 
 public final class DOSShell extends DOSShellBase {
 
@@ -29,6 +29,7 @@ public final class DOSShell extends DOSShellBase {
     private static final class ShellCmd {
         public final String Name; /* Command name */
         public final int Flags; /* Flags about the command */
+        // TODO CStringPt-> String
         public final DOSAction1<CStringPt> Handler; /* Handler for this command */
         public final String Help; /* String with command help */
 
@@ -80,50 +81,54 @@ public final class DOSShell extends DOSShellBase {
     }
 
     @Override
-    protected void doCommand(CStringPt line) {
+    protected void doCommand(String line) {
         /* First split the line into command and arguments */
-        line.trim();
+        line = line.trim();
         CStringPt cmdBuffer = CStringPt.create(ShellInner.CMD_MAXLINE);
         CStringPt cmdWrite = CStringPt.clone(cmdBuffer);
-        while (line.get() != 0) {
-            if (line.get() == 32)
+        int lineIdx = 0;
+        char c;
+        while (lineIdx < line.length()) {
+            c = line.charAt(lineIdx);
+            if (c == 32)
                 break;
-            if (line.get() == '/')
+            if (c == '/')
                 break;
-            if (line.get() == '\t')
+            if (c == '\t')
                 break;
-            if (line.get() == '=')
+            if (c == '=')
                 break;
             // allow stuff like cd.. and dir.exe cd\kees
-            if ((line.get() == '.') || (line.get() == '\\')) {
+            if ((c == '.') || (c == '\\')) {
                 cmdWrite.set((char) 0);
                 if (!cmdBuffer.isEmpty() && cmdBuffer.length() > 0
                         && cmdList.containsKey(cmdBuffer.toString())) {
-                    cmdList.get(cmdBuffer.toString()).Handler.run(line);
+                    line = line.substring(lineIdx);
+                    cmdList.get(cmdBuffer.toString()).Handler.run(CStringPt.create(line));
                     return;
                 }
             }
-            cmdWrite.set(line.get());
+            cmdWrite.set(c);
             cmdWrite.movePtToR1();
-            line.movePtToR1();
+            lineIdx++;
         }
         cmdWrite.set((char) 0);
         if (cmdBuffer.length() == 0)
             return;
+        line = line.substring(lineIdx);
         /* Check the internal list */
         if (!cmdBuffer.isEmpty() && cmdBuffer.length() > 0
                 && cmdList.containsKey(cmdBuffer.toString())) {
-            cmdList.get(cmdBuffer.toString()).Handler.run(line);
+            cmdList.get(cmdBuffer.toString()).Handler.run(CStringPt.create(line));
             return;
         }
         /* This isn't an internal command execute it */
-        if (execute(cmdBuffer, line))
+        if (execute(cmdBuffer.toString(), line))
             return;
         if (checkConfig(cmdBuffer.toString(), line.toString()))
             return;
         writeOut(Message.get("SHELL_EXECUTE_ILLEGAL_COMMAND"), cmdBuffer);
     }
-
 
     /* Checks if it matches a hardware-property */
     private boolean checkConfig(String cmdIn, String line) {
@@ -136,8 +141,8 @@ public final class DOSShell extends DOSShellBase {
                 writeOut("%s\n", val);
             return true;
         }
-        String newcom = "z:\\config " + test.getName() + " " + cmdIn + line;
-        doCommand(CStringPt.create(newcom));
+        String newCom = "z:\\config " + test.getName() + " " + cmdIn + line;
+        doCommand(newCom);
         return true;
     }
 
@@ -145,10 +150,10 @@ public final class DOSShell extends DOSShellBase {
     private boolean help(CStringPt args, String command) {
         if (Support.scanCmdBool(args, "?")) {
             writeOut(Message.get("SHELL_CMD_" + command + "_HELP"));
-            String long_m = Message.get("SHELL_CMD_" + command + "_HELP_LONG");
+            String longM = Message.get("SHELL_CMD_" + command + "_HELP_LONG");
             writeOut("\n");
-            if ("Message not Found!\n" != long_m)
-                writeOut(long_m);
+            if ("Message not Found!\n" != longM)
+                writeOut(longM);
             else
                 writeOut(command + "\n");
             return true;
@@ -402,7 +407,6 @@ public final class DOSShell extends DOSShellBase {
         }
     }
 
-
     private static CStringPt expandDot(CStringPt args, CStringPt buffer) {
         if (args.get() == '.') {
             if (CStringPt.clone(args, 1).get() == 0) {
@@ -422,11 +426,9 @@ public final class DOSShell extends DOSShellBase {
         return buffer;
     }
 
-
     private void formatNumber(int num, CStringPt buf) {
         CStringPt.copy(String.format(Locale.US, "%1$,d", num), buf);
     }
-
 
     private void cmdDIR(CStringPt args) {
         if (help(args, "DIR"))
@@ -868,7 +870,7 @@ public final class DOSShell extends DOSShellBase {
             }
             /* Read the error code from DOS */
             if ((DOSMain.DOS.ReturnCode >= n) == (!hasNot))
-                doCommand(args);
+                doCommand(args.toString());
             return;
         }
 
@@ -888,7 +890,7 @@ public final class DOSShell extends DOSShellBase {
                         DOSMain.findFirst(word.toString(), 0xffff & ~DOSSystem.DOS_ATTR_VOLUME);
                 DOSMain.DOS.setDTA(saveDTA);
                 if (ret == (!hasNot))
-                    doCommand(args);
+                    doCommand(args.toString());
             }
             return;
         }
@@ -924,7 +926,7 @@ public final class DOSShell extends DOSShellBase {
             Support.stripSpaces(args, '=');
 
             if (word1.equals(word2) == (!hasNot))
-                doCommand(args);
+                doCommand(args.toString());
         }
     }
 
@@ -1048,7 +1050,6 @@ public final class DOSShell extends DOSShellBase {
         this.parseLine(args);
         this.Call = false;
     }
-
 
     private void cmdPAUSE(CStringPt args) {
         if (help(args, "PAUSE"))
@@ -1261,7 +1262,6 @@ public final class DOSShell extends DOSShellBase {
                     DOSMain.DOS.Version.minor);
     }
     /*--------------------------- end DOSShellCmds -----------------------------*/
-
 
     /*--------------------------- begin DOSShellMisc -----------------------------*/
     public static String FullArguments = "";
@@ -1661,101 +1661,84 @@ public final class DOSShell extends DOSShellBase {
             completion.clear();
     }
 
-
-    public boolean execute(CStringPt name, CStringPt args) {
+    public boolean execute(String name, String args) {
         /*
          * return true => don't check for hardware changes in do_command return false => check for
          * hardware changes in do_command
          */
         // stores results from Which
-        CStringPt fullname = CStringPt.create(DOSSystem.DOS_PATHLENGTH + 4);
-        CStringPt pFullname;
-        CStringPt line = CStringPt.create(ShellInner.CMD_MAXLINE);
+        String fullname = null;// DOSSystem.DOS_PATHLENGTH + 4
+        String line = null;// ShellInner.CMD_MAXLINE
 
+        final int maxLine = ShellInner.CMD_MAXLINE;
+        int argsIdx = 0;
         if (args.length() != 0) {
-            if (args.get() != ' ') { // put a space in front
-                line.set(0, ' ');
-                line.set(1, (char) 0);
-                line.concat(args, ShellInner.CMD_MAXLINE - 2);
-                line.set(ShellInner.CMD_MAXLINE - 1, (char) 0);
+            if (args.charAt(argsIdx) != ' ') { // put a space in front
+                line = ' ' + (args.length() < maxLine - 2 ? args : args.substring(0, maxLine - 2));
             } else {
-                CStringPt.safeCopy(args, line, ShellInner.CMD_MAXLINE);
+                line = args.length() < maxLine - 1 ? args : args.substring(0, maxLine - 1);
             }
         } else {
-            line.set(0, (char) 0);
+            line = "";
         }
 
         /* check for a drive change */
-        if ((CStringPt.clone(name, 1).equals(":") || CStringPt.clone(name, 1).equals(":\\"))
-                && Character.isLetter(name.get())) {
-            if (!DOSMain.setDrive(Character.toUpperCase(name.get(0)) - 'A')) {
-                writeOut(Message.get("SHELL_EXECUTE_DRIVE_NOT_FOUND"),
-                        Character.toUpperCase(name.get(0)));
+        String rem = name.substring(1);
+        if ((rem == ":" || rem == ":\\") && Character.isLetter(name.charAt(0))) {
+            char drive = Character.toUpperCase(name.charAt(0));
+            if (!DOSMain.setDrive(drive - 'A')) {
+                writeOut(Message.get("SHELL_EXECUTE_DRIVE_NOT_FOUND"), drive);
             }
             return true;
         }
         /* Check for a full name */
-        pFullname = which(name);
-        if (pFullname.isEmpty())
+        fullname = which(name);
+        if (fullname == null)
             return false;
-        CStringPt.copy(pFullname, fullname);
-        CStringPt extension = fullname.lastPositionOf('.');
 
+        int dotIdx = -1;
+        String extension = (dotIdx = fullname.indexOf(".")) < 0 ? "" : fullname.substring(dotIdx);
         /* always disallow files without extension from being executed. */
         /* only internal commands can be run this way and they never get in this handler */
-        if (extension.isEmpty()) {
+        if (fullname.indexOf(".") < 0) {
             // Check if the result will fit in the parameters. Else abort
             if (fullname.length() > (DOSSystem.DOS_PATHLENGTH - 1))
                 return false;
-            CStringPt tempName = CStringPt.create(DOSSystem.DOS_PATHLENGTH + 4);
-            CStringPt tempFullname;
+            String tempFullname = null;
             // try to add .com, .exe and .bat extensions to filename
 
-            CStringPt.copy(fullname, tempName);
-            tempName.concat(".COM");
-            tempFullname = which(tempName);
-            if (!tempFullname.isEmpty()) {
-                extension = CStringPt.create(".com");
-                CStringPt.copy(tempFullname, fullname);
-            }
-
-            else {
-                CStringPt.copy(fullname, tempName);
-                tempName.concat(".EXE");
-                tempFullname = which(tempName);
-                if (!tempFullname.isEmpty()) {
-                    extension = CStringPt.create(".exe");
-                    CStringPt.copy(tempFullname, fullname);
-                }
-
-                else {
-                    CStringPt.copy(fullname, tempName);
-                    tempName.concat(".BAT");
-                    tempFullname = which(tempName);
-                    if (!tempFullname.isEmpty()) {
-                        extension = CStringPt.create(".bat");
-                        CStringPt.copy(tempFullname, fullname);
-                    }
-
-                    else {
+            tempFullname = which(fullname + ".COM");
+            if (tempFullname != null) {
+                extension = ".com";
+                fullname = tempFullname;
+            } else {
+                tempFullname = which(fullname + ".EXE");
+                if (tempFullname != null) {
+                    extension = ".exe";
+                    fullname = tempFullname;
+                } else {
+                    tempFullname = which(fullname + ".BAT");
+                    if (tempFullname != null) {
+                        extension = ".bat";
+                        fullname = tempFullname;
+                    } else {
                         return false;
                     }
-
                 }
             }
         }
 
-        if (extension.toString().equalsIgnoreCase(".bat")) { /* Run the .bat file */
+        if (extension.equalsIgnoreCase(".bat")) { /* Run the .bat file */
             /* delete old batch file if call is not active */
             boolean tempEcho =
                     Echo; /* keep the current echostate (as delete bf might change it ) */
             if (BatFile != null && !Call)
                 BatFile.dispose();
-            BatFile = new BatchFile(this, fullname, name, line);
+            BatFile = new BatchFile(this, fullname.toString(), name, line.toString());
             Echo = tempEcho; // restore it.
         } else { /* only .bat .exe .com extensions maybe be executed by the shell */
-            if (!extension.toString().equalsIgnoreCase(".com")) {
-                if (!extension.toString().equalsIgnoreCase(".exe"))
+            if (!extension.equalsIgnoreCase(".com")) {
+                if (!extension.equalsIgnoreCase(".exe"))
                     return false;
             }
             /* Run the .exe or .com file from the shell */
@@ -1767,10 +1750,11 @@ public final class DOSShell extends DOSShellBase {
             block.clear();
             // Add a filename
             int fileName = Register.realMakeSeg(Register.SEG_NAME_SS, Register.getRegSP() + 0x20);
-            Memory.blockWrite(Memory.real2Phys(fileName), fullname);// 마지막 null포함
+            Memory.blockWrite(Memory.real2Phys(fileName),
+                    fullname.getBytes(StandardCharsets.US_ASCII));// 마지막 null포함
 
             /* HACK: Store full commandline for mount and imgmount */
-            FullArguments = line.toString();
+            FullArguments = line;
 
             /* Fill the command line */
             byte[] cmdTail = new byte[DOSMain.CommandTailSize];// 첫번째 값은 문자열이 아닌 Count
@@ -1779,10 +1763,11 @@ public final class DOSShell extends DOSShellBase {
             // Else some part of the string is unitialized (valgrind)
             Arrays.fill(cmdTail, DOSMain.CommandTailOffBuffer, 126, (byte) 0);
             if (line.length() > 126)
-                line.set(126, (char) 0);
+                line = line.substring(0, 126);
             cmdTail[DOSMain.CommandTailOffCount] = (byte) line.length();
-            ArrayHelper.copy(line.getAsciiBytes(), 0, cmdTail, DOSMain.CommandTailOffBuffer,
-                    line.length());// 마지막 null 제외
+            ArrayHelper.copy(line.getBytes(StandardCharsets.US_ASCII), 0, cmdTail,
+                    DOSMain.CommandTailOffBuffer, line.length());// 마지막 null 제외
+
             cmdTail[DOSMain.CommandTailOffBuffer + line.length()] = 0xd;
 
             /* Copy command line in stack block too */
@@ -1818,7 +1803,6 @@ public final class DOSShell extends DOSShellBase {
             /* Restore CS:IP and the stack */
             Register.setRegSP(Register.getRegSP() + 0x200);
 
-
         }
         return true; // Executable started
     }
@@ -1852,7 +1836,6 @@ public final class DOSShell extends DOSShellBase {
         if (DOSMain.fileExists(whichRet.toString()))
             return whichRet;
 
-
         /* No Path in filename look through path environment string */
         CStringPt path = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
         String temp = null;
@@ -1866,7 +1849,6 @@ public final class DOSShell extends DOSShellBase {
             return CStringPt.getZero();
         pathenv.movePtToR1();
         int i_path = 0;
-
 
         while (pathenv.get() != 0) {
             /* remove ; and ;; at the beginning. (and from the second entry etc) */
@@ -1886,7 +1868,6 @@ public final class DOSShell extends DOSShellBase {
                 path.set(DOSSystem.DOS_PATHLENGTH - 1, (char) 0);
             } else
                 path.set(i_path, (char) 0);
-
 
             /* check entry */
             int len = path.length();
@@ -1922,6 +1903,93 @@ public final class DOSShell extends DOSShellBase {
             }
         }
         return CStringPt.getZero();
+    }
+
+    protected String which(String name) {
+        int nameLen = name.length();
+        if (nameLen >= DOSSystem.DOS_PATHLENGTH)
+            return null;
+
+        /* Parse through the Path to find the correct entry */
+        /* Check if name is already ok but just misses an extension */
+
+        if (DOSMain.fileExists(name))
+            return name;
+        /* try to find .com .exe .bat */
+        String findNm = name + comExt;
+        if (DOSMain.fileExists(findNm))
+            return findNm;
+        findNm = name + exeExt;
+        if (DOSMain.fileExists(findNm))
+            return findNm;
+        findNm = name + batExt;
+        if (DOSMain.fileExists(findNm))
+            return findNm;
+
+        /* No Path in filename look through path environment string */
+        // CStringPt path = CStringPt.create(DOSSystem.DOS_PATHLENGTH);
+        StringBuffer path = new StringBuffer(DOSSystem.DOS_PATHLENGTH);
+        String pathEnv = null;
+        if ((pathEnv = getEnvStr("PATH")) == null)
+            return null;
+        int pathEnvIdx = pathEnv.indexOf("=");
+        if (pathEnvIdx < 0)
+            return null;
+        pathEnvIdx++;
+        int pathIdx = 0;
+
+        while (pathEnvIdx < pathEnv.length()) {
+            /* remove ; and ;; at the beginning. (and from the second entry etc) */
+            while (pathEnvIdx < pathEnv.length() && pathEnv.charAt(pathEnvIdx) == ';')
+                pathEnvIdx++;
+
+            /* get next entry */
+            pathIdx = 0; /* reset writer */
+            while (pathEnvIdx < pathEnv.length() && pathEnv.charAt(pathEnvIdx) != ';'
+                    && pathIdx < DOSSystem.DOS_PATHLENGTH)
+                path.setCharAt(pathIdx++, pathEnv.charAt(++pathEnvIdx));
+
+            if (pathIdx == DOSSystem.DOS_PATHLENGTH) {
+                /* If max size. move till next ; and terminate path */
+                while (pathEnv.charAt(pathEnvIdx) != ';')
+                    pathEnvIdx++;
+                path.setLength(DOSSystem.DOS_PATHLENGTH - 1);// path.set(DOSSystem.DOS_PATHLENGTH -
+                                                             // 1, (char) 0);
+            } else
+                path.setLength(pathIdx); // path.set(pathIdx, (char) 0);
+
+            /* check entry */
+            int len = path.length();
+            if (len != 0) {
+                if (len >= (DOSSystem.DOS_PATHLENGTH - 2))
+                    continue;
+
+                if (path.charAt(len - 1) != '\\') {
+                    path.append("\\");// concat('\\')
+                    len++;
+                }
+
+                // If name too long =>next
+                if ((nameLen + len + 1) >= DOSSystem.DOS_PATHLENGTH)
+                    continue;
+                path.append(name);// concat(name)
+
+                name = path.toString();
+                findNm = name;
+                if (DOSMain.fileExists(findNm))
+                    return findNm;
+                findNm = name + comExt;
+                if (DOSMain.fileExists(findNm))
+                    return findNm;
+                findNm = name + exeExt;
+                if (DOSMain.fileExists(findNm))
+                    return findNm;
+                findNm = name + batExt;
+                if (DOSMain.fileExists(findNm))
+                    return findNm;
+            }
+        }
+        return null;
     }
 
     /*--------------------------- end DOSShellMisc -----------------------------*/

@@ -4,7 +4,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 
 public final class SectionLine extends Section {
-    public String data;
+    public String data = "";
 
     public SectionLine(String sectionName) {
         super(sectionName);

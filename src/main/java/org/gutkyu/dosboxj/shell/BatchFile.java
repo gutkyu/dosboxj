@@ -6,16 +6,15 @@ import org.gutkyu.dosboxj.misc.setup.*;
 import org.gutkyu.dosboxj.util.*;
 
 class BatchFile implements Disposable {
-    public BatchFile(DOSShell host, CStringPt resolvedName, CStringPt enteredName,
-            CStringPt cmdLine) {
+    public BatchFile(DOSShell host, String resolvedName, String enteredName, String cmdLine) {
         location = 0;
         prev = host.BatFile;
         echo = host.Echo;
         shell = host;
         CStringPt totalname = CStringPt.create(DOSSystem.DOS_PATHLENGTH + 4);
         // Get fullname including drive specificiation
-        DOSMain.canonicalize(resolvedName.toString(), totalname);
-        cmd = new CommandLine(enteredName.toString(), cmdLine.toString());
+        DOSMain.canonicalize(resolvedName, totalname);
+        cmd = new CommandLine(enteredName, cmdLine);
         filename = totalname.toString();
 
         // Test if file is openable
@@ -50,16 +49,16 @@ class BatchFile implements Disposable {
         long loc = DOSMain.seekFile(fileHandle, this.location, DOSSystem.DOS_SEEK_SET);
         if (loc >= 0)
             this.location = (int) loc;
-        byte c = 0;
+        int c = 0;// uint8
         int n = 0;
         CStringPt temp = CStringPt.create(ShellInner.CMD_MAXLINE);
-        CStringPt cmdWrite = temp;
+        CStringPt cmdWrite = CStringPt.clone(temp);
         // emptyline:
         while (true) {
             do {
                 n = 1;
                 DOSMain.readFile(fileHandle);
-                c = DOSMain.ReadByte;
+                c = 0xff & DOSMain.ReadByte;
                 n = DOSMain.ReadSize;
                 if (n > 0) {
                     /*
@@ -70,7 +69,7 @@ class BatchFile implements Disposable {
                         cmdWrite.set((char) c);
                     cmdWrite.movePtToR1();
                 }
-            } while (c != (byte) '\n' && n != 0);
+            } while (c != '\n' && n != 0);
             cmdWrite.set((char) 0);
             if (n == 0 && cmdWrite == temp) {
                 // Close file and delete bat file
@@ -85,12 +84,12 @@ class BatchFile implements Disposable {
             break;
         }
         /* Now parse the line read from the bat file for % stuff */
-        cmdWrite = line;
-        CStringPt cmdRead = temp;
+        cmdWrite = CStringPt.clone(line);
+        CStringPt cmdRead = CStringPt.clone(temp);
         CStringPt envName = CStringPt.create(256);
         CStringPt envWrite;
         while (cmdRead.get() != 0) {
-            envWrite = envName;
+            envWrite = CStringPt.clone(envName);
             if (cmdRead.get() == '%') {
                 cmdRead.movePtToR1();
                 if (cmdRead.get(0) == '%') {
