@@ -16,7 +16,7 @@ public final class Support {
         throw new DOSException(arg + "\n");
     }
 
-    public static void exceptionExit(String format, int... args) {
+    public static void exceptionExit(String format, Object... args) {
         // va_list msg;
         // va_start(msg, format);
         // vsprintf(buf, format, msg);
@@ -24,19 +24,7 @@ public final class Support {
         // strcat(buf, "\n");
 
         // throw (buf);
-        throw new DOSException(format + "\n");
-    }
-
-    public static void exceptionExit(String format, String... args) {
-        // va_list msg;
-        // va_start(msg, format);
-        // vsprintf(buf, format, msg);
-        // va_end(msg);
-        // strcat(buf, "\n");
-
-        // throw (buf);
-        throw new DOSException(format + "\n");
-
+        throw new DOSException(String.format(format, args) + "\n");
     }
 
     public static int lTrimIndex(byte[] src, int startIndex) {
