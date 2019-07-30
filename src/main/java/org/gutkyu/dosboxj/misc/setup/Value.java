@@ -83,7 +83,7 @@ public final class Value {
                     return true;
                 break;
             case HEX:
-                if (this._hex == object._hex)
+                if (this._hex.equals(object._hex))
                     return true;
                 break;
             case DOUBLE:
@@ -91,7 +91,7 @@ public final class Value {
                     return true;
                 break;
             case STRING:
-                if (this._string == object._string)
+                if (this._string.equals(object._string))
                     return true;
                 break;
             default:
@@ -246,7 +246,7 @@ public final class Value {
         if (input == null || input.isEmpty())
             return;
         char c = input.charAt(0);
-        if (c == '0' || c == 'd' || c == 'f' || input == "off")
+        if (c == '0' || c == 'd' || c == 'f' || input.equals("off"))
             _bool = false;
     }
 

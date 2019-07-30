@@ -237,43 +237,43 @@ public final class DOSBox {
             section.handleInputline("machine=" + cmd_machine);
         }
 
-        String mtype = section.getString("machine");
+        String mType = section.getString("machine");
         SVGACard = DOSBox.SVGACards.None;
         Machine = DOSBox.MachineType.VGA;
         INT10.int10.VesaNoLFB = false;
         INT10.int10.VesaOldVbe = false;
-        if (mtype == "cga") {
+        if (mType.equals("cga")) {
             Machine = DOSBox.MachineType.CGA;
-        } else if (mtype == "tandy") {
+        } else if (mType.equals("tandy")) {
             Machine = DOSBox.MachineType.TANDY;
-        } else if (mtype == "pcjr") {
+        } else if (mType.equals("pcjr")) {
             Machine = DOSBox.MachineType.PCJR;
-        } else if (mtype == "hercules") {
+        } else if (mType.equals("hercules")) {
             Machine = DOSBox.MachineType.HERC;
-        } else if (mtype == "ega") {
+        } else if (mType.equals("ega")) {
             Machine = DOSBox.MachineType.EGA;
         }
         // else if (mtype == "vga") { svgaCard = SVGA_S3Trio; }
-        else if (mtype == "svga_s3") {
+        else if (mType.equals("svga_s3")) {
             SVGACard = DOSBox.SVGACards.S3Trio;
-        } else if (mtype == "vesa_nolfb") {
+        } else if (mType.equals("vesa_nolfb")) {
             SVGACard = DOSBox.SVGACards.S3Trio;
             INT10.int10.VesaNoLFB = true;
-        } else if (mtype == "vesa_oldvbe") {
+        } else if (mType.equals("vesa_oldvbe")) {
             SVGACard = DOSBox.SVGACards.S3Trio;
             INT10.int10.VesaOldVbe = true;
-        } else if (mtype == "svga_et4000") {
+        } else if (mType.equals("svga_et4000")) {
             SVGACard = DOSBox.SVGACards.TsengET4K;
-        } else if (mtype == "svga_et3000") {
+        } else if (mType.equals("svga_et3000")) {
             SVGACard = DOSBox.SVGACards.TsengET3K;
         }
         // else if (mtype == "vga_pvga1a") { svgaCard = SVGA_ParadisePVGA1A; }
-        else if (mtype == "svga_paradise") {
+        else if (mType.equals("svga_paradise")) {
             SVGACard = DOSBox.SVGACards.ParadisePVGA1A;
-        } else if (mtype == "vgaonly") {
+        } else if (mType.equals("vgaonly")) {
             SVGACard = DOSBox.SVGACards.None;
         } else
-            Support.exceptionExit("DOSBOX:Unknown machine type %s", mtype);
+            Support.exceptionExit("DOSBOX:Unknown machine type %s", mType);
     }
 
     public static void init() {

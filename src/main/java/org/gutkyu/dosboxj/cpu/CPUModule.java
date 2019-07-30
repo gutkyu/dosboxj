@@ -65,7 +65,7 @@ public final class CPUModule extends ModuleBase {
         String type = p.getSection().getString("type");
         String str = null;
         CommandLine cmd = new CommandLine(null, p.getSection().getString("parameters"));
-        if (type == "max") {
+        if (type.equals("max")) {
             CPU.CycleMax = 0;
             CPU.CyclePercUsed = 100;
             CPU.CycleAutoAdjust = true;
@@ -79,7 +79,7 @@ public final class CPUModule extends ModuleBase {
                         percval = Integer.parseInt(str);
                         if ((percval > 0) && (percval <= 105))
                             CPU.CyclePercUsed = percval;
-                    } else if (str == "limit") {
+                    } else if (str.equals("limit")) {
                         cmdnum++;
                         if ((str = cmd.findCommand(cmdnum)) != null) {
                             int cyclimit = 0;
@@ -91,7 +91,7 @@ public final class CPUModule extends ModuleBase {
                 }
             }
         } else {
-            if (type == "auto") {
+            if (type.equals("auto")) {
                 CPU.AutoDetermineMode |= CPU.AutoDetermineCycles;
                 CPU.CycleMax = 3000;
                 CPU.OldCycleMax = 3000;
@@ -105,7 +105,7 @@ public final class CPUModule extends ModuleBase {
                             percval = Integer.parseInt(str);
                             if ((percval > 0) && (percval <= 105))
                                 CPU.CyclePercUsed = percval;
-                        } else if (str == "limit") {
+                        } else if (str.equals("limit")) {
                             cmdnum++;
                             if ((str = cmd.findCommand(cmdnum)) != null) {
                                 int cyclimit = 0;
@@ -123,7 +123,7 @@ public final class CPUModule extends ModuleBase {
                         }
                     }
                 }
-            } else if (type == "fixed") {
+            } else if (type.equals("fixed")) {
                 str = cmd.findCommand(1);
                 int rmdval = 0;
                 rmdval = Integer.parseInt(str);
@@ -141,9 +141,9 @@ public final class CPUModule extends ModuleBase {
         CPU.CycleDown = section.getInt("cycledown");
         String core = section.getString("core");
         CPU.CpuDecoder = CoreNormal.instance().CpuDecoder;
-        if (core == "normal") {
+        if (core.equals("normal")) {
             CPU.CpuDecoder = CoreNormal.instance().CpuDecoder;
-        } else if (core == "simple") {
+        } else if (core.equals("simple")) {
             CPU.CpuDecoder = CoreSimple.instance().CpuDecoder;
         }
         // TODO core full 구현
@@ -151,14 +151,14 @@ public final class CPUModule extends ModuleBase {
         // {
         // cpuModule.cpudecoder = &CPU_Core_Full_Run;
         // }
-        else if (core == "auto") {
+        else if (core.equals("auto")) {
             CPU.CpuDecoder = CoreNormal.instance().CpuDecoder;
         }
         CPU.ArchitectureType = CPU.ArchTypeMixed;
-        String cputype = section.getString("cputype");
-        if (cputype == "auto") {
+        String cpuType = section.getString("cputype");
+        if (cpuType.equals("auto")) {
             CPU.ArchitectureType = CPU.ArchTypeMixed;
-        } else if (cputype == "386") {
+        } else if (cpuType.equals("386")) {
             CPU.ArchitectureType = CPU.ArchType386Fast;
         }
         // TODO 386_prefetch 구현
@@ -181,9 +181,9 @@ public final class CPUModule extends ModuleBase {
         // Support.E_Exit("prefetch queue emulation requires the normal core setting.");
         // }
         // }
-        else if (cputype == "386_slow") {
+        else if (cpuType.equals("386_slow")) {
             CPU.ArchitectureType = CPU.ArchType386Slow;
-        } else if (cputype == "486_slow") {
+        } else if (cpuType.equals("486_slow")) {
             CPU.ArchitectureType = CPU.ArchType486NewSlow;
         }
         // TODO 486_prefetch 구현
@@ -206,7 +206,7 @@ public final class CPUModule extends ModuleBase {
         // Support.E_Exit("prefetch queue emulation requires the normal core setting.");
         // }
         // }
-        else if (cputype == "pentium_slow") {
+        else if (cpuType.equals("pentium_slow")) {
             CPU.ArchitectureType = CPU.ArchTypePentiumSlow;
         }
 

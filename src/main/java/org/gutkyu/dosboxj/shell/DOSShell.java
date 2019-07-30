@@ -137,7 +137,7 @@ public final class DOSShell extends DOSShellBase {
             return false;
         if (line != null && line.charAt(0) == 0x00) {
             String val = test.getPropValue(cmdIn);
-            if (val != SetupModule.NO_SUCH_PROPERTY)
+            if (!val.equals(SetupModule.NO_SUCH_PROPERTY))
                 writeOut("%s\n", val);
             return true;
         }
@@ -152,7 +152,7 @@ public final class DOSShell extends DOSShellBase {
             writeOut(Message.get("SHELL_CMD_" + command + "_HELP"));
             String longM = Message.get("SHELL_CMD_" + command + "_HELP_LONG");
             writeOut("\n");
-            if ("Message not Found!\n" != longM)
+            if (!longM.equals("Message not Found!\n"))
                 writeOut(longM);
             else
                 writeOut(command + "\n");
@@ -362,7 +362,7 @@ public final class DOSShell extends DOSShellBase {
                                 int toread = 0x8000;
                                 do {
                                     failed |= DOSMain.readFile(sourceHandle, buffer, 0, toread);
-                                    toread = DOSMain.ReadSize;
+                                    toread = DOSMain.readSize();
                                     failed |= DOSMain.writeFile(0xffff & targetHandle, buffer, 0,
                                             toread);
                                     toread = DOSMain.WrittenSize;
@@ -530,7 +530,7 @@ public final class DOSShell extends DOSShellBase {
             /* output the file */
             if (optB) {
                 // this overrides pretty much everything
-                if (name.equals(".") && name.equals("..")) {
+                if (!name.equals(".") && !name.equals("..")) {
                     writeOut("%s\n", name);
                 }
             } else {
@@ -979,7 +979,7 @@ public final class DOSShell extends DOSShellBase {
             do {
                 // n = 1;
                 DOSMain.readFile(handle);
-                n = DOSMain.ReadSize;
+                n = DOSMain.readSize();
                 c = DOSMain.ReadByte;
                 DOSMain.writeFile(DOSMain.STDOUT, c, n);
                 n = DOSMain.WrittenSize;
@@ -1079,7 +1079,7 @@ public final class DOSShell extends DOSShellBase {
             if (command.getCount() != 2)
                 throw new DOSException("0");
             arg = command.findCommand(2);
-            if ((arg == "/D") || (arg == "/d"))
+            if ((arg.equals("/D")) || (arg.equals("/d")))
                 throw new DOSException("1"); // No removal (one day)
 
             arg = command.findCommand(1);
@@ -1204,7 +1204,7 @@ public final class DOSShell extends DOSShellBase {
         do {
             DOSMain.readFile(DOSMain.STDIN);
             c = DOSMain.ReadByte;
-            n = DOSMain.ReadSize;
+            n = DOSMain.readSize();
         } while (c == 0 || (ptr = rem.positionOf(optS ? (char) c : Character.toUpperCase((char) c)))
                 .isEmpty());
         c = optS ? c : (byte) Character.toUpperCase((char) c);
@@ -1304,7 +1304,7 @@ public final class DOSShell extends DOSShellBase {
                         "Reopening the input handle.This is a bug!");
             }
             c = DOSMain.ReadByte;
-            n = DOSMain.ReadSize;
+            n = DOSMain.readSize();
             if (n == 0) {
                 size = 0; // Kill the while loop
                 continue;
@@ -1314,7 +1314,7 @@ public final class DOSShell extends DOSShellBase {
                 {
                     DOSMain.readFile(InputHandle);
                     c = DOSMain.ReadByte;
-                    n = DOSMain.ReadSize;
+                    n = DOSMain.readSize();
                     switch (c) {
 
                         case 0x3d: /* F3 */
@@ -1367,7 +1367,7 @@ public final class DOSShell extends DOSShellBase {
                                 break;
 
                             // store current command in history if we are at beginning
-                            if (currHisStr == history.getFirst() && !currentHist) {
+                            if (currHisStr.equals(history.getFirst()) && !currentHist) {
                                 currentHist = true;
                                 history.addFirst(line.toString());
                             }
@@ -1389,13 +1389,13 @@ public final class DOSShell extends DOSShellBase {
                         }
                         case 0x50: /* DOWN */
                         {
-                            if (history.size() == 0 || currHisStr == history.getFirst())
+                            if (history.size() == 0 || currHisStr.equals(history.getFirst()))
                                 break;
 
                             // not very nice but works ..
                             currHisStr = history.get(--currHisIdx);
 
-                            if (currHisStr == history.getFirst()) {
+                            if (currHisStr.equals(history.getFirst())) {
                                 // no previous commands in history
                                 currHisStr = history.get(++currHisIdx);
 
@@ -1684,7 +1684,7 @@ public final class DOSShell extends DOSShellBase {
 
         /* check for a drive change */
         String rem = name.substring(1);
-        if ((rem == ":" || rem == ":\\") && Character.isLetter(name.charAt(0))) {
+        if ((rem.equals(":") || rem.equals(":\\")) && Character.isLetter(name.charAt(0))) {
             char drive = Character.toUpperCase(name.charAt(0));
             if (!DOSMain.setDrive(drive - 'A')) {
                 writeOut(Message.get("SHELL_EXECUTE_DRIVE_NOT_FOUND"), drive);

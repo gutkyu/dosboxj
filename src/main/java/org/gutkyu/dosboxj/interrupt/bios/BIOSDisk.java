@@ -135,8 +135,8 @@ public final class BIOSDisk {
                     if ((DOSBox.Machine == DOSBox.MachineType.CGA)
                             || (DOSBox.Machine == DOSBox.MachineType.PCJR)) {
                         /* those bioses call floppy drive reset for invalid drive values */
-                        if (((ImageDiskList[0] != null) && (ImageDiskList[0].active))
-                                || ((ImageDiskList[1] != null) && (ImageDiskList[1].active))) {
+                        if (((ImageDiskList[0] != null) && ImageDiskList[0].active)
+                                || ((ImageDiskList[1] != null) && ImageDiskList[1].active)) {
                             lastStatus = 0x00;
                             Callback.scf(false);
                         }

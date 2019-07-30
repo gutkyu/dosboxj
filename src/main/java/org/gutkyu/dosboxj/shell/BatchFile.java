@@ -59,7 +59,7 @@ class BatchFile implements Disposable {
                 n = 1;
                 DOSMain.readFile(fileHandle);
                 c = 0xff & DOSMain.ReadByte;
-                n = DOSMain.ReadSize;
+                n = DOSMain.readSize();
                 if (n > 0) {
                     /*
                      * Why are we filtering this ? Exclusion list: tab for batch files escape for
@@ -71,7 +71,7 @@ class BatchFile implements Disposable {
                 }
             } while (c != '\n' && n != 0);
             cmdWrite.set((char) 0);
-            if (n == 0 && cmdWrite == temp) {
+            if (n == 0 && cmdWrite.equals(temp)) {
                 // Close file and delete bat file
                 DOSMain.closeFile(fileHandle);
                 dispose();
@@ -183,7 +183,7 @@ class BatchFile implements Disposable {
                 n = 1;
                 DOSMain.readFile(fileHandle);
                 c = DOSMain.ReadByte;
-                n = DOSMain.ReadSize;
+                n = DOSMain.readSize();
                 if (n > 0) {
                     if (c > 31)
                         cmdWrite.set((char) c);

@@ -90,13 +90,13 @@ public final class KeyboardLayout implements Disposable {
     public int readCodePageFile(String codepageFileName, int codepageId) {
         String CdPgFilename = null;
         CdPgFilename = codepageFileName.toString();
-        if (CdPgFilename == "none")
+        if (CdPgFilename.equals("none"))
             return DOSMain.KEYB_NOERROR;
 
         if (codepageId == DOSMain.DOS.LoadedCodepage)
             return DOSMain.KEYB_NOERROR;
 
-        if (CdPgFilename == "auto") {
+        if (CdPgFilename.equals("auto")) {
             // select matching .cpi-file for specified codepage
             switch (codepageId) {
                 case 437:
@@ -475,7 +475,7 @@ public final class KeyboardLayout implements Disposable {
     private static byte[] readBuf = new byte[65535];
 
     public int extractCodePage(String keyboardFileName) {
-        if (keyboardFileName == "none")
+        if (keyboardFileName.equals("none"))
             return 437;
 
         int readBufSize = 0;
@@ -766,7 +766,7 @@ public final class KeyboardLayout implements Disposable {
     public String getLayoutName() {
         // get layout name (language ID or null if default layout)
         if (useForeignLayout) {
-            if (currentKeyboardFileName != "none") {
+            if (!currentKeyboardFileName.equals("none")) {
                 return currentKeyboardFileName;
             }
         }
@@ -825,7 +825,7 @@ public final class KeyboardLayout implements Disposable {
     }
 
     private void readKeyboardFile(int specificLayout) {
-        if (currentKeyboardFileName != "none")
+        if (!currentKeyboardFileName.equals("none"))
             this.readKeyboardFile(currentKeyboardFileName, specificLayout,
                     DOSMain.DOS.LoadedCodepage);
     }
@@ -836,7 +836,7 @@ public final class KeyboardLayout implements Disposable {
 
         if (specificLayout == -1)
             currentKeyboardFileName = keyboardFileName;
-        if (keyboardFileName == "none")
+        if (keyboardFileName.equals("none"))
             return DOSMain.KEYB_NOERROR;
 
         // static byte read_buf[65535];

@@ -93,7 +93,7 @@ class Config extends Program {
                 return;
             }
             String val = sec.getPropValue(prop);
-            if (val == SetupModule.NO_SUCH_PROPERTY) {
+            if (val.equals(SetupModule.NO_SUCH_PROPERTY)) {
                 writeOut(Message.get("PROGRAM_CONFIG_NO_PROPERTY"), prop, TempLine);
                 return;
             }

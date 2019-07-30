@@ -494,29 +494,29 @@ public final class JavaGFX extends Mapper implements IGFX, MouseAutoLockable {
         String focus = p.getSection().getString("active");
         String notfocus = p.getSection().getString("inactive");
 
-        if (focus == "lowest") {
+        if (focus.equals("lowest")) {
             _priorityFocus = PriorityLevels.Lowest;
-        } else if (focus == "lower") {
+        } else if (focus.equals("lower")) {
             _priorityFocus = PriorityLevels.Lower;
-        } else if (focus == "normal") {
+        } else if (focus.equals("normal")) {
             _priorityFocus = PriorityLevels.Normal;
-        } else if (focus == "higher") {
+        } else if (focus.equals("higher")) {
             _priorityFocus = PriorityLevels.Higher;
-        } else if (focus == "highest") {
+        } else if (focus.equals("highest")) {
             _priorityFocus = PriorityLevels.Highest;
         }
 
-        if (notfocus == "lowest") {
+        if (notfocus.equals("lowest")) {
             _priorityNoFocus = PriorityLevels.Lowest;
-        } else if (notfocus == "lower") {
+        } else if (notfocus.equals("lower")) {
             _priorityNoFocus = PriorityLevels.Lower;
-        } else if (notfocus == "normal") {
+        } else if (notfocus.equals("normal")) {
             _priorityNoFocus = PriorityLevels.Normal;
-        } else if (notfocus == "higher") {
+        } else if (notfocus.equals("higher")) {
             _priorityNoFocus = PriorityLevels.Higher;
-        } else if (notfocus == "highest") {
+        } else if (notfocus.equals("highest")) {
             _priorityNoFocus = PriorityLevels.Highest;
-        } else if (notfocus == "pause") {
+        } else if (notfocus.equals("pause")) {
             /*
              * we only check for pause here, because it makes no sense for DOSBox to be paused while
              * it has focus

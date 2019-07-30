@@ -74,25 +74,25 @@ public final class ImgMount extends Program {
         String fstype = "fat";
         type = Cmd.findString("-t", true);
         fstype = Cmd.findString("-fs", true);
-        if (type == "cdrom")
+        if (type.equals("cdrom"))
             type = "iso"; // Tiny hack for people who like to type -t cdrom
         int mediaId;
-        if (type == "floppy" || type == "hdd" || type == "iso") {
+        if (type.equals("floppy") || type.equals("hdd") || type.equals("iso")) {
             int[] sizes = new int[4];
             boolean imgsizedetect = false;
 
             String strSize = "";
             mediaId = 0xF8;
 
-            if (type == "floppy") {
+            if (type.equals("floppy")) {
                 mediaId = 0xF0;
-            } else if (type == "iso") {
+            } else if (type.equals("iso")) {
                 strSize = "650,127,16513,1700";
                 mediaId = 0xF8;
                 fstype = "iso";
             }
             strSize = Cmd.findString("-size", true);
-            if ((type == "hdd") && (strSize.length() == 0)) {
+            if ((type.equals("hdd")) && (strSize.length() == 0)) {
                 imgsizedetect = true;
             } else {
                 int i = 0;
@@ -101,7 +101,7 @@ public final class ImgMount extends Program {
                 }
             }
 
-            if (fstype == "fat" || fstype == "iso") {
+            if (fstype.equals("fat") || fstype.equals("iso")) {
                 // get the drive letter
                 if ((TempLine = Cmd.findCommand(1)) == null || (TempLine.length() > 2)
                         || ((TempLine.length() > 1) && (TempLine.charAt(1) != ':'))) {
@@ -113,7 +113,7 @@ public final class ImgMount extends Program {
                     writeOutNoParsing(Message.get("PROGRAM_IMGMOUNT_SPECIFY_DRIVE"));
                     return;
                 }
-            } else if (fstype == "none") {
+            } else if (fstype.equals("none")) {
                 TempLine = Cmd.findCommand(1);
                 if ((TempLine.length() > 1) || (!Character.isDigit(TempLine.charAt(0)))) {
                     writeOutNoParsing(Message.get("PROGRAM_IMGMOUNT_SPECIFY2"));
@@ -190,13 +190,13 @@ public final class ImgMount extends Program {
             }
             if (paths.size() == 1)
                 TempLine = paths.get(0);
-            if (paths.size() > 1 && fstype != "iso") {
+            if (paths.size() > 1 && !fstype.equals("iso")) {
                 writeOut(Message.get("PROGRAM_IMGMOUNT_MULTIPLE_NON_CUEISO_FILES"));
                 return;
             }
             int fcsize = 0;
             int sectors = 0;
-            if (fstype == "fat") {
+            if (fstype.equals("fat")) {
                 if (imgsizedetect) {
                     Path path = Paths.get(TempLine);
                     SeekableByteChannel diskfile = null;
@@ -245,7 +245,7 @@ public final class ImgMount extends Program {
                     ((FATDrive) newdrive).dispose();
                     newdrive = null;
                 }
-            } else if (fstype == "iso") {
+            } else if (fstype.equals("iso")) {
             } else {
                 // fopen(temp_line.c_str(), "rb+");
                 Path path = Paths.get(TempLine);
@@ -268,7 +268,7 @@ public final class ImgMount extends Program {
             return;
         }
 
-        if (fstype == "fat") {
+        if (fstype.equals("fat")) {
             if (DOSMain.Drives[drive - 'A'] != null) {
                 writeOut(Message.get("PROGRAM_IMGMOUNT_ALREADY_MOUNTED"));
                 if (newdrive != null)
@@ -299,10 +299,10 @@ public final class ImgMount extends Program {
             if (!((FATDrive) newdrive).LoadedDisk.hardDrive) {
                 BIOSDisk.ImageDiskList[0] = ((FATDrive) newdrive).LoadedDisk;
             }
-        } else if (fstype == "iso") {
+        } else if (fstype.equals("iso")) {
             // TODO have to implement
 
-        } else if (fstype == "none") {
+        } else if (fstype.equals("none")) {
             if (BIOSDisk.ImageDiskList[drive - '0'] != null)
                 BIOSDisk.ImageDiskList[drive - '0'].dispose();
             BIOSDisk.ImageDiskList[drive - '0'] = newImage;

@@ -656,16 +656,16 @@ public final class Render {
         scaler = prop.getSection().getString("type");
         String f = prop.getSection().getString("force");
         scaleForced = false;
-        if (f == "forced")
+        if (f.equals("forced"))
             scaleForced = true;
 
-        if (scaler == "none") {
+        if (scaler.equals("none")) {
             scaleOp = scalerOperation.scalerOpNormal;
             scaleSize = 1;
-        } else if (scaler == "normal2x") {
+        } else if (scaler.equals("normal2x")) {
             scaleOp = scalerOperation.scalerOpNormal;
             scaleSize = 2;
-        } else if (scaler == "normal3x") {
+        } else if (scaler.equals("normal3x")) {
             scaleOp = scalerOperation.scalerOpNormal;
             scaleSize = 3;
         }

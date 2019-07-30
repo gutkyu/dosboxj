@@ -86,20 +86,20 @@ public final class Mount extends Program {
 
         String type = "dir";
         type = Cmd.findString("-t", true);
-        boolean iscdrom = (type == "cdrom"); // Used for mscdex bug cdrom label name emulation
-        if (type == "floppy" || type == "dir" || type == "cdrom") {
+        boolean iscdrom = type.equals("cdrom"); // Used for mscdex bug cdrom label name emulation
+        if (type.equals("floppy") || type.equals("dir") || type.equals("cdrom")) {
             int[] sizes = new int[4];
             int mediaId;
             String strSize;
-            if (type == "floppy") {
+            if (type.equals("floppy")) {
                 strSize = "512,1,2880,2880";/* All space free */
                 mediaId = 0xF0; /* Floppy 1.44 media */
-            } else if (type == "dir") {
+            } else if (type.equals("dir")) {
                 // 512*127*16383==~1GB total size
                 // 512*127*4031==~250MB total free size
                 strSize = "512,127,16383,4031";
                 mediaId = 0xF8; /* Hard Disk */
-            } else if (type == "cdrom") {
+            } else if (type.equals("cdrom")) {
                 strSize = "2048,1,65535,0";
                 mediaId = 0xF8; /* Hard Disk */
             } else {
@@ -110,7 +110,7 @@ public final class Mount extends Program {
             String mbSize = null;
             if ((mbSize = Cmd.findString("-freesize", true)) != null) {
                 int sizemb = Integer.parseInt(mbSize);
-                if (type == "floppy") {
+                if (type.equals("floppy")) {
                     strSize = String.format("512,1,2880,%d", sizemb * 1024 / (512 * 1));
                 } else {
                     strSize = String.format("512,127,16513,%d", sizemb * 1024 * 1024 / (512 * 127));
@@ -189,8 +189,8 @@ public final class Mount extends Program {
              */
 
             /* Give a warning when mount c:\ or the / */
-            if ((TempLine == "c:\\") || (TempLine == "C:\\") || (TempLine == "c:/")
-                    || (TempLine == "C:/"))
+            if ((TempLine.equals("c:\\")) || (TempLine.equals("C:\\")) || (TempLine.equals("c:/"))
+                    || (TempLine.equals("C:/")))
                 writeOut(Message.get("PROGRAM_MOUNT_WARNING_WIN"));
             newdrive = new LocalDrive(TempLine, 0xffff & sizes[0], bit8Size, 0xffff & sizes[2],
                     0xffff & sizes[3], mediaId);
@@ -220,10 +220,10 @@ public final class Mount extends Program {
          * For hard drives set the label to DRIVELETTER_Drive. For floppy drives set the label to
          * DRIVELETTER_Floppy. This way every drive except cdroms should get a label.
          */
-        else if (type == "dir") {
+        else if (type.equals("dir")) {
             label = drive + "_DRIVE";
             newdrive.dirCache.setLabel(label, iscdrom, true);
-        } else if (type == "floppy") {
+        } else if (type.equals("floppy")) {
             label = drive + "_FLOPPY";
             newdrive.dirCache.setLabel(label, iscdrom, true);
         }

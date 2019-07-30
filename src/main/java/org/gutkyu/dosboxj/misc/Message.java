@@ -27,7 +27,7 @@ public final class Message {
     public static void addMsg(String name, String val) {
         /* Find the message */
         for (MessageBlock tel : Lang) {
-            if (tel.name == name) {
+            if (tel.name.equals(name)) {
                 // Log.LOG_MSG("double entry for %s",_name); //Message file might be loaded before
                 // default text messages
                 return;
@@ -40,7 +40,7 @@ public final class Message {
     public static void replace(String name, String val) {
         /* Find the message */
         for (MessageBlock msg : Lang) {
-            if (msg.name == name) {
+            if (msg.name.equals(name)) {
                 Lang.remove(msg);
                 break;
             }
@@ -101,7 +101,7 @@ public final class Message {
 
     public static String get(String msg) {
         for (MessageBlock msgBck : Lang) {
-            if (msgBck.name == msg) {
+            if (msgBck.name.equals(msg)) {
                 return msgBck.val;
             }
         }

@@ -765,7 +765,7 @@ public final class DOSMain {
                 int toread = Register.getRegCX();
                 DOS.Echo = true;
                 if (readFile(Register.getRegBX(), dosCopyBuf, 0, toread)) {
-                    toread = ReadSize;
+                    toread = readFileSize;
                     Memory.blockWrite(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                             dosCopyBuf, 0, toread);
                     // toread = (int) refBuf.Len;
@@ -3014,7 +3014,7 @@ public final class DOSMain {
 
 
     public static byte ReadByte;
-    public static int ReadSize;
+    private static int readFileSize;
 
     // bool(uint16, ref bytes[], offset, len )
     public static boolean readFile(int entry, byte[] buf, int offset, int size) {
@@ -3031,7 +3031,7 @@ public final class DOSMain {
 
         // short toread = amount;
         boolean ret = file.read(buf, offset, size);
-        // amount = toread;
+        readFileSize = file.readSize();
         return ret;
     }
 
@@ -3049,10 +3049,14 @@ public final class DOSMain {
         }
 
         boolean ret = file.read();
-        ReadSize = file.readSize();
+        readFileSize = file.readSize();
         ReadByte = file.getReadByte();
         return ret;
 
+    }
+
+    public static int readSize() {
+        return readFileSize;
     }
 
     public static int WrittenSize;
@@ -3961,7 +3965,7 @@ public final class DOSMain {
         int toread = recSize;
         if (!readFile(fHandle, dosCopyBuf, 0, toread))
             return FCB_READ_NODATA;
-        toread = ReadSize;
+        toread = readFileSize;
         if (toread == 0)
             return FCB_READ_NODATA;
         if (toread < recSize) { // Zero pad copybuffer to rec_size
@@ -4597,7 +4601,7 @@ public final class DOSMain {
             closeFile(fHandle);
             return false;
         }
-        len = ReadSize;
+        len = readFileSize;
         if (len < Size_EXE_Header) {
             if (len == 0) {
                 /* Prevent executing zero byte files */
@@ -4658,7 +4662,7 @@ public final class DOSMain {
                     pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
                     int dataRead = 0x1800;
                     readFile(fHandle, loadBuf, 0, dataRead);
-                    dataRead = ReadSize;
+                    dataRead = readFileSize;
                     if (dataRead < 0x1800)
                         maxSize = dataRead;
                     if (minSize > maxSize)
@@ -4680,7 +4684,7 @@ public final class DOSMain {
                     pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
                     int dataread = 0xf800;
                     readFile(fHandle, loadBuf, 0, dataread);
-                    dataread = ReadSize;
+                    dataread = readFileSize;
                     if (dataread < 0xf800)
                         minSize = 0xffff & (((dataread + 0x10) >>> 4) + 0x20);
                 }
@@ -4731,7 +4735,7 @@ public final class DOSMain {
             pos = seekFile(fHandle, pos, DOSSystem.DOS_SEEK_SET);
             readSize = 0xffff - 256;
             readFile(fHandle, loadBuf, 0, readSize);
-            readSize = ReadSize;
+            readSize = readFileSize;
             Memory.blockWrite(loadAddress, loadBuf, 0, readSize);
         } else { /* EXE Load in 32kb blocks and then relocate */
             pos = headerSize;
@@ -4739,7 +4743,7 @@ public final class DOSMain {
             while (imagesize > 0x7FFF) {
                 readSize = 0x8000;
                 readFile(fHandle, loadBuf, 0, readSize);
-                readSize = ReadSize;
+                readSize = readFileSize;
                 Memory.blockWrite(loadAddress, loadBuf, 0, readSize);
                 // if (readsize!=0x8000) LOG(LOG_EXEC,LOG_NORMAL)("Illegal header");
                 loadAddress += 0x8000;
@@ -4748,7 +4752,7 @@ public final class DOSMain {
             if (imagesize > 0) {
                 readSize = imagesize;
                 readFile(fHandle, loadBuf, 0, readSize);
-                readSize = ReadSize;
+                readSize = readFileSize;
                 Memory.blockWrite(loadAddress, loadBuf, 0, readSize);
                 // if (readsize!=imagesize) LOG(LOG_EXEC,LOG_NORMAL)("Illegal header");
             }
@@ -4764,7 +4768,7 @@ public final class DOSMain {
             for (i = 0; i < headRelocations; i++) {
                 readSize = 4;
                 readFile(fHandle, relocpt, 0, readSize);
-                readSize = ReadSize;
+                readSize = readFileSize;
                 // relocpt=host_readd((HostPt)&relocpt); //Endianize
                 int uintrelocpt = ByteConv.getInt(relocpt, 0);
                 int address = Memory.physMake(Memory.realSeg(uintrelocpt) + loadSeg,

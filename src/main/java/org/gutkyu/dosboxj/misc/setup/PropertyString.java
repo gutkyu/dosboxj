@@ -29,7 +29,7 @@ public class PropertyString extends Property {
             if (val == input) { // Match!
                 return true;
             }
-            if (val.toString() == "%u") {
+            if (val.toString().equals("%u")) {
                 String tmpStr = input.toString();
                 tmpStr = tmpStr.trim();
                 // if(sscanf(in.toString().c_str(),"%u",&value) == 1)

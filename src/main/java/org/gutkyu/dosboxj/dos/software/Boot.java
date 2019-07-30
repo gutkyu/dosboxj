@@ -195,7 +195,7 @@ public final class Boot extends Program {
         }
         while (i < Cmd.getCount()) {
             if ((TempLine = Cmd.findCommand(i + 1)) != null) {
-                if ((TempLine == "-l") || (TempLine == "-L")) {
+                if ((TempLine.equals("-l")) || (TempLine.equals("-L"))) {
                     /* Specifying drive... next argument then is the drive */
                     i++;
                     if ((TempLine = Cmd.findCommand(i + 1)) != null) {
@@ -213,7 +213,7 @@ public final class Boot extends Program {
                     continue;
                 }
 
-                if ((TempLine == "-e") || (TempLine == "-E")) {
+                if ((TempLine.equals("-e")) || (TempLine.equals("-E"))) {
                     /* Command mode for PCJr cartridges */
                     i++;
                     if ((TempLine = Cmd.findCommand(i + 1)) != null) {
@@ -285,7 +285,7 @@ public final class Boot extends Program {
                     int ct = 6;
                     int cLen = 0xff & romBuf[ct];
                     byte[] buf = new byte[257];
-                    if (cartCmd == "?") {
+                    if (cartCmd.equals("?")) {
                         while (cLen != 0) {
                             CStringHelper.strncpy(buf, 0, romBuf, ct + 1, cLen);
                             buf[cLen] = 0;
@@ -312,6 +312,7 @@ public final class Boot extends Program {
                         // fclose(useFileCh1); //delete diskSwap closes the file
                         return;
                     } else {
+                        String str = null;
                         while (cLen != 0) {
                             CStringHelper.strncpy(buf, 0, romBuf, ct + 1, cLen);
                             buf[cLen] = 0;
@@ -319,8 +320,9 @@ public final class Boot extends Program {
                             CStringHelper.strcat(cmdlist, tmSpB);
                             CStringHelper.strcat(cmdlist, buf);
                             ct += 1 + cLen;
-                            if (cartCmd == new String(buf, 0, CStringHelper.strlen(buf),
-                                    StandardCharsets.US_ASCII)) {
+                            str = new String(buf, 0, CStringHelper.strlen(buf),
+                                    StandardCharsets.US_ASCII);
+                            if (cartCmd.equals(str)) {
                                 cFoundAt = ct;
                                 break;
                             }

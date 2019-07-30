@@ -87,7 +87,7 @@ public final class SectionProperty extends Section {
 
     public int getInt(String propName) throws WrongType {
         for (Property prop : properties) {
-            if (prop.PropName != propName)
+            if (!prop.PropName.equals(propName))
                 continue;
             return prop.getValue().getInt();
         }
@@ -96,7 +96,7 @@ public final class SectionProperty extends Section {
 
     public String getString(String propName) throws WrongType {
         for (Property prop : properties) {
-            if (prop.PropName != propName)
+            if (!prop.PropName.equals(propName))
                 continue;
             return prop.getValue().getString();
         }
@@ -105,7 +105,7 @@ public final class SectionProperty extends Section {
 
     public boolean getBool(String propName) throws WrongType {
         for (Property prop : properties) {
-            if (prop.PropName != propName)
+            if ((!prop.PropName.equals(propName)))
                 continue;
             return prop.getValue().getBoolean();
         }
@@ -114,7 +114,7 @@ public final class SectionProperty extends Section {
 
     public Hex getHex(String propName) throws WrongType {
         for (Property prop : properties) {
-            if (prop.PropName != propName)
+            if (!prop.PropName.equals(propName))
                 continue;
             return prop.getValue().getHex();
         }
@@ -123,7 +123,7 @@ public final class SectionProperty extends Section {
 
     public double getDouble(String propName) throws WrongType {
         for (Property prop : properties) {
-            if (prop.PropName != propName)
+            if (!prop.PropName.equals(propName))
                 continue;
             return prop.getValue().getDouble();
         }
@@ -132,7 +132,7 @@ public final class SectionProperty extends Section {
 
     public PropertyPath getPath(String propName) {
         for (Property prop : properties) {
-            if (prop.PropName != propName)
+            if (!prop.PropName.equals(propName))
                 continue;
             return prop instanceof PropertyPath ? (PropertyPath) prop : null;
         }
@@ -141,7 +141,7 @@ public final class SectionProperty extends Section {
 
     public PropertyMultival getMultival(String propName) {
         for (Property prop : properties) {
-            if (prop.PropName != propName)
+            if (!prop.PropName.equals(propName))
                 continue;
             return prop instanceof PropertyMultival ? (PropertyMultival) prop : null;
         }
@@ -151,7 +151,7 @@ public final class SectionProperty extends Section {
 
     public PropertyMultivalRemain getMultivalRemain(String propName) {
         for (Property prop : properties) {
-            if (prop.PropName == propName) {
+            if (prop.PropName.equals(propName)) {
                 if (prop instanceof PropertyMultivalRemain)
                     return null;
                 else
