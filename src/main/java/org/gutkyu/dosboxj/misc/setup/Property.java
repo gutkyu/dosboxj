@@ -64,7 +64,7 @@ public abstract class Property {
         if (suggestedValues.size() == 0)
             return true;
         for (Value val : suggestedValues) {
-            if (val == input) { // Match!
+            if (val.equals(input)) { // Match!
                 return true;
             }
         }

@@ -101,6 +101,10 @@ public final class Value {
         return false;
     }
 
+    public boolean equals(Object value) {
+        return value instanceof Value && this.equal((Value) value);
+    }
+
     public boolean notEquals(Value b) {
         return !this.equal(b);
     }

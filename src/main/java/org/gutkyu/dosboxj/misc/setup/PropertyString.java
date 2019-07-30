@@ -26,7 +26,7 @@ public class PropertyString extends Property {
         if (suggestedValues.size() == 0)
             return true;
         for (Value val : suggestedValues) {
-            if (val == input) { // Match!
+            if (val.equals(input)) { // Match!
                 return true;
             }
             if (val.toString().equals("%u")) {

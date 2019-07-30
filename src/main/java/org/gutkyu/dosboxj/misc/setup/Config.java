@@ -35,7 +35,8 @@ public final class Config {
         return blah;
     }
 
-    public SectionProperty addSectionProp(String name, DOSAction1<Section> initFunction, boolean canChange) {
+    public SectionProperty addSectionProp(String name, DOSAction1<Section> initFunction,
+            boolean canChange) {
         SectionProperty blah = new SectionProperty(name);
         blah.addInitFunction(initFunction, canChange);
         SectionList.addLast(blah);
@@ -128,18 +129,20 @@ public final class Config {
                             // fileWriter.Write(string.Format("# %*s: %s", maxwidth, p.propname,
                             // help));
                             fileWriter.write(String.format("# %1$s: %2$s",
-                                    maxwidth < p.PropName.length() ? p.PropName.substring(0, maxwidth) : p.PropName,
+                                    maxwidth < p.PropName.length()
+                                            ? p.PropName.substring(0, maxwidth)
+                                            : p.PropName,
                                     help));
 
                             List<Value> values = p.getValues();
                             if (values.size() > 0) {
-                                fileWriter.write(
-                                        String.format("%1$s%2$s:", prefix, Message.get("CONFIG_SUGGESTED_VALUES")));
+                                fileWriter.write(String.format("%1$s%2$s:", prefix,
+                                        Message.get("CONFIG_SUGGESTED_VALUES")));
                                 for (Value it : values) {
                                     // Hack hack hack. else we need to modify GetValues, but that
                                     // one is const...
-                                    if (it.toString() != "%u") {
-                                        if (it != values.get(0))// if (it != values.First())
+                                    if (!it.toString().equals("%u")) {
+                                        if (it.notEquals(values.get(0)))// if (it != values.First())
                                             fileWriter.write(",");
                                         fileWriter.write(String.format(" %1$s", it.toString()));
                                     }
@@ -188,7 +191,8 @@ public final class Config {
             try (BufferedReader fileReader = Files.newBufferedReader(Paths.get(configFileName))) {
                 String settingsType = firstConfigFile ? "primary" : "additional";
                 firstConfigFile = false;
-                Log.logMsg("CONFIG:Loading %s settings from config file %s", settingsType, configFileName);
+                Log.logMsg("CONFIG:Loading %s settings from config file %s", settingsType,
+                        configFileName);
 
                 // Get directory from configfilename, used with relative paths.
                 currentConfigDir = configFileName;
@@ -209,30 +213,30 @@ public final class Config {
                         continue;
 
                     switch (gegevens.charAt(0)) {
-                    case '%':
-                    case '\0':
-                    case '#':
-                    case ' ':
-                    case '\n':
-                        continue;
-                    case '[': {
-                        int loc = gegevens.indexOf(']');
-                        if (loc < 0)
+                        case '%':
+                        case '\0':
+                        case '#':
+                        case ' ':
+                        case '\n':
                             continue;
-                        gegevens = gegevens.substring(1, loc);
-                        testSec = getSection(gegevens);
-                        if (testSec != null)
-                            currentSection = testSec;
-                        testSec = null;
-                        break;
-                    }
-                    default:
-                        try {
-                            if (currentSection != null)
-                                currentSection.handleInputline(gegevens);
-                        } catch (Exception e) {// EXIT with message
+                        case '[': {
+                            int loc = gegevens.indexOf(']');
+                            if (loc < 0)
+                                continue;
+                            gegevens = gegevens.substring(1, loc);
+                            testSec = getSection(gegevens);
+                            if (testSec != null)
+                                currentSection = testSec;
+                            testSec = null;
+                            break;
                         }
-                        break;
+                        default:
+                            try {
+                                if (currentSection != null)
+                                    currentSection.handleInputline(gegevens);
+                            } catch (Exception e) {// EXIT with message
+                            }
+                            break;
                     }
                 }
                 currentConfigDir = "";// So internal changes don't use the path information
