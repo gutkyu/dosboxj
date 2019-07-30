@@ -1134,7 +1134,7 @@ public final class Mouse {
             // CHAR.WriteChar((ushort)mouse.BackPosX, (ushort)mouse.BackPosY,
             // Memory.RealReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE), mouse.BackData[0],
             // mouse.BackData[1], true);
-            CHAR.writeChar1(mouse.BackPosX, mouse.BackPosY,
+            CHAR.writeChar1(0xffff & mouse.BackPosX, 0xffff & mouse.BackPosY,
                     Memory.realReadB(INT10.BIOSMEM_SEG, INT10.BIOSMEM_CURRENT_PAGE),
                     0xff & mouse.BackData[0], 0xff & mouse.BackData[1], true);
             mouse.Background = false;
@@ -1158,8 +1158,8 @@ public final class Mouse {
         mouse.Background = true;
         // Write Cursor
         result = 0xffff & ((result & mouse.TextAndMask) ^ mouse.TextXorMask);
-        CHAR.writeChar1(mouse.BackPosX, mouse.BackPosY, page, result & 0xFF, 0xff & (result >>> 8),
-                true);
+        CHAR.writeChar1(0xffff & mouse.BackPosX, 0xffff & mouse.BackPosY, page, result & 0xFF,
+                0xff & (result >>> 8), true);
     }
 
 

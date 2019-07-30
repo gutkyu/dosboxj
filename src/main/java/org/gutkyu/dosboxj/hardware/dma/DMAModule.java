@@ -113,9 +113,9 @@ public final class DMAModule extends ModuleBase {
     /* read a block from physical memory */
     // public static void DMA_BlockRead(PhysPt spage,PhysPt offset,void * data,int size,byte dma16)
     // dataIdx 반환
-    protected int readBlock(int spage, int offset, byte[] data, int dataIdx, int size, byte dma16) {
+    protected int readBlock(int spage, int offset, byte[] data, int dataIdx, int size, int dma16) {
 
-        int highpart_addr_page = spage >>> 12;
+        int highpartAddrPage = spage >>> 12;
         size <<= dma16;
         offset <<= dma16;
         int dmaWrap = ((0xffff << dma16) + dma16) | _dmaWrapping;
@@ -123,7 +123,7 @@ public final class DMAModule extends ModuleBase {
             if (offset > (_dmaWrapping << dma16))
                 Support.exceptionExit("DMA segbound wrapping (read)");
             offset &= dmaWrap;
-            int page = highpart_addr_page + (offset >>> 12);
+            int page = highpartAddrPage + (offset >>> 12);
             /* care for EMS pageframe etc. */
             if (page < EMM_PAGEFRAME4K)
                 page = Paging.paging.FirstMb[page];
@@ -138,17 +138,16 @@ public final class DMAModule extends ModuleBase {
 
     /* write a block into physical memory */
     // public static void DMA_BlockRead(PhysPt spage,PhysPt offset,void * data,int size,byte dma16)
-    protected int writeBlock(int spage, int offset, byte[] data, int dataIdx, int size,
-            byte dma16) {
-        int highpart_addr_page = spage >>> 12;
+    protected int writeBlock(int spage, int offset, byte[] data, int dataIdx, int size, int dma16) {
+        int highpartAddrPage = spage >>> 12;
         size <<= dma16;
         offset <<= dma16;
-        int dma_wrap = ((0xffff << dma16) + dma16) | _dmaWrapping;
+        int dmaWrap = ((0xffff << dma16) + dma16) | _dmaWrapping;
         for (; size > 0; size--, offset++) {
             if (offset > (_dmaWrapping << dma16))
                 Support.exceptionExit("DMA segbound wrapping (write)");
-            offset &= dma_wrap;
-            int page = highpart_addr_page + (offset >>> 12);
+            offset &= dmaWrap;
+            int page = highpartAddrPage + (offset >>> 12);
             /* care for EMS pageframe etc. */
             if (page < EMM_PAGEFRAME4K)
                 page = Paging.paging.FirstMb[page];

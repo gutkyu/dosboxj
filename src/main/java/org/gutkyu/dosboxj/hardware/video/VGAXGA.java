@@ -107,38 +107,38 @@ public final class VGAXGA {
     }
 
     private void writeMultiFunc(int val, int len) {
-        int regselect = val >>> 12;
-        int dataval = val & 0xfff;
-        switch (regselect) {
+        int regSelect = val >>> 12;
+        int dataVal = val & 0xfff;
+        switch (regSelect) {
             case 0: // minor axis pixel count
-                MIPcount = dataval;
+                MIPcount = dataVal;
                 break;
             case 1: // top scissors
-                Scissors.y1 = dataval;
+                Scissors.y1 = dataVal;
                 break;
             case 2: // left
-                Scissors.x1 = dataval;
+                Scissors.x1 = dataVal;
                 break;
             case 3: // bottom
-                Scissors.y2 = dataval;
+                Scissors.y2 = dataVal;
                 break;
             case 4: // right
-                Scissors.x2 = dataval;
+                Scissors.x2 = dataVal;
                 break;
             case 0xa: // data manip control
-                PixCntl = dataval;
+                PixCntl = dataVal;
                 break;
             case 0xd: // misc 2
-                Control2 = dataval;
+                Control2 = dataVal;
                 break;
             case 0xe:
-                Control1 = dataval;
+                Control1 = dataVal;
                 break;
             case 0xf:
-                ReadSel = dataval;
+                ReadSel = dataVal;
                 break;
             default:
-                Log.logMsg("XGA: Unhandled multifunction command %x", regselect);
+                Log.logMsg("XGA: Unhandled multifunction command %x", regSelect);
                 break;
         }
     }
@@ -557,11 +557,11 @@ public final class VGAXGA {
         for (yat = 0; yat <= MIPcount; yat++) {
             srcX = CurX;
             for (xat = 0; xat <= MAPcount; xat++) {
-                int mixmode = (PixCntl >>> 6) & 0x3;
-                switch (mixmode) {
+                int mixMode = (PixCntl >>> 6) & 0x3;
+                switch (mixMode) {
                     case 0x00: /* FOREMIX always used */
-                        mixmode = Foremix;
-                        switch ((mixmode >>> 5) & 0x03) {
+                        mixMode = Foremix;
+                        switch ((mixMode >>> 5) & 0x03) {
                             case 0x00: /* Src is background color */
                                 srcVal = Backcolor;
                                 break;
@@ -582,12 +582,12 @@ public final class VGAXGA {
                         }
                         dstData = getPoint(srcX, srcY);
 
-                        destVal = getMixResult(mixmode, srcVal, dstData);
+                        destVal = getMixResult(mixMode, srcVal, dstData);
 
                         drawPoint(srcX, srcY, destVal);
                         break;
                     default:
-                        Log.logMsg("XGA: DrawRect: Needs mixmode %x", mixmode);
+                        Log.logMsg("XGA: DrawRect: Needs mixmode %x", mixMode);
                         break;
                 }
                 srcX += dx;
@@ -659,31 +659,25 @@ public final class VGAXGA {
 
     private static final int BUS_WITDH_LIN8_8 = VGAModes.LIN8.toValue(); // 8 bit
     private static final int BUS_WITDH_LIN8_16 = 0x20 | VGAModes.LIN8.toValue(); // 16 bit
-    private static final int BUS_WITDH_LIN8_32 = 0x40 | (0xffff & VGAModes.LIN8.toValue()); // 32
-                                                                                            // bit
-    private static final int BUS_WITDH_LIN32_16 = 0x20 | (0xffff & VGAModes.LIN32.toValue());
-    private static final int BUS_WITDH_LIN32_32 = 0x40 | (0xffff & VGAModes.LIN32.toValue()); // 32
-                                                                                              // bit
-    private static final int BUS_WITDH_LIN15_16 = 0x20 | (0xffff & VGAModes.LIN15.toValue()); // 16
-                                                                                              // bit
-    private static final int BUS_WITDH_LIN16_16 = 0x20 | (0xffff & VGAModes.LIN16.toValue()); // 16
-                                                                                              // bit
-    private static final int BUS_WITDH_LIN15_32 = 0x40 | (0xffff & VGAModes.LIN15.toValue()); // 32
-                                                                                              // bit
-    private static final int BUS_WITDH_LIN16_32 = 0x40 | (0xffff & VGAModes.LIN16.toValue()); // 32
-                                                                                              // bit
+    private static final int BUS_WITDH_LIN8_32 = 0x40 | VGAModes.LIN8.toValue(); // 32 bit
+    private static final int BUS_WITDH_LIN32_16 = 0x20 | VGAModes.LIN32.toValue();
+    private static final int BUS_WITDH_LIN32_32 = 0x40 | VGAModes.LIN32.toValue(); // 32 bit
+    private static final int BUS_WITDH_LIN15_16 = 0x20 | VGAModes.LIN15.toValue(); // 16 bit
+    private static final int BUS_WITDH_LIN16_16 = 0x20 | VGAModes.LIN16.toValue(); // 16 bit
+    private static final int BUS_WITDH_LIN15_32 = 0x40 | VGAModes.LIN15.toValue(); // 32 bit
+    private static final int BUS_WITDH_LIN16_32 = 0x40 | VGAModes.LIN16.toValue(); // 32 bit
 
     private void drawWait(int val, int len) {
         XGAWaitCmd xgaWaitCmd = WaitCmd;
         if (!xgaWaitCmd.Wait)
             return;
-        int mixmode = (PixCntl >>> 6) & 0x3;
+        int mixMode = (PixCntl >>> 6) & 0x3;
         int srcval;
         switch (xgaWaitCmd.Cmd) {
             case 2: /* Rectangle */
-                switch (mixmode) {
+                switch (mixMode) {
                     case 0x00: /* FOREMIX always used */
-                        mixmode = Foremix;
+                        mixMode = Foremix;
 
                         /*
                          * switch((mixmode >>>5) & 0x03) { case 0x00: // Src is background color
@@ -691,7 +685,7 @@ public final class VGAXGA {
                          * srcval = xga.forecolor; break; case 0x02: // Src is pixel data from
                          * PIX_TRANS register
                          */
-                        if (((mixmode >>> 5) & 0x03) != 0x2) {
+                        if (((mixMode >>> 5) & 0x03) != 0x2) {
                             // those cases don't seem to occur
                             Log.logMsg("XGA: unsupported drawwait operation");
                             break;
@@ -699,12 +693,12 @@ public final class VGAXGA {
                         switch (xgaWaitCmd.BusWidth) {
                             // case VGAModes.LIN8: // 8 bit
                             case 5: // 8 bit
-                                drawWaitSub(mixmode, val);
+                                drawWaitSub(mixMode, val);
                                 break;
                             // case 0x20 | (short)VGAModes.LIN8: // 16 bit
                             case 0x20 | 5: // 16 bit
                                 for (int i = 0; i < len; i++) {
-                                    drawWaitSub(mixmode, (val >>> (8 * i)) & 0xff);
+                                    drawWaitSub(mixMode, (val >>> (8 * i)) & 0xff);
                                     if (xgaWaitCmd.NewLine)
                                         break;
                                 }
@@ -712,7 +706,7 @@ public final class VGAXGA {
                             // case 0x40 | (short)VGAModes.LIN8: // 32 bit
                             case 0x40 | 5: // 32 bit
                                 for (int i = 0; i < 4; i++)
-                                    drawWaitSub(mixmode, (val >>> (8 * i)) & 0xff);
+                                    drawWaitSub(mixMode, (val >>> (8 * i)) & 0xff);
                                 break;
                             // case 0x20 | (short)VGAModes.LIN32:
                             case 0x20 | 8:
@@ -726,7 +720,7 @@ public final class VGAXGA {
                                         srcval = (val << 16) | xgaWaitCmd.Data;
                                         xgaWaitCmd.Data = 0;
                                         xgaWaitCmd.DataSize = 0;
-                                        drawWaitSub(mixmode, srcval);
+                                        drawWaitSub(mixMode, srcval);
                                     }
                                     break;
                                 } // fall-through
@@ -734,21 +728,21 @@ public final class VGAXGA {
                                   // case 0x40 | (short)VGAModes.LIN32.toValue(): // 32 bit
                             case 0x40 | 8: // 32 bit
                                 // Goto0x40:
-                                drawWaitSub(mixmode, val);
+                                drawWaitSub(mixMode, val);
                                 break;
                             // case 0x20 | (short)VGAModes.LIN15: // 16 bit
                             case 0x20 | 6: // 16 bit
                                 // case 0x20 | (short)VGAModes.LIN16: // 16 bit
                             case 0x20 | 7: // 16 bit
-                                drawWaitSub(mixmode, val);
+                                drawWaitSub(mixMode, val);
                                 break;
                             // case 0x40 | (short)VGAModes.LIN15: // 32 bit
                             case 0x40 | 6: // 32 bit
                                 // case 0x40 | (short)VGAModes.LIN16: // 32 bit
                             case 0x40 | 7: // 32 bit
-                                drawWaitSub(mixmode, val & 0xffff);
+                                drawWaitSub(mixMode, val & 0xffff);
                                 if (!xgaWaitCmd.NewLine)
-                                    drawWaitSub(mixmode, val >>> 16);
+                                    drawWaitSub(mixMode, val >>> 16);
                                 break;
                             default:
                                 // Let's hope they never show up ;)
@@ -789,17 +783,17 @@ public final class VGAXGA {
                         for (int k = 0; k < chunks; k++) { // chunks counter
                             xgaWaitCmd.NewLine = false;
                             for (int n = 0; n < chunkSize; n++) { // pixels
-                                int mixmode1 = 0;
+                                int mixMode1 = 0;
 
                                 // This formula can rule the world ;)
                                 int mask =
                                         1 << ((((n & 0xF8) + (8 - (n & 0x7))) - 1) + chunkSize * k);
                                 if ((val & mask) != 0)
-                                    mixmode1 = Foremix;
+                                    mixMode1 = Foremix;
                                 else
-                                    mixmode1 = Backmix;
+                                    mixMode1 = Backmix;
 
-                                switch ((mixmode1 >>> 5) & 0x03) {
+                                switch ((mixMode1 >>> 5) & 0x03) {
                                     case 0x00: // Src is background color
                                         srcval = Backcolor;
                                         break;
@@ -808,11 +802,11 @@ public final class VGAXGA {
                                         break;
                                     default:
                                         Log.logMsg("XGA: DrawBlitWait: Unsupported src %x",
-                                                (mixmode1 >>> 5) & 0x03);
+                                                (mixMode1 >>> 5) & 0x03);
                                         srcval = 0;
                                         break;
                                 }
-                                drawWaitSub(mixmode1, srcval);
+                                drawWaitSub(mixMode1, srcval);
 
                                 if ((xgaWaitCmd.CurY < 2048)
                                         && (xgaWaitCmd.CurY >= xgaWaitCmd.Y2)) {
@@ -828,7 +822,7 @@ public final class VGAXGA {
                         break;
 
                     default:
-                        Log.logMsg("XGA: DrawBlitWait: Unhandled mixmode: %d", mixmode);
+                        Log.logMsg("XGA: DrawBlitWait: Unhandled mixmode: %d", mixMode);
                         break;
                 } // switch mixmode
                 break;
@@ -861,11 +855,11 @@ public final class VGAXGA {
         tarX = DestX;
         tarY = DestY;
 
-        int mixselect = (PixCntl >>> 6) & 0x3;
-        int mixmode = 0x67; /* Source is bitmap data, mix mode is src */
-        switch (mixselect) {
+        int mixSelect = (PixCntl >>> 6) & 0x3;
+        int mixMode = 0x67; /* Source is bitmap data, mix mode is src */
+        switch (mixSelect) {
             case 0x00: /* Foreground mix is always used */
-                mixmode = Foremix;
+                mixMode = Foremix;
                 break;
             case 0x02: /* CPU Data determines mix used */
                 Log.logMsg("XGA: DrawPattern: Mixselect data from PIX_TRANS register");
@@ -889,20 +883,20 @@ public final class VGAXGA {
                 srcData = getPoint(srcX, srcY);
                 dstData = getPoint(tarX, tarY);
 
-                if (mixselect == 0x3) {
+                if (mixSelect == 0x3) {
                     if (srcData == Forecolor) {
-                        mixmode = Foremix;
+                        mixMode = Foremix;
                     } else {
                         if (srcData == Backcolor) {
-                            mixmode = Backmix;
+                            mixMode = Backmix;
                         } else {
                             /* Best guess otherwise */
-                            mixmode = 0x67; /* Source is bitmap data, mix mode is src */
+                            mixMode = 0x67; /* Source is bitmap data, mix mode is src */
                         }
                     }
                 }
 
-                switch ((mixmode >>> 5) & 0x03) {
+                switch ((mixMode >>> 5) & 0x03) {
                     case 0x00: /* Src is background color */
                         srcVal = Backcolor;
                         break;
@@ -921,7 +915,7 @@ public final class VGAXGA {
                         break;
                 }
 
-                destVal = getMixResult(mixmode, srcVal, dstData);
+                destVal = getMixResult(mixMode, srcVal, dstData);
                 // Log.LOG_MSG("XGA: DrawPattern: Mixmode: %x Mixselect: %x", mixmode, mixselect);
 
                 drawPoint(tarX, tarY, destVal);
@@ -956,11 +950,11 @@ public final class VGAXGA {
 
         tary = DestY;
 
-        int mixselect = (PixCntl >>> 6) & 0x3;
-        int mixmode = 0x67; /* Source is bitmap data, mix mode is src */
-        switch (mixselect) {
+        int mixSelect = (PixCntl >>> 6) & 0x3;
+        int mixMode = 0x67; /* Source is bitmap data, mix mode is src */
+        switch (mixSelect) {
             case 0x00: /* Foreground mix is always used */
-                mixmode = Foremix;
+                mixMode = Foremix;
                 break;
             case 0x02: /* CPU Data determines mix used */
                 Log.logMsg("XGA: DrawPattern: Mixselect data from PIX_TRANS register");
@@ -985,16 +979,16 @@ public final class VGAXGA {
                 dstData = getPoint(tarx, tary);
 
 
-                if (mixselect == 0x3) {
+                if (mixSelect == 0x3) {
                     // TODO lots of guessing here but best results this way
                     /* if(srcdata == xga.forecolor) */
-                    mixmode = Foremix;
+                    mixMode = Foremix;
                     // else
                     if (srcData == Backcolor || srcData == 0)
-                        mixmode = Backmix;
+                        mixMode = Backmix;
                 }
 
-                switch ((mixmode >>> 5) & 0x03) {
+                switch ((mixMode >>> 5) & 0x03) {
                     case 0x00: /* Src is background color */
                         srcVal = Backcolor;
                         break;
@@ -1013,7 +1007,7 @@ public final class VGAXGA {
                         break;
                 }
 
-                destVal = getMixResult(mixmode, srcVal, dstData);
+                destVal = getMixResult(mixMode, srcVal, dstData);
 
                 drawPoint(tarx, tary, destVal);
 

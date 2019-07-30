@@ -307,7 +307,7 @@ public final class CMOSModule extends ModuleBase {
                 return 0;
             case 0x2c:
                 if (BIOSDisk.ImageDiskList[3] != null)
-                    return (BIOSDisk.ImageDiskList[3].sectors);
+                    return BIOSDisk.ImageDiskList[3].sectors;
                 return 0;
             case 0x39:
                 return 0;
@@ -325,11 +325,11 @@ public final class CMOSModule extends ModuleBase {
             case 0x31: /* Extended memory in KB High Byte */
                 // Log.Logging(Log.LOG_TYPES.LOG_BIOS,Log.LOG_SEVERITIES.LOG_NORMAL,"CMOS:Read from
                 // reg %X : %04X",cmos.reg,cmos.regs[cmos.reg]);
-                return CMOSInfo.regs[CMOSInfo.reg];
+                return 0xff & CMOSInfo.regs[CMOSInfo.reg];
             default:
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Normal, "CMOS:Read from reg %X",
                         CMOSInfo.reg);
-                return CMOSInfo.regs[CMOSInfo.reg];
+                return 0xff & CMOSInfo.regs[CMOSInfo.reg];
         }
     }
 

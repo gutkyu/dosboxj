@@ -591,15 +591,15 @@ public final class VGA {
             currentVGALineOffset = vidStart;
             return;
         }
-        int lineat = ((vidStart - (Config.RealStart << 2)) >>> 1) / Draw.Width;
-        if ((S3.HGC.PosX >= Draw.Width) || (lineat < S3.HGC.OriginY)
-                || (lineat > (S3.HGC.OriginY + (63 - S3.HGC.PosY)))) {
+        int lineAt = ((vidStart - (Config.RealStart << 2)) >>> 1) / Draw.Width;
+        if ((S3.HGC.PosX >= Draw.Width) || (lineAt < S3.HGC.OriginY)
+                || (lineAt > (S3.HGC.OriginY + (63 - S3.HGC.PosY)))) {
             currentVGALine = Mem.LinearAlloc;
             currentVGALineOffset = vidStart;
             return;
         } else {
             ArrayHelper.copy(Mem.LinearAlloc, vidStart, TempLine, 0, Draw.Width * 2);
-            int sourceStartBit = ((lineat - S3.HGC.OriginY) + S3.HGC.PosY) * 64 + S3.HGC.PosX;
+            int sourceStartBit = ((lineAt - S3.HGC.OriginY) + S3.HGC.PosY) * 64 + S3.HGC.PosX;
             int cursorMemStart =
                     ((sourceStartBit >>> 2) & ~1) + ((0xffff & S3.HGC.StartAddr) << 10);
             int cursorStartBit = sourceStartBit & 0x7;
@@ -945,8 +945,8 @@ public final class VGA {
                 if (underline && ((col & 0x07) == 0x01))
                     font |= 0xff & (0xff >>> (8 - pelPan));
                 else
-                    font |= 0xff & (Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32
-                            + line] >>> (8 - pelPan));
+                    font |= 0xff & ((0xff & Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32
+                            + line]) >>> (8 - pelPan));
                 fg = col & 0xf;
                 bg = TXTBGTable[col >>> 4] & 0xff;
             } else {
@@ -1949,7 +1949,7 @@ public final class VGA {
 
     // Checked planar offset (latched access)
     public int checked2(int v) {
-        return ((v) & ((VMemWrap >>> 2) - 1));
+        return (v & ((VMemWrap >>> 2) - 1));
     }
     // #else
     // #define CHECKED(v) (v)
@@ -3242,7 +3242,7 @@ public final class VGA {
         public byte ExHorOverflow;
         public byte ExVerOverflow;
         public int LaWindow;// uint16
-        public byte MiscControl2;
+        public int MiscControl2;// uint8
         public byte ExtMemCtrl;
         public int XGAScreenWidth;
         public VGAModes XGAColorMode;

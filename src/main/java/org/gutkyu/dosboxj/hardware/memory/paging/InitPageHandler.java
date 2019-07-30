@@ -119,13 +119,13 @@ class InitPageHandler extends PageHandler {
             return true;
     }
 
-    public int initPage(int lin_addr, boolean writing) {
-        int lin_page = lin_addr >>> 12;
-        int phys_page;
+    public int initPage(int linAddr, boolean writing) {
+        int linPage = linAddr >>> 12;
+        int physPage;
         if (Paging.paging.Enabled) {
             X86PageEntry table = new X86PageEntry();
             X86PageEntry entry = new X86PageEntry();
-            Paging.initPageCheckPresence(lin_addr, writing, table, entry);
+            Paging.initPageCheckPresence(linAddr, writing, table, entry);
 
             // 0: no action
             // 1: can (but currently does not) fail a user-level access privilege check
@@ -176,14 +176,14 @@ class InitPageHandler extends PageHandler {
                 Log.logging(Log.LogTypes.PAGING, Log.LogServerities.Normal,
                         "Page access denied: cpl=%i, %x:%x:%x:%x", CPU.Block.CPL, entry.us,
                         table.us, entry.wr, table.wr);
-                Paging.pageFault(lin_addr, (table.Base << 12) + (lin_page & 0x3ff) * 4,
+                Paging.pageFault(linAddr, (table.Base << 12) + (linPage & 0x3ff) * 4,
                         0x05 | (writing ? 0x02 : 0x00));
                 priv_check = 0;
             }
 
             if (table.a == 0) {
                 table.a = 1; // set page table accessed
-                Memory.physWriteD((int) ((Paging.paging.Base.Page << 12) + (lin_page >>> 10) * 4),
+                Memory.physWriteD((int) ((Paging.paging.Base.Page << 12) + (linPage >>> 10) * 4),
                         table.getLoad());
             }
             if ((entry.a == 0) || (entry.d == 0)) {
@@ -194,54 +194,54 @@ class InitPageHandler extends PageHandler {
                 if (writing || (priv_check == 0))
                     entry.d = 1; // mark page as dirty
 
-                Memory.physWriteD((table.Base << 12) + (lin_page & 0x3ff) * 4, entry.getLoad());
+                Memory.physWriteD((table.Base << 12) + (linPage & 0x3ff) * 4, entry.getLoad());
             }
 
-            phys_page = entry.Base;
+            physPage = entry.Base;
 
             // now see how the page should be linked best, if we need to catch privilege
             // checks later on it should be linked as read-only page
             if (priv_check == 0) {
                 // if reading we could link the page as read-only to later cacth writes,
                 // will slow down pretty much but allows catching all dirty events
-                Paging.linkPage(lin_page, phys_page);
+                Paging.linkPage(linPage, physPage);
             } else {
                 if (priv_check == 1) {
-                    Paging.linkPage(lin_page, phys_page);
+                    Paging.linkPage(linPage, physPage);
                     return 1;
                 } else if (writing) {
-                    PageHandler handler = Memory.getPageHandler(phys_page);
-                    Paging.linkPage(lin_page, phys_page);
+                    PageHandler handler = Memory.getPageHandler(physPage);
+                    Paging.linkPage(linPage, physPage);
                     if ((handler.Flags & Paging.PFLAG_READABLE) == 0)
                         return 1;
                     if ((handler.Flags & Paging.PFLAG_WRITEABLE) == 0)
                         return 1;
-                    if (Paging.getTLBEntry(lin_addr).Read != Paging.getTLBEntry(lin_addr).Write)
+                    if (Paging.getTLBEntry(linAddr).Read != Paging.getTLBEntry(linAddr).Write)
                         return 1;
-                    if (phys_page > 1)
-                        return phys_page;
+                    if (physPage > 1)
+                        return physPage;
                     else
                         return 1;
                 } else {
-                    Paging.linkPageReadOnly(lin_page, phys_page);
+                    Paging.linkPageReadOnly(linPage, physPage);
                 }
             }
         } else {
-            if (lin_page < Paging.LINK_START)
-                phys_page = Paging.paging.FirstMb[lin_page];
+            if (linPage < Paging.LINK_START)
+                physPage = Paging.paging.FirstMb[linPage];
             else
-                phys_page = lin_page;
-            Paging.linkPage(lin_page, phys_page);
+                physPage = linPage;
+            Paging.linkPage(linPage, physPage);
         }
         return 0;
     }
 
-    public boolean initPageCheckOnly(int lin_addr, boolean writing) {
-        int lin_page = lin_addr >>> 12;
+    public boolean initPageCheckOnly(int linAddr, boolean writing) {
+        int linPage = linAddr >>> 12;
         if (Paging.paging.Enabled) {
             X86PageEntry table = new X86PageEntry();
             X86PageEntry entry = new X86PageEntry();
-            if (!Paging.initPageCheckPresenceCheckOnly(lin_addr, writing, table, entry))
+            if (!Paging.initPageCheckPresenceCheckOnly(linAddr, writing, table, entry))
                 return false;
 
             if ((CPU.Block.CPL & CPU.Block.MPL) != 3)
@@ -252,47 +252,47 @@ class InitPageHandler extends PageHandler {
                 Log.logging(Log.LogTypes.PAGING, Log.LogServerities.Normal,
                         "Page access denied: cpl=%i, %x:%x:%x:%x", CPU.Block.CPL, entry.us,
                         table.us, entry.wr, table.wr);
-                Paging.paging.CR2 = lin_addr;
+                Paging.paging.CR2 = linAddr;
                 CPU.Block.Exception.Which = CPU.ExceptionPF;
                 CPU.Block.Exception.Error = 0x05 | (writing ? 0x02 : 0x00);
                 return false;
             }
         } else {
             int phys_page;
-            if (lin_page < Paging.LINK_START)
-                phys_page = Paging.paging.FirstMb[lin_page];
+            if (linPage < Paging.LINK_START)
+                phys_page = Paging.paging.FirstMb[linPage];
             else
-                phys_page = lin_page;
-            Paging.linkPage(lin_page, phys_page);
+                phys_page = linPage;
+            Paging.linkPage(linPage, phys_page);
         }
         return true;
     }
 
-    public void initPageForced(int lin_addr) {
-        int lin_page = lin_addr >>> 12;
-        int phys_page;
+    public void initPageForced(int linAddr) {
+        int linPage = linAddr >>> 12;
+        int physPage;
         if (Paging.paging.Enabled) {
             X86PageEntry table = new X86PageEntry();
             X86PageEntry entry = new X86PageEntry();
-            Paging.initPageCheckPresence(lin_addr, false, table, entry);
+            Paging.initPageCheckPresence(linAddr, false, table, entry);
 
             if (table.a == 0) {
                 table.a = 1; // Set access
-                Memory.physWriteD((int) ((Paging.paging.Base.Page << 12) + (lin_page >>> 10) * 4),
+                Memory.physWriteD((int) ((Paging.paging.Base.Page << 12) + (linPage >>> 10) * 4),
                         table.getLoad());
             }
             if (entry.a == 0) {
                 entry.a = 1; // Set access
-                Memory.physWriteD((table.Base << 12) + (lin_page & 0x3ff) * 4, entry.getLoad());
+                Memory.physWriteD((table.Base << 12) + (linPage & 0x3ff) * 4, entry.getLoad());
             }
-            phys_page = entry.Base;
+            physPage = entry.Base;
             // maybe use read-only page here if possible
         } else {
-            if (lin_page < Paging.LINK_START)
-                phys_page = Paging.paging.FirstMb[lin_page];
+            if (linPage < Paging.LINK_START)
+                physPage = Paging.paging.FirstMb[linPage];
             else
-                phys_page = lin_page;
+                physPage = linPage;
         }
-        Paging.linkPage(lin_page, phys_page);
+        Paging.linkPage(linPage, physPage);
     }
 }

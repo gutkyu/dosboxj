@@ -347,7 +347,7 @@ public final class S3TrioSVGADriverProvider {
                  * 8bit (2 pixels/VCLK) 3 Mode 9: 15bit (1 pixel/VCLK) 5 Mode 10: 16bit (1
                  * pixel/VCLK) 7 Mode 11: 24/32bit (2 VCLKs/pixel) 13 (732/764) 32bit (1 pixel/VCLK)
                  */
-                vga.S3.MiscControl2 = (byte) val;
+                vga.S3.MiscControl2 = 0xff & val;
                 vga.determineMode();
                 break;
             case 0x69: /* Extended System Control 3 */
@@ -447,7 +447,7 @@ public final class S3TrioSVGADriverProvider {
             case 0x5e: /* Extended Vertical Overflow */
                 return vga.S3.ExVerOverflow & 0xff;
             case 0x67: /* Extended Miscellaneous Control 2 */
-                return vga.S3.MiscControl2 & 0xff;
+                return vga.S3.MiscControl2;
             case 0x69: /* Extended System Control 3 */
                 return 0xff & ((vga.Config.DisplayStart & 0x1f0000) >>> 16);
             case 0x6a: /* Extended System Control 4 */

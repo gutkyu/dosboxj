@@ -11016,7 +11016,8 @@ public abstract class CPUCore {
     }
 
     // cpu_full의 op.h
-    public boolean DSHRWFull(int op1, short op2, byte op3) {
+    // (uint32 op1, uint16 op2, uint8 op3)
+    public boolean DSHRWFull(int op1, int op2, int op3) {
         int val = op3 & 0x1F;
         // if (val == 0) break;
         if (val == 0)

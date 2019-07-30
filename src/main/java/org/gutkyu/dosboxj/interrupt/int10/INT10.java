@@ -598,12 +598,12 @@ public final class INT10 {
                         int idx = Memory.realReadB(BIOSMEM_SEG, BIOSMEM_DCC_INDEX);
                         // check if index within range
                         if (idx < entries) {
-                            int dccentry = Memory.realReadW(Memory.realSeg(dcctable),
+                            int dccEntry = Memory.realReadW(Memory.realSeg(dcctable),
                                     Memory.realOff(dcctable) + 0x04 + idx * 2);
-                            if ((dccentry & 0xff) == 0)
-                                Register.setRegBX(dccentry >>> 8);
+                            if ((dccEntry & 0xff) == 0)
+                                Register.setRegBX(dccEntry >>> 8);
                             else
-                                Register.setRegBX(dccentry);
+                                Register.setRegBX(dccEntry);
                         } else
                             Register.setRegBX(0xffff);
                     } else

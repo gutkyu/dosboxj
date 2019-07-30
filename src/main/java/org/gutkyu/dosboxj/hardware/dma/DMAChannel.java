@@ -10,7 +10,7 @@ final class DMAChannel {
     public int currCnt;// uint16
     public int chanNum;// uint8
     public int pageNum;// uint8
-    public byte dma16;
+    public int dma16;// uint8
     public boolean increment;
     public boolean autoInit;
     public byte tranType;
@@ -26,7 +26,7 @@ final class DMAChannel {
         if (num == 4)
             return;
         chanNum = num;
-        this.dma16 = (byte) (dma16 ? 0x1 : 0x0);
+        this.dma16 = dma16 ? 0x1 : 0x0;
         pageNum = 0;
         pageBase = 0;
         baseAddr = 0;

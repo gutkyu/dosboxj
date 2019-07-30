@@ -169,26 +169,26 @@ public final class Paging {
             linkPageReadOnly(addr >>> 12, relink);
     }
 
-    public static void initPageCheckPresence(int lin_addr, boolean writing, X86PageEntry table,
+    public static void initPageCheckPresence(int linAddr, boolean writing, X86PageEntry table,
             X86PageEntry entry) {
-        int lin_page = lin_addr >>> 12;
-        int d_index = lin_page >>> 10;
-        int t_index = lin_page & 0x3ff;
-        int table_addr = (int) ((paging.Base.Page << 12) + d_index * 4);
-        table.setLoad(Memory.physReadD(table_addr));
+        int linPage = linAddr >>> 12;
+        int dIndex = linPage >>> 10;
+        int tIndex = linPage & 0x3ff;
+        int tableAddr = (int) ((paging.Base.Page << 12) + dIndex * 4);
+        table.setLoad(Memory.physReadD(tableAddr));
         if (table.p == 0) {
             Log.logging(Log.LogTypes.PAGING, Log.LogServerities.Normal, "NP Table");
-            pageFault(lin_addr, table_addr, (writing ? 0x02 : 0x00)
+            pageFault(linAddr, tableAddr, (writing ? 0x02 : 0x00)
                     | (((CPU.Block.CPL & CPU.Block.MPL) == 0) ? 0x00 : 0x04));
-            table.setLoad(Memory.physReadD(table_addr));
+            table.setLoad(Memory.physReadD(tableAddr));
             if (table.p == 0)
                 Support.exceptionExit("Pagefault didn't correct table");
         }
-        int entry_addr = (table.Base << 12) + t_index * 4;
+        int entry_addr = (table.Base << 12) + tIndex * 4;
         entry.setLoad(Memory.physReadD(entry_addr));
         if (entry.p == 0) {
             // LOG(LOG_PAGING,LOG_NORMAL)("NP Page");
-            pageFault(lin_addr, entry_addr, (writing ? 0x02 : 0x00)
+            pageFault(linAddr, entry_addr, (writing ? 0x02 : 0x00)
                     | (((CPU.Block.CPL & CPU.Block.MPL) == 0) ? 0x00 : 0x04));
             entry.setLoad(Memory.physReadD(entry_addr));
             if (entry.p == 0)
@@ -196,24 +196,24 @@ public final class Paging {
         }
     }
 
-    public static boolean initPageCheckPresenceCheckOnly(int lin_addr, boolean writing,
+    public static boolean initPageCheckPresenceCheckOnly(int linAddr, boolean writing,
             X86PageEntry table, X86PageEntry entry) {
-        int lin_page = lin_addr >>> 12;
-        int d_index = lin_page >>> 10;
-        int t_index = lin_page & 0x3ff;
-        int table_addr = (int) ((paging.Base.Page << 12) + d_index * 4);
-        table.setLoad(Memory.physReadD(table_addr));
+        int linPage = linAddr >>> 12;
+        int dIndex = linPage >>> 10;
+        int tIndex = linPage & 0x3ff;
+        int tableAddr = (int) ((paging.Base.Page << 12) + dIndex * 4);
+        table.setLoad(Memory.physReadD(tableAddr));
         if (table.p == 0) {
-            paging.CR2 = lin_addr;
+            paging.CR2 = linAddr;
             CPU.Block.Exception.Which = CPU.ExceptionPF;
             CPU.Block.Exception.Error = (writing ? 0x02 : 0x00)
                     | (((CPU.Block.CPL & CPU.Block.MPL) == 0) ? 0x00 : 0x04);
             return false;
         }
-        int entry_addr = (table.Base << 12) + t_index * 4;
+        int entry_addr = (table.Base << 12) + tIndex * 4;
         entry.setLoad(Memory.physReadD(entry_addr));
         if (entry.p == 0) {
-            paging.CR2 = lin_addr;
+            paging.CR2 = linAddr;
             CPU.Block.Exception.Which = CPU.ExceptionPF;
             CPU.Block.Exception.Error = (writing ? 0x02 : 0x00)
                     | (((CPU.Block.CPL & CPU.Block.MPL) == 0) ? 0x00 : 0x04);
@@ -241,7 +241,7 @@ public final class Paging {
     public static PagingBlock paging = new PagingBlock();
 
     public static TLBEntry getTLBEntry(int address) {
-        int index = (address >>> 12);
+        int index = address >>> 12;
         if (TLB_BANKS != 0 && (index > TLB_SIZE)) {
             int bank = (address >>> BANK_SHIFT) - 1;
             if (paging.TLBhBanks[bank] == null)

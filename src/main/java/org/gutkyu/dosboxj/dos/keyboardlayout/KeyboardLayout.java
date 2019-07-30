@@ -657,9 +657,8 @@ public final class KeyboardLayout implements Disposable {
                 // remap key
                 if (currentLayout[key * layoutPages + 2 + cplane] != 0) {
                     // check if command-bit is set for this plane
-                    boolean isCommand =
-                            ((currentLayout[key * layoutPages + layoutPages - 2] >>> (cplane + 2))
-                                    & 1) != 0;
+                    boolean isCommand = (((currentLayout[key * layoutPages + layoutPages - 2]
+                            & 0xffff) >>> (cplane + 2)) & 1) != 0;
                     if (this.mapKey(key, currentLayout[key * layoutPages + 2 + cplane], isCommand,
                             isSpecialPair))
                         return true;

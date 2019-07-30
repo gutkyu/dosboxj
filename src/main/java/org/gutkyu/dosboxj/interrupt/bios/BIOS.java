@@ -637,7 +637,7 @@ public final class BIOS {
     }
 
 
-    private static void TandySetupTransfer(int bufpt, boolean isplayback) {
+    private static void TandySetupTransfer(int bufPt, boolean isplayback) {
         int length = Memory.realReadW(0x40, 0xd0);
         if (length == 0)
             return; /* nothing to do... */
@@ -686,35 +686,35 @@ public final class BIOS {
         else
             IO.write(0x0b, 0xff & (0x44 | tandyDMA));
         /* set physical address of buffer */
-        int bufpage = (bufpt >>> 16) & 0xff;
-        IO.write((0xff & tandyDMA) * 2, bufpt & 0xff);
-        IO.write((0xff & tandyDMA) * 2, (bufpt >>> 8) & 0xff);
+        int bufPage = (bufPt >>> 16) & 0xff;
+        IO.write((0xff & tandyDMA) * 2, bufPt & 0xff);
+        IO.write((0xff & tandyDMA) * 2, (bufPt >>> 8) & 0xff);
         switch (tandyDMA) {
             case 0:
-                IO.write(0x87, bufpage);
+                IO.write(0x87, bufPage);
                 break;
             case 1:
-                IO.write(0x83, bufpage);
+                IO.write(0x83, bufPage);
                 break;
             case 2:
-                IO.write(0x81, bufpage);
+                IO.write(0x81, bufPage);
                 break;
             case 3:
-                IO.write(0x82, bufpage);
+                IO.write(0x82, bufPage);
                 break;
         }
-        Memory.realWriteB(0x40, 0xd4, bufpage);
+        Memory.realWriteB(0x40, 0xd4, bufPage);
 
         /* calculate transfer size (respects segment boundaries) */
-        int tlength = length;
-        if (tlength + (bufpt & 0xffff) > 0x10000)
-            tlength = 0x10000 - (bufpt & 0xffff);
-        Memory.realWriteW(0x40, 0xd0, length - tlength); /* remaining buffer length */
-        tlength--;
+        int tLength = length;
+        if (tLength + (bufPt & 0xffff) > 0x10000)
+            tLength = 0x10000 - (bufPt & 0xffff);
+        Memory.realWriteW(0x40, 0xd0, length - tLength); /* remaining buffer length */
+        tLength--;
 
         /* set transfer size */
-        IO.write((0xff & tandyDMA) * 2 + 1, tlength & 0xff);
-        IO.write((0xff & tandyDMA) * 2 + 1, (tlength >>> 8) & 0xff);
+        IO.write((0xff & tandyDMA) * 2 + 1, tLength & 0xff);
+        IO.write((0xff & tandyDMA) * 2 + 1, (tLength >>> 8) & 0xff);
 
         int delay = Memory.realReadW(0x40, 0xd2) & 0xfff;
         int amplitude = (Memory.realReadW(0x40, 0xd2) >>> 13) & 0x7;
@@ -729,8 +729,8 @@ public final class BIOS {
             else
                 IO.write((0xffff & tandySb.port) + 0xc, 0x24);
             /* set transfer size */
-            IO.write((0xffff & tandySb.port) + 0xc, tlength & 0xff);
-            IO.write((0xffff & tandySb.port) + 0xc, (tlength >>> 8) & 0xff);
+            IO.write((0xffff & tandySb.port) + 0xc, tLength & 0xff);
+            IO.write((0xffff & tandySb.port) + 0xc, (tLength >>> 8) & 0xff);
         } else {
             if (isplayback)
                 IO.write(0xffff & tandyDAC.port, 0xff & ((IO.read(tandyDAC.port) & 0x7c) | 0x03));

@@ -44,8 +44,8 @@ public final class Keyboard {
 
     private KBDKeys repeatKey;
     private int repeatWait;
-    private int _repeat_pause, _repeat_rate;
-    private KeyCommands _command;
+    private int repeatPause, repeatRate;
+    private KeyCommands command;
     private byte p60data;
     private boolean p60changed;
     private boolean active;
@@ -118,13 +118,13 @@ public final class Keyboard {
                     167, 182, 200, 217, 233, 250, 270, 303, 333, 370, 400, 435, 476, 500};
 
     private void writeP60(int port, int val, int iolen) {
-        switch (_command) {
+        switch (command) {
             case CMD_NONE: /* None */
                 /* No active command this would normally get sent to the keyboard then */
                 clrBuffer();
                 switch (val) {
                     case 0xed: /* Set Leds */
-                        _command = KeyCommands.CMD_SETLEDS;
+                        command = KeyCommands.CMD_SETLEDS;
                         addBuffer(0xfa); /* Acknowledge */
                         break;
                     case 0xee: /* Echo */
@@ -135,7 +135,7 @@ public final class Keyboard {
                         addBuffer(0xfa); /* Acknowledge */
                         break;
                     case 0xf3: /* Typematic rate programming */
-                        _command = KeyCommands.CMD_SETTYPERATE;
+                        command = KeyCommands.CMD_SETTYPERATE;
                         addBuffer(0xfa); /* Acknowledge */
                         break;
                     case 0xf4: /* Enable keyboard,clear buffer, start scanning */
@@ -162,19 +162,19 @@ public final class Keyboard {
                 return;
             case CMD_SETOUTPORT:
                 Memory.A20Enable((val & 2) > 0);
-                _command = KeyCommands.CMD_NONE;
+                command = KeyCommands.CMD_NONE;
                 break;
             case CMD_SETTYPERATE: {
 
-                _repeat_pause = delay[(val >>> 5) & 3];
-                _repeat_rate = repeat[val & 0x1f];
-                _command = KeyCommands.CMD_NONE;
+                repeatPause = delay[(val >>> 5) & 3];
+                repeatRate = repeat[val & 0x1f];
+                command = KeyCommands.CMD_NONE;
                 // goto KeyCmdSETLEDS;
             }
             /* Fallthrough! as setleds does what we want */
             case CMD_SETLEDS:
                 // KeyCmdSETLEDS:
-                _command = KeyCommands.CMD_NONE;
+                command = KeyCommands.CMD_NONE;
                 clrBuffer();
                 addBuffer(0xfa); /* Acknowledge */
                 break;
@@ -216,7 +216,7 @@ public final class Keyboard {
                 setPort60((byte) (Memory.A20Enabled() ? 0x02 : 0));
                 break;
             case 0xd1: /* Write to outport */
-                _command = KeyCommands.CMD_SETOUTPORT;
+                command = KeyCommands.CMD_SETOUTPORT;
                 break;
             default:
                 // LOG(LOG_KEYBOARD,LOG_ERROR)("Port 64 write with val %d",val);
@@ -569,9 +569,9 @@ public final class Keyboard {
         /* Add the actual key in the keyboard queue */
         if (pressed) {
             if (repeatKey == keytype)
-                repeatWait = _repeat_rate;
+                repeatWait = repeatRate;
             else
-                repeatWait = _repeat_pause;
+                repeatWait = repeatPause;
             repeatKey = keytype;
         } else {
             repeatKey = KBDKeys.KBD_NONE;
@@ -591,32 +591,32 @@ public final class Keyboard {
         }
     }
 
-    private static Keyboard _kbd = null;
+    private static Keyboard kbd = null;
 
     public static void init(Section sec) {
-        if (_kbd == null)
-            _kbd = new Keyboard();
-        IO.registerWriteHandler(0x60, _kbd::writeP60, IO.IO_MB);
-        IO.registerReadHandler(0x60, _kbd::readP60, IO.IO_MB);
-        IO.registerWriteHandler(0x61, _kbd::writeP61, IO.IO_MB);
-        IO.registerReadHandler(0x61, _kbd::readP61, IO.IO_MB);
-        IO.registerWriteHandler(0x64, _kbd::writeP64, IO.IO_MB);
-        IO.registerReadHandler(0x64, _kbd::readP64, IO.IO_MB);
-        Timer.addTickHandler(_kbd::tickHandler);
-        _kbd.writeP61(0, 0, 0);
+        if (kbd == null)
+            kbd = new Keyboard();
+        IO.registerWriteHandler(0x60, kbd::writeP60, IO.IO_MB);
+        IO.registerReadHandler(0x60, kbd::readP60, IO.IO_MB);
+        IO.registerWriteHandler(0x61, kbd::writeP61, IO.IO_MB);
+        IO.registerReadHandler(0x61, kbd::readP61, IO.IO_MB);
+        IO.registerWriteHandler(0x64, kbd::writeP64, IO.IO_MB);
+        IO.registerReadHandler(0x64, kbd::readP64, IO.IO_MB);
+        Timer.addTickHandler(kbd::tickHandler);
+        kbd.writeP61(0, 0, 0);
         /* Init the keyb struct */
-        _kbd.active = true;
-        _kbd.scanning = true;
-        _kbd._command = KeyCommands.CMD_NONE;
-        _kbd.p60changed = false;
-        _kbd.repeatKey = KBDKeys.KBD_NONE;
-        _kbd._repeat_pause = 500;
-        _kbd._repeat_rate = 33;
-        _kbd.repeatWait = 0;
-        _kbd.clrBuffer();
+        kbd.active = true;
+        kbd.scanning = true;
+        kbd.command = KeyCommands.CMD_NONE;
+        kbd.p60changed = false;
+        kbd.repeatKey = KBDKeys.KBD_NONE;
+        kbd.repeatPause = 500;
+        kbd.repeatRate = 33;
+        kbd.repeatWait = 0;
+        kbd.clrBuffer();
     }
 
     public static Keyboard instance() {
-        return _kbd;
+        return kbd;
     }
 }
