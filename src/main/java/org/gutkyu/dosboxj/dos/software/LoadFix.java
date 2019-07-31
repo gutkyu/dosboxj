@@ -15,7 +15,8 @@ public final class LoadFix extends Program {
     public void run() {
         short commandNr = 1;
         short kb = 64;
-        if ((TempLine = Cmd.findCommand(commandNr)) != null) {
+        if (Cmd.findCommand(commandNr)) {
+            TempLine = Cmd.returnedCmd;
             if (TempLine.charAt(0) == '-') {
                 char ch = TempLine.charAt(1);
                 if ((Character.toUpperCase(ch) == 'D') || (Character.toUpperCase(ch) == 'F')) {
@@ -43,7 +44,8 @@ public final class LoadFix extends Program {
             mcb.setPSPSeg(0x40); // use fake segment
             writeOut(Message.get("PROGRAM_LOADFIX_ALLOC"), kb);
             // Prepare commandline...
-            if ((TempLine = Cmd.findCommand(commandNr++)) != null) {
+            if (Cmd.findCommand(commandNr++)) {
+                TempLine = Cmd.returnedCmd;
                 // get Filename
                 CStringPt filename = CStringPt.create(128);
                 CStringPt.safeCopy(TempLine, filename, 128);
@@ -52,7 +54,8 @@ public final class LoadFix extends Program {
                 CStringPt args = CStringPt.create(256);
                 args.set(0, (char) 0);
                 do {
-                    ok = (TempLine = Cmd.findCommand(commandNr++)) != null;
+                    ok = Cmd.findCommand(commandNr++);
+                    TempLine = ok ? Cmd.returnedCmd : TempLine;
                     if (args.length() - args.length() - 1 < TempLine.length() + 1)
                         break;
                     args.concat(TempLine);

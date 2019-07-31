@@ -13,7 +13,8 @@ public final class KEYB extends Program {
 
     @Override
     public void run() {
-        if ((TempLine = Cmd.findCommand(1)) != null) {
+        if (Cmd.findCommand(1)) {
+            TempLine = Cmd.returnedCmd;
             if ((TempLine = Cmd.findString("?", false)) != null) {
                 writeOut(Message.get("PROGRAM_KEYB_SHOWHELP"));
             } else {
@@ -21,11 +22,13 @@ public final class KEYB extends Program {
                 int keybError = 0;
                 String cpString = null;
                 int triedCP = -1;
-                if ((cpString = Cmd.findCommand(2)) != null) {
+                if (Cmd.findCommand(2)) {
+                    cpString = Cmd.returnedCmd;
                     /* second parameter is codepage number */
                     triedCP = Integer.parseInt(cpString);
                     CStringPt cpFileName = CStringPt.create(256);
-                    if ((cpString = Cmd.findCommand(3)) != null) {
+                    if (Cmd.findCommand(3)) {
+                        cpString = Cmd.returnedCmd;
                         /* third parameter is codepage file */
                         CStringPt.copy(cpString, cpFileName);
                     } else {

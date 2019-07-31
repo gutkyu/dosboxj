@@ -65,12 +65,11 @@ public final class Autoexec extends ModuleBase {
             String orig = "";
             char cross_filesplit = Cross.FILESPLIT;
             BasicFileAttributes attrs = null;
-            if ((line = DOSBox.Control.CmdLine.findCommand(1)) == null) {
+            if (!DOSBox.Control.CmdLine.findCommand(1)) {
                 if (secure)
                     _autoexec[12].install("z:\\config.com -securemode");
             } else {
-
-
+                line = DOSBox.Control.CmdLine.returnedCmd;
                 StringBuilder sb = new StringBuilder();
                 sb.append(line);
                 buffer = sb.toString();
@@ -94,7 +93,6 @@ public final class Autoexec extends ModuleBase {
                     path = Paths.get(buffer);
                     if (Files.exists(path))
                         break;// goto nomount;
-
 
                 }
 

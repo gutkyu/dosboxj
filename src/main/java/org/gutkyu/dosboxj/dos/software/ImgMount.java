@@ -102,8 +102,10 @@ public final class ImgMount extends Program {
             }
 
             if (fstype.equals("fat") || fstype.equals("iso")) {
+                boolean foundCmd = Cmd.findCommand(1);
+                TempLine = foundCmd ? Cmd.returnedCmd : TempLine;
                 // get the drive letter
-                if ((TempLine = Cmd.findCommand(1)) == null || (TempLine.length() > 2)
+                if (!foundCmd || (TempLine.length() > 2)
                         || ((TempLine.length() > 1) && (TempLine.charAt(1) != ':'))) {
                     writeOutNoParsing(Message.get("PROGRAM_IMGMOUNT_SPECIFY_DRIVE"));
                     return;
@@ -114,7 +116,7 @@ public final class ImgMount extends Program {
                     return;
                 }
             } else if (fstype.equals("none")) {
-                TempLine = Cmd.findCommand(1);
+                TempLine = Cmd.findCommand(1) ? Cmd.returnedCmd : TempLine;
                 if ((TempLine.length() > 1) || (!Character.isDigit(TempLine.charAt(0)))) {
                     writeOutNoParsing(Message.get("PROGRAM_IMGMOUNT_SPECIFY2"));
                     return;
@@ -130,8 +132,7 @@ public final class ImgMount extends Program {
             }
 
             // find all file parameters, assuming that all option parameters have been removed
-            while ((TempLine = Cmd.findCommand(paths.size() + 2)) != null
-                    && TempLine.length() > 0) {
+            while (Cmd.findCommand(paths.size() + 2) && (TempLine = Cmd.returnedCmd).length() > 0) {
                 Path path = Paths.get(TempLine);
                 BasicFileAttributes attr = null;
                 try {

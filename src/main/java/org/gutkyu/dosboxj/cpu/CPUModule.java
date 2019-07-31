@@ -71,7 +71,8 @@ public final class CPUModule extends ModuleBase {
             CPU.CycleAutoAdjust = true;
             CPU.CycleLimit = -1;
             for (int cmdnum = 1; cmdnum <= cmd.getCount(); cmdnum++) {
-                if ((str = cmd.findCommand(cmdnum)) != null) {
+                if (cmd.findCommand(cmdnum)) {
+                    str = cmd.returnedCmd;
                     if (str.indexOf('%') == str.length() - 1) {
                         // str = str.Remove(str.indexOf('%'));
                         str = str.substring(0, str.length() - 1);
@@ -81,7 +82,8 @@ public final class CPUModule extends ModuleBase {
                             CPU.CyclePercUsed = percval;
                     } else if (str.equals("limit")) {
                         cmdnum++;
-                        if ((str = cmd.findCommand(cmdnum)) != null) {
+                        if (cmd.findCommand(cmdnum)) {
+                            str = cmd.returnedCmd;
                             int cyclimit = 0;
                             cyclimit = Integer.parseInt(str);
                             if (cyclimit > 0)
@@ -97,7 +99,8 @@ public final class CPUModule extends ModuleBase {
                 CPU.OldCycleMax = 3000;
                 CPU.CyclePercUsed = 100;
                 for (int cmdnum = 0; cmdnum <= cmd.getCount(); cmdnum++) {
-                    if ((str = cmd.findCommand(cmdnum)) != null) {
+                    if (cmd.findCommand(cmdnum)) {
+                        str = cmd.returnedCmd;
                         if (str.indexOf('%') == str.length() - 1) {
                             // str = str.Remove(str.indexOf('%'));
                             str = str.substring(0, str.length() - 1);
@@ -107,7 +110,8 @@ public final class CPUModule extends ModuleBase {
                                 CPU.CyclePercUsed = percval;
                         } else if (str.equals("limit")) {
                             cmdnum++;
-                            if ((str = cmd.findCommand(cmdnum)) != null) {
+                            if (cmd.findCommand(cmdnum)) {
+                                str = cmd.returnedCmd;
                                 int cyclimit = 0;
                                 cyclimit = Integer.parseInt(str);
                                 if (cyclimit > 0)
@@ -124,7 +128,7 @@ public final class CPUModule extends ModuleBase {
                     }
                 }
             } else if (type.equals("fixed")) {
-                str = cmd.findCommand(1);
+                str = cmd.findCommand(1) ? cmd.returnedCmd : str;
                 int rmdval = 0;
                 rmdval = Integer.parseInt(str);
                 CPU.CycleMax = rmdval;

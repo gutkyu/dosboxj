@@ -1078,11 +1078,11 @@ public final class DOSShell extends DOSShellBase {
 
             if (command.getCount() != 2)
                 throw new DOSException("0");
-            arg = command.findCommand(2);
+            arg = command.findCommand(2) ? command.returnedCmd : arg;
             if ((arg.equals("/D")) || (arg.equals("/d")))
                 throw new DOSException("1"); // No removal (one day)
 
-            arg = command.findCommand(1);
+            arg = command.findCommand(1) ? command.returnedCmd : arg;
             if ((arg.length() > 1) && arg.charAt(1) != ':')
                 throw new DOSException("0");
             tempStr.set(0, Character.toUpperCase(args.get(0)));
@@ -1091,7 +1091,7 @@ public final class DOSShell extends DOSShellBase {
             mountString.concat(tempStr);
             mountString.concat(" ");
 
-            arg = command.findCommand(2);
+            arg = command.findCommand(2) ? command.returnedCmd : arg;
             if (!DOSMain.makeFullName(arg.toUpperCase(), DOSSystem.DOS_PATHLENGTH))
                 throw new DOSException("0");
             String fullDir = DOSMain.returnedFullName;

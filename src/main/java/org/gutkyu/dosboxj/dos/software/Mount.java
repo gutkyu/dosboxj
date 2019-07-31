@@ -136,7 +136,7 @@ public final class Mount extends Program {
             sizes[count++] = Integer.parseInt(new String(number));
 
             // get the drive letter
-            TempLine = Cmd.findCommand(1);
+            TempLine = Cmd.findCommand(1) ? Cmd.returnedCmd : TempLine;
             if ((TempLine.length() > 2)
                     || ((TempLine.length() > 1) && (TempLine.charAt(1) != ':'))) {
                 // goto showusage
@@ -150,11 +150,12 @@ public final class Mount extends Program {
                 return;
             }
 
-            if ((TempLine = Cmd.findCommand(2)) == null) {
+            if (!Cmd.findCommand(2)) {
                 // goto showusage
                 showUsage();
                 return;
             }
+            TempLine = Cmd.returnedCmd;
             if (TempLine.length() == 0) {
                 // goto showusage
                 showUsage();

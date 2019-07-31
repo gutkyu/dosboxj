@@ -113,8 +113,9 @@ class BatchFile implements Disposable {
                     if (cmd.getCount() < (int) next)
                         continue;
                     String word = null;
-                    if ((word = cmd.findCommand(next)) == null)
+                    if (!cmd.findCommand(next))
                         continue;
+                    word = cmd.returnedCmd;
                     CStringPt.copy(word, cmdWrite);
                     cmdWrite.moveR(word.length());
                     continue;

@@ -194,11 +194,13 @@ public final class Boot extends Program {
             return;
         }
         while (i < Cmd.getCount()) {
-            if ((TempLine = Cmd.findCommand(i + 1)) != null) {
+            if (Cmd.findCommand(i + 1)) {
+                TempLine = Cmd.returnedCmd;
                 if ((TempLine.equals("-l")) || (TempLine.equals("-L"))) {
                     /* Specifying drive... next argument then is the drive */
                     i++;
-                    if ((TempLine = Cmd.findCommand(i + 1)) != null) {
+                    if (Cmd.findCommand(i + 1)) {
+                        TempLine = Cmd.returnedCmd;
                         drive = Character.toUpperCase(TempLine.charAt(0));
                         if ((drive != 'A') && (drive != 'C') && (drive != 'D')) {
                             printError();
@@ -216,8 +218,8 @@ public final class Boot extends Program {
                 if ((TempLine.equals("-e")) || (TempLine.equals("-E"))) {
                     /* Command mode for PCJr cartridges */
                     i++;
-                    if ((TempLine = Cmd.findCommand(i + 1)) != null) {
-                        TempLine = TempLine.toUpperCase();
+                    if (Cmd.findCommand(i + 1)) {
+                        TempLine = Cmd.returnedCmd.toUpperCase();
                         cartCmd = TempLine;
                     } else {
                         printError();
