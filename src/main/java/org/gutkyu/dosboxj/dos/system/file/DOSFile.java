@@ -21,7 +21,7 @@ public abstract class DOSFile implements Disposable {
         Open = orig.Open;
         Name = CStringPt.create();
         if (!orig.Name.isEmpty()) {
-            Name = orig.Name;
+            Name = CStringPt.create(orig.Name.toString());
         }
     }
 
@@ -59,7 +59,7 @@ public abstract class DOSFile implements Disposable {
     public abstract int getInformation();
 
     public void setName(CStringPt name) {
-        Name = name;
+        Name = CStringPt.create(name.toString());
     }
 
     public CStringPt getName() {

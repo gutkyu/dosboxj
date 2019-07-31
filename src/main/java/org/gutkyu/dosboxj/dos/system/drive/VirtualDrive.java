@@ -70,7 +70,7 @@ public final class VirtualDrive extends DOSDrive {
     private static CStringPt cstrDOSBOX = CStringPt.create("DOSBOX");
 
     @Override
-    public boolean findFirst(CStringPt _dir, DOSDTA dta, boolean fcbFindFirst) {
+    public boolean findFirst(CStringPt dir, DOSDTA dta, boolean fcbFindFirst) {
         searchFile = VFile.firstFile;
         CStringPt pattern = CStringPt.create(DOSSystem.DOS_NAMELENGTH_ASCII);
         int attr = dta.getSearchParams(pattern);

@@ -105,8 +105,9 @@ public final class Support {
 
     /* This scans the command line for a remaining switch and reports it else returns 0 */
     public static CStringPt scanCmdRemain(CStringPt cmd) {
-        CStringPt scan, found;
-        if (!(scan = found = cmd.positionOf('/')).isEmpty()) {
+        CStringPt found = cmd.positionOf('/');
+        CStringPt scan = CStringPt.clone(found);
+        if (!scan.isEmpty()) {
             while (scan.get() != 0 && !Character.isWhitespace(scan.get()))
                 scan.movePtToR1();
             scan.set((char) 0);
@@ -115,15 +116,16 @@ public final class Support {
             return CStringPt.getZero();
     }
 
+    // char * StripWord(char *&cmd);
     public static CStringPt stripWord(CStringPt line) {
         // CStringPt scan = line;
         CStringPt scan = CStringPt.clone(line);
         scan = scan.lTrim();
         if (scan.get() == '"') {
-            CStringPt end_quote = CStringPt.clone(scan, 1).positionOf('"');
-            if (!end_quote.isEmpty()) {
-                end_quote.set((char) 0);
-                line = end_quote.movePtToR1().lTrim();
+            CStringPt endQuote = CStringPt.clone(scan, 1).positionOf('"');
+            if (!endQuote.isEmpty()) {
+                endQuote.set((char) 0);
+                CStringPt.copyPt(endQuote.movePtToR1().lTrim(), line);
                 return CStringPt.clone(scan, 1);
             }
         }
@@ -139,6 +141,7 @@ public final class Support {
         return begin;
     }
 
+    // StripSpaces(char*&args,char also)
     public static void stripSpaces(CStringPt args, char also) {
         while (!args.isEmpty() && args.get() != 0
                 && (Character.isWhitespace(args.get()) || args.get() == also)) {

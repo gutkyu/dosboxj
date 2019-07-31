@@ -679,6 +679,7 @@ public class DOSDriveCache implements Disposable {
         return compareName.toString().compareTo(shortName.toString());
     }
 
+    // SetResult(CFileInfo dir, ref CStringPt result, UInt32 entryNr)
     private boolean setResult(CFileInfo dir, CStringPt result, int entryNr) {
         CStringPt res = CStringPt.create(Cross.LEN);
         res.set(0, (char) 0);
@@ -704,7 +705,7 @@ public class DOSDriveCache implements Disposable {
 
         CStringPt dir = CStringPt.create(Cross.LEN);
         CStringPt work = CStringPt.create(Cross.LEN);
-        CStringPt start = path;// path
+        CStringPt start = CStringPt.clone(path);// path
         CStringPt pos;
         CFileInfo curDir = dirBase;
         int id = 0;
@@ -786,8 +787,8 @@ public class DOSDriveCache implements Disposable {
 
     private boolean removeSpaces(CStringPt str) {
         // Removes all spaces
-        CStringPt curpos = str;
-        CStringPt chkpos = str;
+        CStringPt curpos = CStringPt.clone(str);
+        CStringPt chkpos = CStringPt.clone(str);
         while (chkpos.get() != 0) {
             if (chkpos.get() == ' ')
                 chkpos.movePtToR1();

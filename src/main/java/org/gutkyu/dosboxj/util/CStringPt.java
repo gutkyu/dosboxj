@@ -130,13 +130,13 @@ public final class CStringPt {
 
     // copyPt, 포인터 정보 복사, 주로 함수 포인터 매개변수의 값을 바꾸기 위해 사용
     public static void copyPt(CStringPt src, CStringPt dest) {
-        src.arrays = dest.arrays;
-        src.posNullChar = dest.posNullChar;
-        src.index = dest.index;
-        src.changed = dest.changed;
+        dest.arrays = src.arrays;
+        dest.posNullChar = src.posNullChar;
+        dest.index = src.index;
+        dest.changed = src.changed;
 
-        src.str = dest.str;
-        src.zero = dest.zero;
+        dest.str = src.str;
+        dest.zero = src.zero;
     }
 
     // dispose하지 않고 할당된 메모리 해제만 수행

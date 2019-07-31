@@ -137,6 +137,7 @@ public abstract class DOSShellBase extends Program {
         boolean normalstdout = false; /* Bug: Assumed is they are "con" */
 
         num = getRedirection(line, inPt, outPt, append);
+        append = returnedGetRedirectionAppend;
         if (num > 1)
             Log.logMsg("SHELL:Multiple command on 1 line not supported");
         if (!inPt.isEmpty() || !outPt.isEmpty()) {
@@ -202,6 +203,9 @@ public abstract class DOSShellBase extends Program {
         }
     }
 
+    private boolean returnedGetRedirectionAppend;
+
+    // Bitu GetRedirection(char *s, char **ifn, char **ofn,bool * append)
     public int getRedirection(CStringPt line, CStringPt ifn, CStringPt ofn, boolean append) {
         CStringPt lr = CStringPt.clone(line);
         CStringPt lw = CStringPt.clone(line);
@@ -226,13 +230,13 @@ public abstract class DOSShellBase extends Program {
                     quote = !quote;
                     break;
                 case '>':
-                    append = ((lr.get()) == '>');
+                    returnedGetRedirectionAppend = append = ((lr.get()) == '>');
                     if (append)
                         lr.movePtToR1();
                     lr = lr.lTrim();
                     if (!ofn.isEmpty())
                         ofn.empty();
-                    ofn = CStringPt.clone(lr);
+                    CStringPt.copyPt(lr, ofn);
                     while (lr.get() != 0 && lr.get() != ' ' && lr.get() != '<' && lr.get() != '|')
                         lr.movePtToR1();
                     // if it ends on a : => remove it.
@@ -244,13 +248,13 @@ public abstract class DOSShellBase extends Program {
                     // *lr=0;
                     t = CStringPt.create(CStringPt.diff(lr, ofn) + 1);
                     CStringPt.safeCopy(t, ofn, CStringPt.diff(lr, ofn) + 1);
-                    ofn = CStringPt.clone(t);
+                    CStringPt.copyPt(t, ofn);
                     continue;
                 case '<':
                     lr.lTrim();
                     if (!ifn.isEmpty())
                         ifn.empty();
-                    ifn = CStringPt.clone(lr);
+                    CStringPt.copyPt(lr, ifn);
                     while (lr.get() != 0 && lr.get() != ' ' && lr.get() != '>' && lr.get() != '|')
                         lr.movePtToR1();
                     if ((CStringPt.notEqual(ifn, lr)) && (lr.get(-1) == ':'))
@@ -261,8 +265,7 @@ public abstract class DOSShellBase extends Program {
                     // *lr=0;
                     t = CStringPt.create(CStringPt.diff(lr, ifn) + 1);
                     CStringPt.safeCopy(t, ifn, CStringPt.diff(lr, ifn) + 1);
-                    ifn = CStringPt.clone(t);
-
+                    CStringPt.copyPt(t, ifn);
                     continue;
                 case '|':
                     ch = (char) 0;

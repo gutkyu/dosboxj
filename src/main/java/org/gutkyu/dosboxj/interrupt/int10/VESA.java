@@ -96,6 +96,8 @@ final class VESA {
     private static final int Off_MODE_INFO_OffScreenMemSize = 48;
     private static final int Off_MODE_INFO_Reserved = 50;
 
+    private static final byte[] vesa = {'V', 'E', 'S', 'A'};
+
     public static int getSVGAInformation(int seg, int off) {
         /* Fill 256 byte buffer with VESA information */
         int buffer = Memory.physMake(seg, off);
@@ -113,7 +115,8 @@ final class VESA {
                 Memory.writeB(buffer + i, 0);
         }
         /* Fill common data */
-        Memory.blockWrite(buffer, CStringPt.create("VESA"), 4); // Identification
+
+        Memory.blockWrite(buffer, vesa, 0, 4); // Identification
         if (!INT10.int10.VesaOldVbe)
             Memory.writeW(buffer + 0x04, 0x200); // Vesa version 2.0
         else

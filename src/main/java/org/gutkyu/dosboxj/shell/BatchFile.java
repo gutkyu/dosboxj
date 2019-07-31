@@ -18,9 +18,9 @@ class BatchFile implements Disposable {
         filename = totalname.toString();
 
         // Test if file is openable
-        if (!DOSMain.openFile(totalname.toString(), 128)) {
+        if (!DOSMain.openFile(filename, 128)) {
             // TODO Come up with something better
-            Support.exceptionExit("SHELL:Can't open BatchFile %s", totalname.toString());
+            Support.exceptionExit("SHELL:Can't open BatchFile %s", filename);
         }
         fileHandle = DOSMain.returnFileHandle;
         DOSMain.closeFile(fileHandle);
@@ -141,7 +141,7 @@ class BatchFile implements Disposable {
                         CStringPt.copy(equals, cmdWrite);
                         cmdWrite.moveR(equals.length());
                     }
-                    cmdRead = first;
+                    CStringPt.copyPt(first, cmdRead);
                 }
             } else {
                 cmdWrite.set(cmdRead.get());
@@ -178,7 +178,7 @@ class BatchFile implements Disposable {
 
         // again:
         while (true) {
-            cmdWrite = cmdBuffer;
+            cmdWrite = CStringPt.clone(cmdBuffer);
             do {
                 n = 1;
                 DOSMain.readFile(fileHandle);
@@ -193,7 +193,7 @@ class BatchFile implements Disposable {
 
             cmdWrite.set((char) 0);
             cmdWrite.movePtToR1();
-            CStringPt nospace = cmdBuffer.trim();
+            CStringPt nospace = CStringPt.clone(cmdBuffer.trim());
             if (nospace.get(0) == ':') {
                 nospace.movePtToR1(); // Skip :
                 // Strip spaces and = from it.
@@ -202,7 +202,7 @@ class BatchFile implements Disposable {
                     nospace.movePtToR1();
 
                 // label is until space/=/eol
-                CStringPt beginlabel = nospace;
+                CStringPt beginlabel = CStringPt.clone(nospace);
                 while (nospace.get() != 0 && !Character.isWhitespace(nospace.get())
                         && (nospace.get() != '='))
                     nospace.movePtToR1();

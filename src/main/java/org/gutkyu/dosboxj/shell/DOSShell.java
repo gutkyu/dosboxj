@@ -192,7 +192,7 @@ public final class DOSShell extends DOSShellBase {
         Callback.runRealInt(0x10);
     }
 
-    static CStringPt defaulttarget = CStringPt.create(".");
+    static CStringPt defaultTarget = CStringPt.create(".");
     static byte[] buffer = new byte[0x8000]; // static, otherwise stack overflow possible.
 
     private void cmdCOPY(CStringPt args) {
@@ -249,7 +249,7 @@ public final class DOSShell extends DOSShellBase {
                     }
                 }
                 sources.add(new CopySource(sourceX.toString(), !plus.isEmpty()));
-                sourceP = plus;
+                CStringPt.copyPt(plus, sourceP);
             } while (!sourceP.isEmpty() && sourceP.get() != 0);
         }
         // At least one source has to be there
@@ -268,7 +268,7 @@ public final class DOSShell extends DOSShellBase {
         }
         // If no target => default target with concat flag true to detect a+b+c
         if (target.filename.length() == 0)
-            target = new CopySource(defaulttarget.toString(), true);
+            target = new CopySource(defaultTarget.toString(), true);
 
         CopySource oldSource = new CopySource();
         CopySource source = new CopySource();
@@ -534,11 +534,11 @@ public final class DOSShell extends DOSShellBase {
                     writeOut("%s\n", name);
                 }
             } else {
-                CStringPt ext = emptyString;
+                CStringPt ext = CStringPt.clone(emptyString);
                 if (!optW && (name.get(0) != '.')) {
                     ext = name.lastPositionOf('.');
                     if (ext.isEmpty())
-                        ext = emptyString;
+                        CStringPt.copyPt(emptyString, ext);
                     else {
                         ext.set((char) 0);
                         ext.movePtToR1();
@@ -668,7 +668,7 @@ public final class DOSShell extends DOSShellBase {
             return;
         }
         CStringPt buffer = CStringPt.create(512);
-        CStringPt pbuffer = buffer;
+        CStringPt pbuffer = CStringPt.clone(buffer);
         CStringPt.safeCopy(args, buffer, 512);
         pbuffer.lTrim();
         if (pbuffer.equalsIgnoreCase("OFF")) {
@@ -799,7 +799,7 @@ public final class DOSShell extends DOSShellBase {
             p.movePtToR1();
             /* parse p for envirionment variables */
             CStringPt parsed = CStringPt.create(ShellInner.CMD_MAXLINE);
-            CStringPt p_parsed = parsed;
+            CStringPt p_parsed = CStringPt.clone(parsed);
             while (p.get() != 0) {
                 if (p.get() != '%') {
                     p_parsed.set(p.get());
@@ -824,7 +824,7 @@ public final class DOSShell extends DOSShellBase {
                         CStringPt.copy(temp.substring(equals + 1), p_parsed);
                         p_parsed.moveR(p_parsed.length());
                     }
-                    p = second;
+                    CStringPt.copyPt(second, p);
                 }
             }
             p_parsed.set((char) 0);
@@ -897,11 +897,11 @@ public final class DOSShell extends DOSShellBase {
 
         /* Normal if string compare */
 
-        CStringPt word1 = args;
+        CStringPt word1 = CStringPt.clone(args);
         // first word is until space or =
         while (args.get() != 0 && !Character.isWhitespace(args.get()) && (args.get() != '='))
             args.movePtToR1();
-        CStringPt endWord1 = args;
+        CStringPt endWord1 = CStringPt.clone(args);
 
         // scan for =
         while (args.get() != 0 && (args.get() != '='))
@@ -914,7 +914,7 @@ public final class DOSShell extends DOSShellBase {
         args.moveR(2);
         Support.stripSpaces(args, '=');
 
-        CStringPt word2 = args;
+        CStringPt word2 = CStringPt.clone(args);
         // second word is until space or =
         while (args.get() != 0 && !Character.isWhitespace(args.get()) && (args.get() != '='))
             args.movePtToR1();
@@ -939,7 +939,7 @@ public final class DOSShell extends DOSShellBase {
         if (args.get() != 0 && (args.get() == ':'))
             args.movePtToR1();
         // label ends at the first space
-        CStringPt nonSpace = args;
+        CStringPt nonSpace = CStringPt.clone(args);
         while (nonSpace.get() != 0) {
             if ((nonSpace.get() == ' ') || (nonSpace.get() == '\t'))
                 nonSpace.set((char) 0);
@@ -1142,12 +1142,11 @@ public final class DOSShell extends DOSShellBase {
             this.parseLine(args);
     }
 
-    private static CStringPt defChoice = CStringPt.create("yn");
-
     private void cmdCHOICE(CStringPt args) {
         if (help(args, "CHOICE"))
             return;
-        CStringPt rem = CStringPt.getZero(), ptr;
+        CStringPt rem = CStringPt.getZero();
+        CStringPt ptr;
         boolean optN = Support.scanCmdBool(args, "N");
         boolean optS = Support.scanCmdBool(args, "S"); // Case-sensitive matching
         Support.scanCmdBool(args, "T"); // Default Choice after timeout
@@ -1171,8 +1170,8 @@ public final class DOSShell extends DOSShellBase {
                 args.empty();
         }
         if (rem.isEmpty() || rem.get() == 0)
-            rem = defChoice; /* No choices specified use YN */
-        ptr = rem;
+            rem = CStringPt.create("yn"); /* No choices specified use YN */
+        ptr = CStringPt.clone(rem);
         byte c = 0;
         if (!optS)
             while ((c = (byte) ptr.get()) != (char) 0) {
