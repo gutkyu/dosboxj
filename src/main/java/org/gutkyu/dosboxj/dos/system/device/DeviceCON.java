@@ -12,7 +12,7 @@ public final class DeviceCON extends DOSDevice {
     private static final int NUMBER_ANSI_DATA = 10;
 
     public DeviceCON() {
-        setName(CStringPt.create("CON"));
+        setName("CON");
         readCache = 0;
         lastWrite = 0;
         ansi.enabled = false;

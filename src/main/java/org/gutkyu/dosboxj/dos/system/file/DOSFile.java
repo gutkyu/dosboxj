@@ -7,7 +7,7 @@ import org.gutkyu.dosboxj.util.*;
 public abstract class DOSFile implements Disposable {
     public DOSFile() {
         Flags = 0;
-        Name = CStringPt.create();
+        Name = "";
         RefCtr = 0;
         hdrive = (byte) 0xff;
     }
@@ -19,9 +19,9 @@ public abstract class DOSFile implements Disposable {
         Attr = orig.Attr;
         RefCtr = orig.RefCtr;
         Open = orig.Open;
-        Name = CStringPt.create();
+        Name = "";
         if (!orig.Name.isEmpty()) {
-            Name = CStringPt.create(orig.Name.toString());
+            Name = orig.Name;
         }
     }
 
@@ -33,7 +33,7 @@ public abstract class DOSFile implements Disposable {
         if (disposing) {
         }
         if (Name != null)
-            Name.empty();
+            Name = "";
     }
 
     public abstract boolean read();
@@ -58,11 +58,11 @@ public abstract class DOSFile implements Disposable {
 
     public abstract int getInformation();
 
-    public void setName(CStringPt name) {
-        Name = CStringPt.create(name.toString());
+    public void setName(String name) {
+        Name = name;
     }
 
-    public CStringPt getName() {
+    public String getName() {
         return Name;
     }
 
@@ -100,7 +100,7 @@ public abstract class DOSFile implements Disposable {
     public int Attr;
     public int RefCtr;
     public boolean Open;
-    public CStringPt Name;
+    public String Name;
     /* Some Device Specific Stuff */
     private byte hdrive;
 }

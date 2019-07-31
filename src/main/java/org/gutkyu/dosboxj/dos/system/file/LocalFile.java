@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import org.gutkyu.dosboxj.dos.*;
 import org.gutkyu.dosboxj.hardware.io.*;
-import org.gutkyu.dosboxj.util.*;
 
 public final class LocalFile extends DOSFile {
     public LocalFile(String name, SeekableByteChannel chann) {
@@ -20,8 +19,8 @@ public final class LocalFile extends DOSFile {
         _lastAction = LastActionType.NONE;
         _readOnlyMedium = false;
 
-        Name.empty();
-        setName(CStringPt.create(name));
+        Name = "";
+        setName(name);
     }
 
     // TODO Maybe use flush, but that seemed to fuck up in visual c
@@ -182,7 +181,7 @@ public final class LocalFile extends DOSFile {
 
 
         try {
-            FileTime mTime = Files.getLastModifiedTime(Paths.get(getName().toString()));
+            FileTime mTime = Files.getLastModifiedTime(Paths.get(getName()));
             LocalDateTime dt = LocalDateTime.ofInstant(mTime.toInstant(), ZoneOffset.UTC);
 
             Date = DOSMain.packDate(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());

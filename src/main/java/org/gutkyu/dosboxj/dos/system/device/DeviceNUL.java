@@ -4,7 +4,7 @@ import org.gutkyu.dosboxj.util.*;
 
 public final class DeviceNUL extends DOSDevice {
     public DeviceNUL() {
-        setName(CStringPt.create("NUL"));
+        setName("NUL");
     }
 
     private final byte[] tmpRd = new byte[1];
@@ -20,12 +20,12 @@ public final class DeviceNUL extends DOSDevice {
             buf[i + offset] = 0;
         }
         rdSz = size;
-        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:READ", getName().toString());
+        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:READ", getName());
         return true;
     }
 
     @Override
-    public byte getReadByte(){
+    public byte getReadByte() {
         return tmpRd[0];
     }
 
@@ -33,32 +33,28 @@ public final class DeviceNUL extends DOSDevice {
 
     @Override
     public int readSize() {
-        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:readSize",
-                getName().toString());
+        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:readSize", getName());
         return rdSz;
     }
 
     @Override
     public boolean write(byte buf) {
         wrtSz = 1;
-        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:WRITE",
-                getName().toString());
+        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:WRITE", getName());
         return true;
     }
 
     @Override
     public boolean write(byte value, int size) {
         wrtSz = size;
-        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:WRITE",
-                getName().toString());
+        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:WRITE", getName());
         return true;
     }
 
     @Override
     public boolean write(byte[] buf, int offset, int size) {
         wrtSz = size;
-        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:WRITE",
-                getName().toString());
+        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:WRITE", getName());
         return true;
     }
 
@@ -66,14 +62,13 @@ public final class DeviceNUL extends DOSDevice {
 
     @Override
     public int writtenSize() {
-        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:writtenSize",
-                getName().toString());
+        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:writtenSize", getName());
         return wrtSz;
     }
 
     @Override
     public long seek(long pos, int type) {
-        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:SEEK", getName().toString());
+        Log.logging(Log.LogTypes.IOCTL, Log.LogServerities.Normal, "%s:SEEK", getName());
         return pos;
     }
 

@@ -125,47 +125,50 @@ public final class DOSSystem {
 
                     // fill in filename in fcb style
                     // (space-padded name (8 chars)+space-padded extension (3 chars))
-                    CStringPt filename = DOSMain.Files[Register.getRegBX()].getName();
-                    if (!filename.lastPositionOf('\\').isEmpty())
-                        filename = CStringPt.clone(filename.lastPositionOf('\\'), 1);
-                    if (!filename.lastPositionOf('/').isEmpty())
-                        filename = CStringPt.clone(filename.lastPositionOf('/'), 1);
-                    if (filename.isEmpty())
+                    String fileName = DOSMain.Files[Register.getRegBX()].getName();
+                    int findIdx = -1;
+                    if ((findIdx = fileName.lastIndexOf('\\')) >= 0)
+                        fileName = fileName.substring(findIdx + 1);
+                    if ((findIdx = fileName.lastIndexOf('/')) >= 0)
+                        fileName = fileName.substring(findIdx + 1);
+                    if (fileName == null || fileName.equals(""))
                         return true;
-                    CStringPt dotpos = filename.lastPositionOf('.');
-                    if (!dotpos.isEmpty()) {
-                        dotpos.movePtToR1();
-                        int nlen = filename.length();
-                        int extlen = dotpos.length();
-                        int nmelen = nlen - extlen;
-                        if (nmelen < 1)
+                    // CStringPt dotPos = fileName.lastPositionOf('.');
+                    int dotIdx = fileName.lastIndexOf('.');
+                    if (dotIdx >= 0) {
+                        // dotPos.movePtToR1();
+                        dotIdx++;
+                        int nLen = fileName.length();
+                        int extLen = nLen - dotIdx;
+                        int nmeLen = nLen - extLen;
+                        if (nmeLen < 1)
                             return true;
-                        nlen -= (extlen + 1);
+                        nLen -= (extLen + 1);
 
-                        if (nlen > 8)
-                            nlen = 8;
+                        if (nLen > 8)
+                            nLen = 8;
                         int i;
 
-                        for (i = 0; i < nlen; i++)
-                            Memory.writeB(sftptr + sftofs + 0x20 + i, filename.get(i));
-                        for (i = nlen; i < 8; i++)
-                            Memory.writeB(sftptr + sftofs + 0x20 + i, (byte) ' ');
+                        for (i = 0; i < nLen; i++)
+                            Memory.writeB(sftptr + sftofs + 0x20 + i, fileName.charAt(i));
+                        for (i = nLen; i < 8; i++)
+                            Memory.writeB(sftptr + sftofs + 0x20 + i, ' ');
 
-                        if (extlen > 3)
-                            extlen = 3;
-                        for (i = 0; i < extlen; i++)
-                            Memory.writeB(sftptr + sftofs + 0x28 + i, (byte) dotpos.get(i));
-                        for (i = extlen; i < 3; i++)
-                            Memory.writeB(sftptr + sftofs + 0x28 + i, (byte) ' ');
+                        if (extLen > 3)
+                            extLen = 3;
+                        for (i = 0; i < extLen; i++)
+                            Memory.writeB(sftptr + sftofs + 0x28 + i, fileName.charAt(dotIdx + i));
+                        for (i = extLen; i < 3; i++)
+                            Memory.writeB(sftptr + sftofs + 0x28 + i, ' ');
                     } else {
                         int i;
-                        int nlen = filename.length();
+                        int nlen = fileName.length();
                         if (nlen > 8)
                             nlen = 8;
                         for (i = 0; i < nlen; i++)
-                            Memory.writeB(sftptr + sftofs + 0x20 + i, (byte) filename.get(i));
+                            Memory.writeB(sftptr + sftofs + 0x20 + i, fileName.charAt(i));
                         for (i = nlen; i < 11; i++)
-                            Memory.writeB(sftptr + sftofs + 0x20 + i, (byte) ' ');
+                            Memory.writeB(sftptr + sftofs + 0x20 + i, ' ');
                     }
 
                     Register.segSet16(Register.SEG_NAME_ES, Memory.realSeg(sftrealpt));

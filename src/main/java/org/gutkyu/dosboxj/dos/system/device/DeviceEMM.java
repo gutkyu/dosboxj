@@ -10,7 +10,7 @@ public final class DeviceEMM extends DOSDevice {
     private static int GEMMIS_seg;
 
     public DeviceEMM() {
-        setName(CStringPt.create("EMMXXXX0"));
+        setName("EMMXXXX0");
         GEMMIS_seg = 0;
     }
 
