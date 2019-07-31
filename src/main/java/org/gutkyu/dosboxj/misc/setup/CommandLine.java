@@ -191,13 +191,14 @@ public final class CommandLine {
         return findString(name, false);
     }
 
-    // public boolean FindCommand(uint which, ref String value)
+    // 1 <= which <= cmds.size()
+    // boolean FindCommand(uint which, ref String value)
     public String findCommand(int which) {
         if (which < 1)
             return null;
         if (which > cmds.size())
             return null;
-        return cmds.get(which);// which > 1
+        return cmds.get(which - 1);// which > 1
     }
 
     // 인자 begin은 null 문자(0x00)을 제외한 string이 입력되어야한다.

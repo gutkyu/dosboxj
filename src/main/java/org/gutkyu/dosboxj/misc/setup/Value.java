@@ -69,7 +69,7 @@ public final class Value {
 
 
     private boolean equal(Value object) {
-        if (this.equals(object))
+        if (super.equals(object))
             return true;
         if (this.type != object.type)
             return false;
