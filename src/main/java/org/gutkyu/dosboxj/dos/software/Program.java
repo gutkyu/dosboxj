@@ -11,6 +11,10 @@ import org.gutkyu.dosboxj.misc.setup.*;
 import org.gutkyu.dosboxj.misc.setup.Value.WrongType;
 
 public abstract class Program implements Disposable {
+    protected String tempLine;
+    protected CommandLine cmd;
+    protected DOSPSP PSP;
+
     public Program() {
         /* Find the command line and setup the PSP */
         PSP = new DOSPSP(DOSMain.DOS.getPSP());
@@ -27,7 +31,7 @@ public abstract class Program implements Disposable {
             tail[DOSMain.CommandTailOffBuffer + 126] = 0;
         byte[] filename = new byte[256 + 1];
         Memory.strCopy(envscan, filename, 256);
-        Cmd = new CommandLine(filename, tail, DOSMain.CommandTailOffBuffer);
+        cmd = new CommandLine(filename, tail, DOSMain.CommandTailOffBuffer);
     }
 
     public void dispose() {
@@ -41,10 +45,6 @@ public abstract class Program implements Disposable {
          */
 
     }
-
-    public String TempLine;
-    public CommandLine Cmd;
-    public DOSPSP PSP;
 
     public abstract void run() throws WrongType;
 
@@ -227,10 +227,10 @@ public abstract class Program implements Disposable {
          * of parameters Length of arguments can be ~120. but switch when above 100 to be sure
          */
 
-        if (/* control.SecureMode() || */ Cmd.getArgLength() > 100) {
-            CommandLine temp = new CommandLine(Cmd.getFileName(), DOSShell.FullArguments + "\0");
-            Cmd = null;
-            Cmd = temp;
+        if (/* control.SecureMode() || */ cmd.getArgLength() > 100) {
+            CommandLine temp = new CommandLine(cmd.getFileName(), DOSShell.FullArguments + "\0");
+            cmd = null;
+            cmd = temp;
         }
         DOSShell.FullArguments = ""; // Clear so it gets even more save
     }

@@ -42,8 +42,8 @@ public final class ImgMount extends Program {
         List<String> paths = new ArrayList<String>();
         String umount = "";
         /* Check for unmounting */
-        if (this.Cmd.findString("-u", false)) {
-            umount = Cmd.returnedString;
+        if (this.cmd.findString("-u", false)) {
+            umount = cmd.returnedString;
             umount = String.valueOf(Character.toUpperCase(umount.charAt(0)));
             if (umount.length() > 1) {
                 umount += umount.substring(1);
@@ -73,8 +73,8 @@ public final class ImgMount extends Program {
 
         String type = "hdd";
         String fstype = "fat";
-        type = Cmd.findString("-t", true) ? Cmd.returnedString : type;
-        fstype = Cmd.findString("-fs", true) ? Cmd.returnedString : fstype;
+        type = cmd.findString("-t", true) ? cmd.returnedString : type;
+        fstype = cmd.findString("-fs", true) ? cmd.returnedString : fstype;
         if (type.equals("cdrom"))
             type = "iso"; // Tiny hack for people who like to type -t cdrom
         int mediaId;
@@ -92,7 +92,7 @@ public final class ImgMount extends Program {
                 mediaId = 0xF8;
                 fstype = "iso";
             }
-            strSize = Cmd.findString("-size", true) ? Cmd.returnedString : strSize;
+            strSize = cmd.findString("-size", true) ? cmd.returnedString : strSize;
             if ((type.equals("hdd")) && (strSize.length() == 0)) {
                 imgsizedetect = true;
             } else {
@@ -103,26 +103,26 @@ public final class ImgMount extends Program {
             }
 
             if (fstype.equals("fat") || fstype.equals("iso")) {
-                boolean foundCmd = Cmd.findCommand(1);
-                TempLine = foundCmd ? Cmd.returnedCmd : TempLine;
+                boolean foundCmd = cmd.findCommand(1);
+                tempLine = foundCmd ? cmd.returnedCmd : tempLine;
                 // get the drive letter
-                if (!foundCmd || (TempLine.length() > 2)
-                        || ((TempLine.length() > 1) && (TempLine.charAt(1) != ':'))) {
+                if (!foundCmd || (tempLine.length() > 2)
+                        || ((tempLine.length() > 1) && (tempLine.charAt(1) != ':'))) {
                     writeOutNoParsing(Message.get("PROGRAM_IMGMOUNT_SPECIFY_DRIVE"));
                     return;
                 }
-                drive = Character.toUpperCase(TempLine.charAt(0));
+                drive = Character.toUpperCase(tempLine.charAt(0));
                 if (!Character.isLetter(drive)) {
                     writeOutNoParsing(Message.get("PROGRAM_IMGMOUNT_SPECIFY_DRIVE"));
                     return;
                 }
             } else if (fstype.equals("none")) {
-                TempLine = Cmd.findCommand(1) ? Cmd.returnedCmd : TempLine;
-                if ((TempLine.length() > 1) || (!Character.isDigit(TempLine.charAt(0)))) {
+                tempLine = cmd.findCommand(1) ? cmd.returnedCmd : tempLine;
+                if ((tempLine.length() > 1) || (!Character.isDigit(tempLine.charAt(0)))) {
                     writeOutNoParsing(Message.get("PROGRAM_IMGMOUNT_SPECIFY2"));
                     return;
                 }
-                drive = TempLine.charAt(0);
+                drive = tempLine.charAt(0);
                 if ((drive < '0') || (drive > 3 + '0')) {
                     writeOutNoParsing(Message.get("PROGRAM_IMGMOUNT_SPECIFY2"));
                     return;
@@ -133,8 +133,8 @@ public final class ImgMount extends Program {
             }
 
             // find all file parameters, assuming that all option parameters have been removed
-            while (Cmd.findCommand(paths.size() + 2) && (TempLine = Cmd.returnedCmd).length() > 0) {
-                Path path = Paths.get(TempLine);
+            while (cmd.findCommand(paths.size() + 2) && (tempLine = cmd.returnedCmd).length() > 0) {
+                Path path = Paths.get(tempLine);
                 BasicFileAttributes attr = null;
                 try {
                     attr = Files.readAttributes(path, BasicFileAttributes.class);
@@ -142,16 +142,16 @@ public final class ImgMount extends Program {
 
 
                     // See if it works if the ~ are written out
-                    String homedir = TempLine;
+                    String homedir = tempLine;
                     homedir = Cross.resolveHomedir(homedir);
                     path = Paths.get(homedir);
                     try {
                         attr = Files.readAttributes(path, BasicFileAttributes.class);
-                        TempLine = homedir;
+                        tempLine = homedir;
                     } catch (Exception e1) {
                         // convert dosbox filename to system filename
                         CStringPt tmp = CStringPt.create(Cross.LEN);
-                        CStringPt.safeCopy(TempLine, tmp, Cross.LEN);
+                        CStringPt.safeCopy(tempLine, tmp, Cross.LEN);
                         if (!DOSMain.makeFullName(tmp.toString(), Cross.LEN)
                                 || DOSMain.Drives[DOSMain.returnedFullNameDrive]
                                         .getInfo() != "local directory") {
@@ -168,9 +168,9 @@ public final class ImgMount extends Program {
                         }
                         LocalDrive ldp = (LocalDrive) drv;
                         ldp.getSystemFilename(tmp, fullName);
-                        TempLine = tmp.toString();
+                        tempLine = tmp.toString();
 
-                        path = Paths.get(TempLine);
+                        path = Paths.get(tempLine);
                         try {
                             attr = Files.readAttributes(path, BasicFileAttributes.class);
                         } catch (Exception e3) {
@@ -184,14 +184,14 @@ public final class ImgMount extends Program {
                     writeOut(Message.get("PROGRAM_IMGMOUNT_MOUNT"));
                     return;
                 }
-                paths.add(TempLine);
+                paths.add(tempLine);
             }
             if (paths.size() == 0) {
                 writeOut(Message.get("PROGRAM_IMGMOUNT_SPECIFY_FILE"));
                 return;
             }
             if (paths.size() == 1)
-                TempLine = paths.get(0);
+                tempLine = paths.get(0);
             if (paths.size() > 1 && !fstype.equals("iso")) {
                 writeOut(Message.get("PROGRAM_IMGMOUNT_MULTIPLE_NON_CUEISO_FILES"));
                 return;
@@ -200,7 +200,7 @@ public final class ImgMount extends Program {
             int sectors = 0;
             if (fstype.equals("fat")) {
                 if (imgsizedetect) {
-                    Path path = Paths.get(TempLine);
+                    Path path = Paths.get(tempLine);
                     SeekableByteChannel diskfile = null;
                     try {
                         diskfile = Files.newByteChannel(path, StandardOpenOption.READ,
@@ -242,7 +242,7 @@ public final class ImgMount extends Program {
                             sizes[3]);
                 }
 
-                newdrive = new FATDrive(TempLine, sizes[0], sizes[1], sizes[2], sizes[3], 0);
+                newdrive = new FATDrive(tempLine, sizes[0], sizes[1], sizes[2], sizes[3], 0);
                 if (!((FATDrive) newdrive).createdSuccessfully) {
                     ((FATDrive) newdrive).dispose();
                     newdrive = null;
@@ -250,7 +250,7 @@ public final class ImgMount extends Program {
             } else if (fstype.equals("iso")) {
             } else {
                 // fopen(temp_line.c_str(), "rb+");
-                Path path = Paths.get(TempLine);
+                Path path = Paths.get(tempLine);
                 SeekableByteChannel newDisk = null;
                 try {
                     newDisk = Files.newByteChannel(path, StandardOpenOption.READ,
@@ -261,7 +261,7 @@ public final class ImgMount extends Program {
                 } catch (Exception e) {
 
                 }
-                newImage = new ImageDisk(newDisk, TempLine, imagesize, (imagesize > 2880));
+                newImage = new ImageDisk(newDisk, tempLine, imagesize, (imagesize > 2880));
                 if (imagesize > 2880)
                     newImage.setGeometry(sizes[2], sizes[3], sizes[1], sizes[0]);
             }
@@ -285,7 +285,7 @@ public final class ImgMount extends Program {
             // Set the correct media byte in the table
             Memory.writeB(Memory.real2Phys(DOSMain.DOS.tables.MediaId) + (drive - 'A') * 2,
                     mediaId);
-            writeOut(Message.get("PROGRAM_MOUNT_STATUS_2"), drive, TempLine);
+            writeOut(Message.get("PROGRAM_MOUNT_STATUS_2"), drive, tempLine);
             if (((FATDrive) newdrive).LoadedDisk.hardDrive) {
                 if (BIOSDisk.ImageDiskList[2] == null) {
                     BIOSDisk.ImageDiskList[2] = ((FATDrive) newdrive).LoadedDisk;
@@ -309,7 +309,7 @@ public final class ImgMount extends Program {
                 BIOSDisk.ImageDiskList[drive - '0'].dispose();
             BIOSDisk.ImageDiskList[drive - '0'] = newImage;
             BIOSDisk.updateDPT();
-            writeOut(Message.get("PROGRAM_IMGMOUNT_MOUNT_NUMBER"), drive - '0', TempLine);
+            writeOut(Message.get("PROGRAM_IMGMOUNT_MOUNT_NUMBER"), drive - '0', tempLine);
         }
 
         // check if volume label is given. becareful for cdrom

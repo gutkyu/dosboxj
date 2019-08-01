@@ -15,8 +15,8 @@ class Config extends Program {
 
     @Override
     public void run() throws WrongType {
-        if (Cmd.findString("-writeconf", true) || Cmd.findString("-wc", true)) {
-            TempLine = Cmd.returnedString;
+        if (cmd.findString("-writeconf", true) || cmd.findString("-wc", true)) {
+            tempLine = cmd.returnedString;
             /* In secure mode don't allow a new configfile to be created */
             if (DOSBox.Control.getSecureMode()) {
                 writeOut(Message.get("PROGRAM_CONFIG_SECURE_DISALLOW"));
@@ -24,20 +24,20 @@ class Config extends Program {
             }
             try {
                 try (SeekableByteChannel bf =
-                        Files.newByteChannel(Paths.get(TempLine), StandardOpenOption.CREATE,
+                        Files.newByteChannel(Paths.get(tempLine), StandardOpenOption.CREATE,
                                 StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-                    DOSBox.Control.printConfig(TempLine);
+                    DOSBox.Control.printConfig(tempLine);
                     return;
                 }
 
             } catch (Exception e) {
-                writeOut(Message.get("PROGRAM_CONFIG_FILE_ERROR"), TempLine);
+                writeOut(Message.get("PROGRAM_CONFIG_FILE_ERROR"), tempLine);
                 return;
             }
 
         }
-        if (Cmd.findString("-writelang", true) || Cmd.findString("-wl", true)) {
-            TempLine = Cmd.returnedString;
+        if (cmd.findString("-writelang", true) || cmd.findString("-wl", true)) {
+            tempLine = cmd.returnedString;
 
             /*
              * In secure mode don't allow a new languagefile to be created Who knows which kind of
@@ -49,20 +49,20 @@ class Config extends Program {
             }
             try {
                 try (SeekableByteChannel bf =
-                        Files.newByteChannel(Paths.get(TempLine), StandardOpenOption.CREATE,
+                        Files.newByteChannel(Paths.get(tempLine), StandardOpenOption.CREATE,
                                 StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-                    Message.write(TempLine);
+                    Message.write(tempLine);
                     return;
                 }
 
             } catch (Exception e) {
-                writeOut(Message.get("PROGRAM_CONFIG_FILE_ERROR"), TempLine);
+                writeOut(Message.get("PROGRAM_CONFIG_FILE_ERROR"), tempLine);
                 return;
             }
         }
 
         /* Code for switching to secure mode */
-        if (Cmd.findExist("-securemode", true)) {
+        if (cmd.findExist("-securemode", true)) {
             DOSBox.Control.switchToSecureMode();
             writeOut(Message.get("PROGRAM_CONFIG_SECURE_ON"));
             return;
@@ -72,31 +72,31 @@ class Config extends Program {
          * Code for getting the current configuration. * Official format: config -get
          * "section property" * As a bonus it will set %CONFIG% to this value as well
          */
-        if (Cmd.findString("-get", true)) {
-            TempLine = Cmd.returnedCmd;
+        if (cmd.findString("-get", true)) {
+            tempLine = cmd.returnedCmd;
             String temp2 = "";
-            temp2 = Cmd.getStringRemain(temp2);// So -get n1 n2= can be used without quotes
+            temp2 = cmd.getStringRemain(temp2);// So -get n1 n2= can be used without quotes
             temp2 = temp2 == null ? "" : temp2;
             if (temp2 != "")
-                TempLine = TempLine + " " + temp2;
+                tempLine = tempLine + " " + temp2;
 
-            int space = TempLine.indexOf(" ");
+            int space = tempLine.indexOf(" ");
             if (space < 0) {
                 writeOut(Message.get("PROGRAM_CONFIG_GET_SYNTAX"));
                 return;
             }
             // Copy the found property to a new string and erase from templine (mind the space)
-            String prop = TempLine.substring(space + 1);
-            TempLine = TempLine.substring(0, space + 1);
+            String prop = tempLine.substring(space + 1);
+            tempLine = tempLine.substring(0, space + 1);
 
-            Section sec = DOSBox.Control.getSection(TempLine);
+            Section sec = DOSBox.Control.getSection(tempLine);
             if (sec == null) {
-                writeOut(Message.get("PROGRAM_CONFIG_SECTION_ERROR"), TempLine);
+                writeOut(Message.get("PROGRAM_CONFIG_SECTION_ERROR"), tempLine);
                 return;
             }
             String val = sec.getPropValue(prop);
             if (val.equals(SetupModule.NO_SUCH_PROPERTY)) {
-                writeOut(Message.get("PROGRAM_CONFIG_NO_PROPERTY"), prop, TempLine);
+                writeOut(Message.get("PROGRAM_CONFIG_NO_PROPERTY"), prop, tempLine);
                 return;
             }
             writeOut("%s", val);
@@ -112,19 +112,19 @@ class Config extends Program {
          * section * and/or the "=" replaced by a " "
          */
 
-        if (Cmd.findString("-set", true)) { // get all arguments
-            TempLine = Cmd.returnedString;
+        if (cmd.findString("-set", true)) { // get all arguments
+            tempLine = cmd.returnedString;
             String temp2 = "";
-            temp2 = Cmd.getStringRemain(temp2);// So -set n1 n2=n3 can be used without quotes
+            temp2 = cmd.getStringRemain(temp2);// So -set n1 n2=n3 can be used without quotes
             temp2 = temp2 == null ? "" : temp2;
             if (temp2 != "")
-                TempLine = TempLine + " " + temp2;
-        } else if ((TempLine = Cmd.getStringRemain(TempLine)) == null) {// no set
+                tempLine = tempLine + " " + temp2;
+        } else if ((tempLine = cmd.getStringRemain(tempLine)) == null) {// no set
             writeOut(Message.get("PROGRAM_CONFIG_USAGE")); // and no arguments specified
             return;
         }
         // Wanted input: n1 n2=n3
-        String copy = TempLine;
+        String copy = tempLine;
         // seperate section from property
         int tempIdx = copy.indexOf(' ');
         if ((tempIdx >= 0) || (tempIdx = copy.indexOf('=')) < 0)
@@ -137,33 +137,33 @@ class Config extends Program {
         String inputLine = "";
 
         // if n1 n2 n3 then replace last space with =
-        int signIdx = TempLine.indexOf('=', tempIdx);
+        int signIdx = tempLine.indexOf('=', tempIdx);
         if (signIdx < 0) {
-            signIdx = TempLine.indexOf(' ', tempIdx);
+            signIdx = tempLine.indexOf(' ', tempIdx);
             if (signIdx >= 0) {
                 copy = copy.substring(0, signIdx) + "=" + copy.substring(signIdx + 1);
-                inputLine = TempLine.substring(tempIdx);
+                inputLine = tempLine.substring(tempIdx);
             } else {
                 // 2 items specified (no space nor = between n2 and n3
                 // assume that they posted: property value
                 // Try to determine the section.
                 Section sec = DOSBox.Control.getSectionFromProperty(copy);
                 if (sec == null) {
-                    if (DOSBox.Control.getSectionFromProperty(TempLine.substring(tempIdx)) != null)
+                    if (DOSBox.Control.getSectionFromProperty(tempLine.substring(tempIdx)) != null)
                         return; // Weird situation:ignore
                     writeOut(Message.get("PROGRAM_CONFIG_PROPERTY_ERROR"), copy);
                     return;
                 } // Hack to allow config ems true
-                String buffer = copy + "=" + TempLine.substring(tempIdx);
+                String buffer = copy + "=" + tempLine.substring(tempIdx);
                 signIdx = buffer.indexOf(' ');
                 if (signIdx < 0)
                     buffer = buffer.substring(0, signIdx) + "=" + buffer.substring(signIdx + 1);
                 copy = sec.getName();
                 inputLine = buffer;
             }
-            inputLine = TempLine.substring(tempIdx);
+            inputLine = tempLine.substring(tempIdx);
         } else {
-            inputLine = TempLine.substring(tempIdx);
+            inputLine = tempLine.substring(tempIdx);
         }
 
         /*

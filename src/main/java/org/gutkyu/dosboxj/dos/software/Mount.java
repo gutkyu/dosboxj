@@ -27,7 +27,7 @@ public final class Mount extends Program {
         changeToLongCmd();
         /* Parse the command line */
         /* if the command line is empty show current mounts */
-        if (Cmd.getCount() == 0) {
+        if (cmd.getCount() == 0) {
             writeOut(Message.get("PROGRAM_MOUNT_STATUS_1"));
             for (int d = 0; d < DOSMain.DOS_DRIVES; d++) {
                 if (DOSMain.Drives[d] != null) {
@@ -47,8 +47,8 @@ public final class Mount extends Program {
         }
 
         /* Check for unmounting */
-        if (Cmd.findString("-u", false)) {
-            umount = Cmd.returnedString;
+        if (cmd.findString("-u", false)) {
+            umount = cmd.returnedString;
             umount = Character.toUpperCase(umount.charAt(0)) + umount.substring(1);
             int iDrive = umount.charAt(0) - 'A';
             if (iDrive < DOSMain.DOS_DRIVES && iDrive >= 0 && DOSMain.Drives[iDrive] != null) {
@@ -73,7 +73,7 @@ public final class Mount extends Program {
         }
 
         // Show list of cdroms
-        if (Cmd.findExist("-cd", false)) {
+        if (cmd.findExist("-cd", false)) {
             /*
              * #if CDROM int num = SDL_CDNumDrives();
              * WriteOut(messages.MSG_Get("PROGRAM_MOUNT_CDROMS_FOUND"), num); for (int i = 0; i <
@@ -87,7 +87,7 @@ public final class Mount extends Program {
         }
 
         String type = "dir";
-        type = Cmd.findString("-t", true) ? Cmd.returnedString : type;
+        type = cmd.findString("-t", true) ? cmd.returnedString : type;
         boolean iscdrom = type.equals("cdrom"); // Used for mscdex bug cdrom label name emulation
         if (type.equals("floppy") || type.equals("dir") || type.equals("cdrom")) {
             int[] sizes = new int[4];
@@ -110,8 +110,8 @@ public final class Mount extends Program {
             }
             /* Parse the free space in mb's (kb's for floppies) */
             String mbSize = null;
-            if (Cmd.findString("-freesize", true)) {
-                mbSize = Cmd.returnedString;
+            if (cmd.findString("-freesize", true)) {
+                mbSize = cmd.returnedString;
                 int sizemb = Integer.parseInt(mbSize);
                 if (type.equals("floppy")) {
                     strSize = String.format("512,1,2880,%d", sizemb * 1024 / (512 * 1));
@@ -120,57 +120,58 @@ public final class Mount extends Program {
                 }
             }
 
-            strSize = Cmd.findString("-size", true) ? Cmd.returnedString : strSize;
+            strSize = cmd.findString("-size", true) ? cmd.returnedString : strSize;
             /* Parse the str_size string */
             sizes = Arrays.stream(strSize.split(",")).mapToInt(Integer::parseInt).toArray();
 
             // get the drive letter
-            TempLine = Cmd.findCommand(1) ? Cmd.returnedCmd : TempLine;
-            if ((TempLine.length() > 2)
-                    || ((TempLine.length() > 1) && (TempLine.charAt(1) != ':'))) {
+            tempLine = cmd.findCommand(1) ? cmd.returnedCmd : tempLine;
+            if ((tempLine.length() > 2)
+                    || ((tempLine.length() > 1) && (tempLine.charAt(1) != ':'))) {
                 // goto showusage
                 showUsage();
                 return;
             }
-            drive = Character.toUpperCase((char) TempLine.charAt(0));
+            drive = Character.toUpperCase((char) tempLine.charAt(0));
             if (!Character.isLetter(drive)) {
                 // goto showusage
                 showUsage();
                 return;
             }
 
-            if (!Cmd.findCommand(2)) {
+            if (!cmd.findCommand(2)) {
                 // goto showusage
                 showUsage();
                 return;
             }
-            TempLine = Cmd.returnedCmd;
-            if (TempLine.length() == 0) {
+            tempLine = cmd.returnedCmd;
+            if (tempLine.length() == 0) {
                 // goto showusage
                 showUsage();
                 return;
             }
 
-            boolean failed = false;
-            /* Removing trailing backslash if not root dir so stat will succeed */
-            if (TempLine.length() > 3 && TempLine.charAt(TempLine.length() - 1) == '\\')
-                TempLine = TempLine.substring(0, TempLine.length() - 1);;
-            Path path = Paths.get(TempLine);
+            if (Cross.IS_WINDOWS) {
+                /* Removing trailing backslash if not root dir so stat will succeed */
+                if (tempLine.length() > 3 && tempLine.charAt(tempLine.length() - 1) == '\\')
+                    tempLine = tempLine.substring(0, tempLine.length() - 1);
+            }
+            Path path = Paths.get(tempLine);
             BasicFileAttributes attr = null;
             try {
                 attr = Files.readAttributes(path, BasicFileAttributes.class);
             } catch (Exception e) {
-                writeOut(Message.get("PROGRAM_MOUNT_ERROR_1"), TempLine);
+                writeOut(Message.get("PROGRAM_MOUNT_ERROR_1"), tempLine);
                 return;
             }
             if (!attr.isDirectory()) {
-                writeOut(Message.get("PROGRAM_MOUNT_ERROR_2"), TempLine);
+                writeOut(Message.get("PROGRAM_MOUNT_ERROR_2"), tempLine);
                 return;
             }
 
 
-            if (TempLine.charAt(TempLine.length() - 1) != Cross.FILESPLIT)
-                TempLine += Cross.FILESPLIT;
+            if (tempLine.charAt(tempLine.length() - 1) != Cross.FILESPLIT)
+                tempLine += Cross.FILESPLIT;
             int bit8Size = 0xff & sizes[1];
 
             // TODO have to implement CDROM
@@ -179,10 +180,15 @@ public final class Mount extends Program {
              */
 
             /* Give a warning when mount c:\ or the / */
-            if ((TempLine.equals("c:\\")) || (TempLine.equals("C:\\")) || (TempLine.equals("c:/"))
-                    || (TempLine.equals("C:/")))
-                writeOut(Message.get("PROGRAM_MOUNT_WARNING_WIN"));
-            newdrive = new LocalDrive(TempLine, 0xffff & sizes[0], bit8Size, 0xffff & sizes[2],
+            if (Cross.IS_WINDOWS) {
+                if ((tempLine.equals("c:\\")) || (tempLine.equals("C:\\"))
+                        || (tempLine.equals("c:/")) || (tempLine.equals("C:/")))
+                    writeOut(Message.get("PROGRAM_MOUNT_WARNING_WIN"));
+            } else {
+                if (tempLine == "/")
+                    writeOut(Message.get("PROGRAM_MOUNT_WARNING_OTHER"));
+            }
+            newdrive = new LocalDrive(tempLine, 0xffff & sizes[0], bit8Size, 0xffff & sizes[2],
                     0xffff & sizes[3], mediaId);
 
         } else {
@@ -204,8 +210,8 @@ public final class Mount extends Program {
                 newdrive.getMediaByte());
         writeOut(Message.get("PROGRAM_MOUNT_STATUS_2"), drive, newdrive.getInfo());
         /* check if volume label is given and don't allow it to updated in the future */
-        if (Cmd.findString("-label", true)) {
-            label = Cmd.returnedString;
+        if (cmd.findString("-label", true)) {
+            label = cmd.returnedString;
             newdrive.dirCache.setLabel(label, iscdrom, false);
         }
         /*

@@ -13,6 +13,11 @@ public final class Cross {
     public static final char FILESPLIT =
             java.nio.file.FileSystems.getDefault().getSeparator().charAt(0);
     public static final int LEN = 512;
+    public static final boolean IS_WINDOWS;
+
+    static {
+        IS_WINDOWS = System.getProperty("os.name").toLowerCase().startsWith("windows");
+    }
 
     public static String getPlatformConfigDir() {
 

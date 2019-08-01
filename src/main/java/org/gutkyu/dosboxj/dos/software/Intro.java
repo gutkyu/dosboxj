@@ -24,18 +24,19 @@ public final class Intro extends Program {
     public void run() {
         /* Only run if called from the first shell (Xcom TFTD runs any intro file in the path) */
         if ((new DOSPSP(DOSMain.DOS.getPSP()))
-                .getParent() != (new DOSPSP(new DOSPSP(DOSMain.DOS.getPSP()).getParent())).getParent())
+                .getParent() != (new DOSPSP(new DOSPSP(DOSMain.DOS.getPSP()).getParent()))
+                        .getParent())
             return;
-        if (Cmd.findExist("cdrom", false)) {
+        if (cmd.findExist("cdrom", false)) {
             writeOut(Message.get("PROGRAM_INTRO_CDROM"));
             return;
         }
-        if (Cmd.findExist("mount", false)) {
+        if (cmd.findExist("mount", false)) {
             writeOut("\u001B[2J");// Clear screen before printing
             displayMount();
             return;
         }
-        if (Cmd.findExist("special", false)) {
+        if (cmd.findExist("special", false)) {
             writeOut(Message.get("PROGRAM_INTRO_SPECIAL"));
             return;
         }

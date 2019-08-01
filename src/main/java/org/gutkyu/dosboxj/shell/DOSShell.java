@@ -29,7 +29,6 @@ public final class DOSShell extends DOSShellBase {
     private static final class ShellCmd {
         public final String Name; /* Command name */
         public final int Flags; /* Flags about the command */
-        // TODO CStringPt-> String
         public final DOSAction1<CStringPt> Handler; /* Handler for this command */
         public final String Help; /* String with command help */
 
@@ -119,7 +118,9 @@ public final class DOSShell extends DOSShellBase {
         /* Check the internal list */
         if (!cmdBuffer.isEmpty() && cmdBuffer.length() > 0
                 && cmdList.containsKey(cmdBuffer.toString())) {
-            cmdList.get(cmdBuffer.toString()).Handler.run(CStringPt.create(line));
+            cmdWrite.movePtToR1();
+            CStringPt.copy(line, cmdWrite);
+            cmdList.get(cmdBuffer.toString()).Handler.run(cmdWrite);
             return;
         }
         /* This isn't an internal command execute it */

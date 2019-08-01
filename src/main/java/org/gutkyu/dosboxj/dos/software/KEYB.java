@@ -13,23 +13,23 @@ public final class KEYB extends Program {
 
     @Override
     public void run() {
-        if (Cmd.findCommand(1)) {
-            TempLine = Cmd.returnedCmd;
-            if (Cmd.findString("?", false)) {
-                TempLine = Cmd.returnedString;
+        if (cmd.findCommand(1)) {
+            tempLine = cmd.returnedCmd;
+            if (cmd.findString("?", false)) {
+                tempLine = cmd.returnedString;
                 writeOut(Message.get("PROGRAM_KEYB_SHOWHELP"));
             } else {
                 /* first parameter is layout ID */
                 int keybError = 0;
                 String cpString = null;
                 int triedCP = -1;
-                if (Cmd.findCommand(2)) {
-                    cpString = Cmd.returnedCmd;
+                if (cmd.findCommand(2)) {
+                    cpString = cmd.returnedCmd;
                     /* second parameter is codepage number */
                     triedCP = Integer.parseInt(cpString);
                     CStringPt cpFileName = CStringPt.create(256);
-                    if (Cmd.findCommand(3)) {
-                        cpString = Cmd.returnedCmd;
+                    if (cmd.findCommand(3)) {
+                        cpString = cmd.returnedCmd;
                         /* third parameter is codepage file */
                         CStringPt.copy(cpString, cpFileName);
                     } else {
@@ -38,28 +38,28 @@ public final class KEYB extends Program {
                     }
 
                     keybError =
-                            DOSMain.loadKeyboardLayout(TempLine, triedCP, cpFileName.toString());
+                            DOSMain.loadKeyboardLayout(tempLine, triedCP, cpFileName.toString());
                 } else {
-                    keybError = DOSMain.trySwitchKeyboardLayout(TempLine);
+                    keybError = DOSMain.trySwitchKeyboardLayout(tempLine);
                     triedCP = DOSMain.returnedSwitchKBLTryiedCP;
                 }
                 switch (keybError) {
                     case DOSMain.KEYB_NOERROR:
-                        writeOut(Message.get("PROGRAM_KEYB_NOERROR"), TempLine,
+                        writeOut(Message.get("PROGRAM_KEYB_NOERROR"), tempLine,
                                 DOSMain.DOS.LoadedCodepage);
                         break;
                     case DOSMain.KEYB_FILENOTFOUND:
-                        writeOut(Message.get("PROGRAM_KEYB_FILENOTFOUND"), TempLine);
+                        writeOut(Message.get("PROGRAM_KEYB_FILENOTFOUND"), tempLine);
                         writeOut(Message.get("PROGRAM_KEYB_SHOWHELP"));
                         break;
                     case DOSMain.KEYB_INVALIDFILE:
-                        writeOut(Message.get("PROGRAM_KEYB_INVALIDFILE"), TempLine);
+                        writeOut(Message.get("PROGRAM_KEYB_INVALIDFILE"), tempLine);
                         break;
                     case DOSMain.KEYB_LAYOUTNOTFOUND:
-                        writeOut(Message.get("PROGRAM_KEYB_LAYOUTNOTFOUND"), TempLine, triedCP);
+                        writeOut(Message.get("PROGRAM_KEYB_LAYOUTNOTFOUND"), tempLine, triedCP);
                         break;
                     case DOSMain.KEYB_INVALIDCPFILE:
-                        writeOut(Message.get("PROGRAM_KEYB_INVCPFILE"), TempLine);
+                        writeOut(Message.get("PROGRAM_KEYB_INVCPFILE"), tempLine);
                         writeOut(Message.get("PROGRAM_KEYB_SHOWHELP"));
                         break;
                     default:

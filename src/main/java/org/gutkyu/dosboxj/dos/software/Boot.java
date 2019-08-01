@@ -189,19 +189,19 @@ public final class Boot extends Program {
         char drive = 'A';
         String cartCmd = "";
 
-        if (Cmd.getCount() == 0) {
+        if (cmd.getCount() == 0) {
             printError();
             return;
         }
-        while (i < Cmd.getCount()) {
-            if (Cmd.findCommand(i + 1)) {
-                TempLine = Cmd.returnedCmd;
-                if ((TempLine.equals("-l")) || (TempLine.equals("-L"))) {
+        while (i < cmd.getCount()) {
+            if (cmd.findCommand(i + 1)) {
+                tempLine = cmd.returnedCmd;
+                if ((tempLine.equals("-l")) || (tempLine.equals("-L"))) {
                     /* Specifying drive... next argument then is the drive */
                     i++;
-                    if (Cmd.findCommand(i + 1)) {
-                        TempLine = Cmd.returnedCmd;
-                        drive = Character.toUpperCase(TempLine.charAt(0));
+                    if (cmd.findCommand(i + 1)) {
+                        tempLine = cmd.returnedCmd;
+                        drive = Character.toUpperCase(tempLine.charAt(0));
                         if ((drive != 'A') && (drive != 'C') && (drive != 'D')) {
                             printError();
                             return;
@@ -215,12 +215,12 @@ public final class Boot extends Program {
                     continue;
                 }
 
-                if ((TempLine.equals("-e")) || (TempLine.equals("-E"))) {
+                if ((tempLine.equals("-e")) || (tempLine.equals("-E"))) {
                     /* Command mode for PCJr cartridges */
                     i++;
-                    if (Cmd.findCommand(i + 1)) {
-                        TempLine = Cmd.returnedCmd.toUpperCase();
-                        cartCmd = TempLine;
+                    if (cmd.findCommand(i + 1)) {
+                        tempLine = cmd.returnedCmd.toUpperCase();
+                        cartCmd = tempLine;
                     } else {
                         printError();
                         return;
@@ -229,15 +229,15 @@ public final class Boot extends Program {
                     continue;
                 }
 
-                writeOut(Message.get("PROGRAM_BOOT_IMAGE_OPEN"), TempLine);
+                writeOut(Message.get("PROGRAM_BOOT_IMAGE_OPEN"), tempLine);
                 int romByteSize = 0;
-                SeekableByteChannel usefile = tryGetFSFile(TempLine);
+                SeekableByteChannel usefile = tryGetFSFile(tempLine);
                 floppySize = returnedFSFileKSize;
                 romByteSize = returnedFSFileBSize;
                 if (usefile != null) {
                     if (BIOSDisk.DiskSwap[i] != null)
                         BIOSDisk.DiskSwap[i] = null;
-                    BIOSDisk.DiskSwap[i] = new ImageDisk(usefile, TempLine, floppySize, false);
+                    BIOSDisk.DiskSwap[i] = new ImageDisk(usefile, tempLine, floppySize, false);
                     if (useFileCh1 == null) {
                         useFileCh1 = usefile;
                         romByteSize1 = romByteSize;
@@ -246,7 +246,7 @@ public final class Boot extends Program {
                         romByteSize2 = romByteSize;
                     }
                 } else {
-                    writeOut(Message.get("PROGRAM_BOOT_IMAGE_NOT_OPEN"), TempLine);
+                    writeOut(Message.get("PROGRAM_BOOT_IMAGE_NOT_OPEN"), tempLine);
                     return;
                 }
 

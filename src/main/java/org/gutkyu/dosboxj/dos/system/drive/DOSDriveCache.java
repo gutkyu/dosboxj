@@ -798,7 +798,7 @@ public class DOSDriveCache implements Disposable {
             chkpos.movePtToR1();
         }
         curpos.set((char) 0);
-        return (curpos != chkpos);
+        return (CStringPt.notEqual(curpos, chkpos));
     }
 
     private int returnedOpenDirId = 0;// uint16

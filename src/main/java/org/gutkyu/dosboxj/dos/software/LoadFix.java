@@ -15,10 +15,10 @@ public final class LoadFix extends Program {
     public void run() {
         short commandNr = 1;
         short kb = 64;
-        if (Cmd.findCommand(commandNr)) {
-            TempLine = Cmd.returnedCmd;
-            if (TempLine.charAt(0) == '-') {
-                char ch = TempLine.charAt(1);
+        if (cmd.findCommand(commandNr)) {
+            tempLine = cmd.returnedCmd;
+            if (tempLine.charAt(0) == '-') {
+                char ch = tempLine.charAt(1);
                 if ((Character.toUpperCase(ch) == 'D') || (Character.toUpperCase(ch) == 'F')) {
                     // Deallocate all
                     DOSMain.freeProcessMemory(0x40);
@@ -26,7 +26,7 @@ public final class LoadFix extends Program {
                     return;
                 } else {
                     // Set mem amount to allocate
-                    kb = Short.parseShort(TempLine.substring(1));
+                    kb = Short.parseShort(tempLine.substring(1));
                     if (kb == 0)
                         kb = 64;
                     commandNr++;
@@ -44,21 +44,21 @@ public final class LoadFix extends Program {
             mcb.setPSPSeg(0x40); // use fake segment
             writeOut(Message.get("PROGRAM_LOADFIX_ALLOC"), kb);
             // Prepare commandline...
-            if (Cmd.findCommand(commandNr++)) {
-                TempLine = Cmd.returnedCmd;
+            if (cmd.findCommand(commandNr++)) {
+                tempLine = cmd.returnedCmd;
                 // get Filename
                 CStringPt filename = CStringPt.create(128);
-                CStringPt.safeCopy(TempLine, filename, 128);
+                CStringPt.safeCopy(tempLine, filename, 128);
                 // Setup commandline
                 boolean ok;
                 CStringPt args = CStringPt.create(256);
                 args.set(0, (char) 0);
                 do {
-                    ok = Cmd.findCommand(commandNr++);
-                    TempLine = ok ? Cmd.returnedCmd : TempLine;
-                    if (args.length() - args.length() - 1 < TempLine.length() + 1)
+                    ok = cmd.findCommand(commandNr++);
+                    tempLine = ok ? cmd.returnedCmd : tempLine;
+                    if (args.length() - args.length() - 1 < tempLine.length() + 1)
                         break;
-                    args.concat(TempLine);
+                    args.concat(tempLine);
                     args.concat(" ");
                 } while (ok);
                 // Use shell to start program

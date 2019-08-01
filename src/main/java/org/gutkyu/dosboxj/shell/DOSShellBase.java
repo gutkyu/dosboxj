@@ -15,7 +15,7 @@ public abstract class DOSShellBase extends Program {
     protected LinkedList<String> history = new LinkedList<String>(),
             completion = new LinkedList<String>();
 
-    protected String _completionStart;
+    protected String completionStart;
     protected int completionIndex;
 
     /* The shell's variables */
@@ -27,7 +27,7 @@ public abstract class DOSShellBase extends Program {
 
     protected DOSShellBase() {
         super();
-        _completionStart = null;
+        completionStart = null;
     }
 
     abstract protected void doCommand(String line);
@@ -40,7 +40,7 @@ public abstract class DOSShellBase extends Program {
         CStringPt inputLine = CStringPt.create(ShellInner.CMD_MAXLINE);
         inputLine.set(0, (char) 0);
         String line = null;
-        if ((line = Cmd.findStringRemainS("/C")) != null) {
+        if ((line = cmd.findStringRemainS("/C")) != null) {
             CStringPt.copy(line, inputLine);
             int sep_idx = line.indexOf("\r\n");
             if (sep_idx > 0)
@@ -61,8 +61,8 @@ public abstract class DOSShellBase extends Program {
          * if (DOSBox.Machine == DOSBox.MachineType.HERC)
          * writeOut(Message.get("SHELL_STARTUP_HERC")); writeOut(Message.get("SHELL_STARTUP_END"));
          */
-        if (Cmd.findString("/INIT", true)) {
-            line = Cmd.returnedString;
+        if (cmd.findString("/INIT", true)) {
+            line = cmd.returnedString;
             CStringPt.copy(line, inputLine);
             line = "";
             parseLine(inputLine);
@@ -298,10 +298,10 @@ public abstract class DOSShellBase extends Program {
      * first_shell is used to add and delete stuff from the shell env by "external" programs.
      * (config)
      */
-    private static Program _firstShell = null;
+    private static Program firstShellObj = null;
 
     public static Program firstShell() {
-        return _firstShell;
+        return firstShellObj;
     }
 
     public static int shellStopHandler() {
@@ -464,9 +464,9 @@ public abstract class DOSShellBase extends Program {
 
         /* Now call up the shell for the first time */
         int pspSeg = DOSMain.DOS_FIRST_SHELL;
-        int env_seg = DOSMain.DOS_FIRST_SHELL + 19; // DOS_GetMemory(1+(4096/16))+1;
-        int stack_seg = DOSMain.getMemory(2048 / 16);
-        Register.segSet16(Register.SEG_NAME_SS, stack_seg);
+        int envSeg = DOSMain.DOS_FIRST_SHELL + 19; // DOS_GetMemory(1+(4096/16))+1;
+        int stackSeg = DOSMain.getMemory(2048 / 16);
+        Register.segSet16(Register.SEG_NAME_SS, stackSeg);
         Register.setRegSP(2046);
 
         /* Set up int 24 and psp (Telarium games) */
@@ -482,13 +482,13 @@ public abstract class DOSShellBase extends Program {
         pspmcb.setPSPSeg(pspSeg); // MCB of the command shell psp
         pspmcb.setSize(0x10 + 2);
         pspmcb.setType(0x4d);
-        DOSMCB envmcb = new DOSMCB(env_seg - 1);
+        DOSMCB envmcb = new DOSMCB(envSeg - 1);
         envmcb.setPSPSeg(pspSeg); // MCB of the command shell environment
-        envmcb.setSize((DOSMain.DOS_MEM_START - env_seg));
+        envmcb.setSize((DOSMain.DOS_MEM_START - envSeg));
         envmcb.setType(0x4d);
 
         /* Setup environment */
-        int envWrite = Memory.physMake(env_seg, 0);
+        int envWrite = Memory.physMake(envSeg, 0);
         Memory.blockWrite(envWrite, pathString, 0, pathString.length);
         envWrite += pathString.length;
         Memory.blockWrite(envWrite, comspecString, 0, comspecString.length);
@@ -498,8 +498,8 @@ public abstract class DOSShellBase extends Program {
         envWrite += 2;
         Memory.blockWrite(envWrite, fullName, 0, fullName.length);
 
-        DOSPSP psp = new DOSPSP(pspSeg);
-        psp.makeNew(0);
+        DOSPSP newPSP = new DOSPSP(pspSeg);
+        newPSP.makeNew(0);
         DOSMain.DOS.setPSP(pspSeg);
 
         /*
@@ -515,9 +515,9 @@ public abstract class DOSShellBase extends Program {
         DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE); /* STDAUX */
         DOSMain.openFile("CON", DOSSystem.OPEN_READWRITE); /* STDPRN */
 
-        psp.setParent(pspSeg);
+        newPSP.setParent(pspSeg);
         /* Set the environment */
-        psp.setEnvironment(env_seg);
+        newPSP.setEnvironment(envSeg);
         /* Set the command line for the shell start up */
         byte[] tail = new byte[DOSMain.CommandTailSize];
         tail[DOSMain.CommandTailOffCount] = (byte) (initLine.length - 1);// null character제외
@@ -528,8 +528,8 @@ public abstract class DOSShellBase extends Program {
         DOSMain.DOS.setDTA(Memory.realMake(pspSeg, 0x80));
         DOSMain.DOS.setPSP(pspSeg);
 
-        _firstShell = makeProgram();
-        _firstShell.run();
+        firstShellObj = makeProgram();
+        firstShellObj.run();
         // first_shell.dispose();
         // first_shell = null;//Make clear that it shouldn't be used anymore
     }
