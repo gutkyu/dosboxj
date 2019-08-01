@@ -15,9 +15,9 @@ public final class JavaSurface extends Panel {
 
     }
 
-    //public void update(Graphics g){
-    //    this.paint(g);
-    //}
+    public void update(Graphics g) {
+        this.paint(g);
+    }
 
     public void paint(Graphics g) {
         if (!requestUpdate) {
@@ -46,7 +46,7 @@ public final class JavaSurface extends Panel {
     private boolean requestUpdate = false;
     private BufferedImage img = null;
     // private Rectangle targetArea = null;
-    private Rectangle targetArea = new Rectangle(0,0,480,640);
+    private Rectangle targetArea = new Rectangle(0, 0, 480, 640);
 
     public void newImage(int width, int height, int type) {
         img = new BufferedImage(width, height, type);
@@ -69,12 +69,12 @@ public final class JavaSurface extends Panel {
 
     public void requestUpdate(Rectangle targetArea) {
         // if (this.targetArea == null) {
-        //     this.targetArea = targetArea;
+        // this.targetArea = targetArea;
         // } else {
-        //     this.targetArea.x = Math.min(this.targetArea.x, targetArea.x);
-        //     this.targetArea.y = Math.min(this.targetArea.y, targetArea.y);
-        //     this.targetArea.height = Math.max(this.targetArea.height, targetArea.height);
-        //     this.targetArea.width = Math.max(this.targetArea.width, targetArea.width);
+        // this.targetArea.x = Math.min(this.targetArea.x, targetArea.x);
+        // this.targetArea.y = Math.min(this.targetArea.y, targetArea.y);
+        // this.targetArea.height = Math.max(this.targetArea.height, targetArea.height);
+        // this.targetArea.width = Math.max(this.targetArea.width, targetArea.width);
         // }
         requestUpdate = true;
         repaint();
