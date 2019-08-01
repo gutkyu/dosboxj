@@ -632,10 +632,11 @@ public final class INT10Mode {
                 case LIN16:
                 case LIN32:
                     /* Hack we just acess the memory directly */
-                    Arrays.fill(VGA.instance().Mem.LinearAlloc, (int) VGA.instance().FastMemBase,
-                            VGA.instance().VMemSize, (byte) 0);
-                    Arrays.fill(VGA.instance().Mem.LinearAlloc, (int) VGA.instance().FastMemBase,
-                            VGA.instance().VMemSize << 1, (byte) 0);
+                    VGA vga = VGA.instance();
+                    Arrays.fill(vga.Mem.LinearAlloc, vga.Mem.LinearBase,
+                            vga.VMemSize + vga.Mem.LinearBase, (byte) 0);
+                    Arrays.fill(vga.FastMemAlloc, vga.FastMemBase,
+                            (vga.VMemSize << 1) + vga.FastMemBase, (byte) 0);
                     break;
             }
         }

@@ -1751,7 +1751,7 @@ public final class DOSShell extends DOSShellBase {
             // Add a filename
             int fileName = Register.realMakeSeg(Register.SEG_NAME_SS, Register.getRegSP() + 0x20);
             Memory.blockWrite(Memory.real2Phys(fileName),
-                    fullname.getBytes(StandardCharsets.US_ASCII));// 마지막 null포함
+                    (fullname + '\0').getBytes(StandardCharsets.US_ASCII));// 마지막 null포함
 
             /* HACK: Store full commandline for mount and imgmount */
             FullArguments = line;

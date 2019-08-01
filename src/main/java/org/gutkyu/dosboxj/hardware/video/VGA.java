@@ -69,7 +69,7 @@ public final class VGA {
     // byte* fastmem;
     /* memory for fast (usually 16-color) rendering, always twice as big as vmemsize */
     public byte[] FastMemAlloc;
-    public long FastMemBase;// uint type
+    public int FastMemBase;// uint type
     // 메모리 할당시 15비트 이동한 다음 주소숫자의 뒷자리 15비트부분을 깨끗하게 지우는 작업을 하는 이유는?
     // 그러므로 vga.fastmem_orgptr 없이 바로 할당
     // byte* fastmem_orgptr;
