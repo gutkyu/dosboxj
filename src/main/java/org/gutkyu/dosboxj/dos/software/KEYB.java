@@ -15,7 +15,8 @@ public final class KEYB extends Program {
     public void run() {
         if (Cmd.findCommand(1)) {
             TempLine = Cmd.returnedCmd;
-            if ((TempLine = Cmd.findString("?", false)) != null) {
+            if (Cmd.findString("?", false)) {
+                TempLine = Cmd.returnedString;
                 writeOut(Message.get("PROGRAM_KEYB_SHOWHELP"));
             } else {
                 /* first parameter is layout ID */

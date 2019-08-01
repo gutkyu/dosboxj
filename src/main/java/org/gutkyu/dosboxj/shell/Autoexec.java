@@ -46,7 +46,8 @@ public final class Autoexec extends ModuleBase {
          */
         /* Maximum of extra commands: 10 */
         int i = 1;
-        while ((line = DOSBox.Control.CmdLine.findString("-c", true)) != null && i <= 11) {
+        while (DOSBox.Control.CmdLine.findString("-c", true) && i <= 11) {
+            line = DOSBox.Control.CmdLine.returnedString;
             // replace single with double quotes so that mount commands can contain spaces
             line = line.replace('\'', '"');
             _autoexec[i++].install(line);

@@ -61,7 +61,8 @@ public abstract class DOSShellBase extends Program {
          * if (DOSBox.Machine == DOSBox.MachineType.HERC)
          * writeOut(Message.get("SHELL_STARTUP_HERC")); writeOut(Message.get("SHELL_STARTUP_END"));
          */
-        if ((line = Cmd.findString("/INIT", true)) != null) {
+        if (Cmd.findString("/INIT", true)) {
+            line = Cmd.returnedString;
             CStringPt.copy(line, inputLine);
             line = "";
             parseLine(inputLine);

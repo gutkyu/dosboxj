@@ -124,7 +124,8 @@ public final class Message {
 
     public static void init(SectionProperty section) {
         String fileName = "";
-        if ((fileName = DOSBox.Control.CmdLine.findString("-lang", true)) != null) {
+        if (DOSBox.Control.CmdLine.findString("-lang", true)) {
+            fileName = DOSBox.Control.CmdLine.returnedString;
             loadMessageFile(fileName);
         } else {
             PropertyPath pathprop = section.getPath("language");

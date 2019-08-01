@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import org.gutkyu.dosboxj.*;
 import org.gutkyu.dosboxj.misc.*;
 import org.gutkyu.dosboxj.hardware.memory.*;
@@ -46,7 +47,8 @@ public final class Mount extends Program {
         }
 
         /* Check for unmounting */
-        if ((umount = Cmd.findString("-u", false)) != null) {
+        if (Cmd.findString("-u", false)) {
+            umount = Cmd.returnedString;
             umount = Character.toUpperCase(umount.charAt(0)) + umount.substring(1);
             int iDrive = umount.charAt(0) - 'A';
             if (iDrive < DOSMain.DOS_DRIVES && iDrive >= 0 && DOSMain.Drives[iDrive] != null) {
@@ -85,7 +87,7 @@ public final class Mount extends Program {
         }
 
         String type = "dir";
-        type = Cmd.findString("-t", true);
+        type = Cmd.findString("-t", true) ? Cmd.returnedString : type;
         boolean iscdrom = type.equals("cdrom"); // Used for mscdex bug cdrom label name emulation
         if (type.equals("floppy") || type.equals("dir") || type.equals("cdrom")) {
             int[] sizes = new int[4];
@@ -108,7 +110,8 @@ public final class Mount extends Program {
             }
             /* Parse the free space in mb's (kb's for floppies) */
             String mbSize = null;
-            if ((mbSize = Cmd.findString("-freesize", true)) != null) {
+            if (Cmd.findString("-freesize", true)) {
+                mbSize = Cmd.returnedString;
                 int sizemb = Integer.parseInt(mbSize);
                 if (type.equals("floppy")) {
                     strSize = String.format("512,1,2880,%d", sizemb * 1024 / (512 * 1));
@@ -117,23 +120,9 @@ public final class Mount extends Program {
                 }
             }
 
-            strSize = Cmd.findString("-size", true);
-            char[] number = new char[20];
-            int scanIdx = 0;
-            int index = 0;
-            int count = 0;
+            strSize = Cmd.findString("-size", true) ? Cmd.returnedString : strSize;
             /* Parse the str_size string */
-            while (scanIdx < strSize.length()) {
-                if (strSize.charAt(scanIdx) == ',') {
-                    number[index] = (char) 0;
-                    sizes[count++] = Integer.parseInt(new String(number));
-                    index = 0;
-                } else
-                    number[index++] = strSize.charAt(scanIdx);
-                scanIdx++;
-            }
-            number[index] = (char) 0;
-            sizes[count++] = Integer.parseInt(new String(number));
+            sizes = Arrays.stream(strSize.split(",")).mapToInt(Integer::parseInt).toArray();
 
             // get the drive letter
             TempLine = Cmd.findCommand(1) ? Cmd.returnedCmd : TempLine;
@@ -215,8 +204,10 @@ public final class Mount extends Program {
                 newdrive.getMediaByte());
         writeOut(Message.get("PROGRAM_MOUNT_STATUS_2"), drive, newdrive.getInfo());
         /* check if volume label is given and don't allow it to updated in the future */
-        if ((label = Cmd.findString("-label", true)) != null)
+        if (Cmd.findString("-label", true)) {
+            label = Cmd.returnedString;
             newdrive.dirCache.setLabel(label, iscdrom, false);
+        }
         /*
          * For hard drives set the label to DRIVELETTER_Drive. For floppy drives set the label to
          * DRIVELETTER_Floppy. This way every drive except cdroms should get a label.

@@ -42,7 +42,8 @@ public final class ImgMount extends Program {
         List<String> paths = new ArrayList<String>();
         String umount = "";
         /* Check for unmounting */
-        if ((umount = this.Cmd.findString("-u", false)) != null) {
+        if (this.Cmd.findString("-u", false)) {
+            umount = Cmd.returnedString;
             umount = String.valueOf(Character.toUpperCase(umount.charAt(0)));
             if (umount.length() > 1) {
                 umount += umount.substring(1);
@@ -72,8 +73,8 @@ public final class ImgMount extends Program {
 
         String type = "hdd";
         String fstype = "fat";
-        type = Cmd.findString("-t", true);
-        fstype = Cmd.findString("-fs", true);
+        type = Cmd.findString("-t", true) ? Cmd.returnedString : type;
+        fstype = Cmd.findString("-fs", true) ? Cmd.returnedString : fstype;
         if (type.equals("cdrom"))
             type = "iso"; // Tiny hack for people who like to type -t cdrom
         int mediaId;
@@ -91,7 +92,7 @@ public final class ImgMount extends Program {
                 mediaId = 0xF8;
                 fstype = "iso";
             }
-            strSize = Cmd.findString("-size", true);
+            strSize = Cmd.findString("-size", true) ? Cmd.returnedString : strSize;
             if ((type.equals("hdd")) && (strSize.length() == 0)) {
                 imgsizedetect = true;
             } else {

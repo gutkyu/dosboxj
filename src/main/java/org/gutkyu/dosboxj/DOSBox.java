@@ -232,7 +232,8 @@ public final class DOSBox {
         GUIPlatform.mapper.addKeyHandler(DOSBox::unlockSpeed, MapKeys.F12, Mapper.MMOD2,
                 "speedlock", "Speedlock");
         String cmd_machine = "";
-        if ((cmd_machine = Control.CmdLine.findString("-machine", true)) != null) {
+        if (Control.CmdLine.findString("-machine", true)) {
+            cmd_machine = Control.CmdLine.returnedString;
             // update value in config (else no matching against suggested values
             section.handleInputline("machine=" + cmd_machine);
         }

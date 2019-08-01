@@ -170,15 +170,17 @@ public final class App {
         int argc = argv.length;
 
         CommandLine cmdLine = new CommandLine(argc, argv);
-        Config myconf = new Config(cmdLine);
-        DOSBox.Control = myconf;
+        Config conf = new Config(cmdLine);
+        DOSBox.Control = conf;
         /* Init the configuration system and add default values */
         addGUIConfig();
         DOSBox.init();
 
         String editor = "";
-        if ((editor = DOSBox.Control.CmdLine.findString("-editconf", false)) != null)
+        if (DOSBox.Control.CmdLine.findString("-editconf", false)) {
+            editor = DOSBox.Control.CmdLine.returnedString;
             launchEditor();
+        }
         // if(dosbox.control.cmdline.FindString("-opencaptures",ref editor,true))
         // launchcaptures(editor);
         if (DOSBox.Control.CmdLine.findExist("-eraseconf"))
@@ -292,10 +294,11 @@ public final class App {
         }
 
         // Second parse -conf entries
-        while ((configFile = DOSBox.Control.CmdLine.findString("-conf", true)) != null)
+        while (DOSBox.Control.CmdLine.findString("-conf", true)) {
+            configFile = DOSBox.Control.CmdLine.returnedString;
             if (DOSBox.Control.parseConfigFile(configFile))
                 parsedAnyConfigFile = true;
-
+        }
         // if none found => parse localdir conf
         configFile = "dosbox.conf";
         if (!parsedAnyConfigFile && DOSBox.Control.parseConfigFile(configFile))

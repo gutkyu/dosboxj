@@ -646,9 +646,11 @@ public final class Render {
         String scaler;
         // Check for commandline paramters and parse them through the configclass so they get
         // checked against allowed values
-        if ((cline = DOSBox.Control.CmdLine.findString("-scaler", false)) != null) {
+        if (DOSBox.Control.CmdLine.findString("-scaler", false)) {
+            cline = DOSBox.Control.CmdLine.returnedString;
             section.handleInputline("scaler=" + cline);
-        } else if ((cline = DOSBox.Control.CmdLine.findString("-forcescaler", false)) != null) {
+        } else if (DOSBox.Control.CmdLine.findString("-forcescaler", false)) {
+            cline = DOSBox.Control.CmdLine.returnedString;
             section.handleInputline("scaler=" + cline + " forced");
         }
 

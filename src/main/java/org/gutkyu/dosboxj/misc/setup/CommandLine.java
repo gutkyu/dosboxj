@@ -175,19 +175,21 @@ public final class CommandLine {
         return findInt(name, false);
     }
 
-    public String findString(String name, boolean remove) {
+    public String returnedString;
+
+    public boolean findString(String name, boolean remove) {
         int i = 0;
         if ((i = findEntry(name, true)) < 0)
-            return null;
-        String ret = cmds.get(i + 1);
+            return false;
+        returnedString = cmds.get(i + 1);
         if (remove) {
             cmds.remove(i + 1);
             cmds.remove(i);
         }
-        return ret;
+        return true;
     }
 
-    public String findString(String name) {
+    public boolean findString(String name) {
         return findString(name, false);
     }
 

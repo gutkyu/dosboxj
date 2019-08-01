@@ -15,8 +15,8 @@ class Config extends Program {
 
     @Override
     public void run() throws WrongType {
-        if ((TempLine = Cmd.findString("-writeconf", true)) != null
-                || (TempLine = Cmd.findString("-wc", true)) != null) {
+        if (Cmd.findString("-writeconf", true) || Cmd.findString("-wc", true)) {
+            TempLine = Cmd.returnedString;
             /* In secure mode don't allow a new configfile to be created */
             if (DOSBox.Control.getSecureMode()) {
                 writeOut(Message.get("PROGRAM_CONFIG_SECURE_DISALLOW"));
@@ -36,8 +36,9 @@ class Config extends Program {
             }
 
         }
-        if ((TempLine = Cmd.findString("-writelang", true)) != null
-                || (TempLine = Cmd.findString("-wl", true)) != null) {
+        if (Cmd.findString("-writelang", true) || Cmd.findString("-wl", true)) {
+            TempLine = Cmd.returnedString;
+
             /*
              * In secure mode don't allow a new languagefile to be created Who knows which kind of
              * file we would overwriting.
@@ -71,7 +72,8 @@ class Config extends Program {
          * Code for getting the current configuration. * Official format: config -get
          * "section property" * As a bonus it will set %CONFIG% to this value as well
          */
-        if ((TempLine = Cmd.findString("-get", true)) != null) {
+        if (Cmd.findString("-get", true)) {
+            TempLine = Cmd.returnedCmd;
             String temp2 = "";
             temp2 = Cmd.getStringRemain(temp2);// So -get n1 n2= can be used without quotes
             temp2 = temp2 == null ? "" : temp2;
@@ -110,7 +112,8 @@ class Config extends Program {
          * section * and/or the "=" replaced by a " "
          */
 
-        if ((TempLine = Cmd.findString("-set", true)) != null) { // get all arguments
+        if (Cmd.findString("-set", true)) { // get all arguments
+            TempLine = Cmd.returnedString;
             String temp2 = "";
             temp2 = Cmd.getStringRemain(temp2);// So -set n1 n2=n3 can be used without quotes
             temp2 = temp2 == null ? "" : temp2;
