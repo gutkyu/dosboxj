@@ -3150,7 +3150,7 @@ public final class DOSMain {
         psp.setFileHandle(entry, 0xff);
         if (file.removeRef() <= 0) {
             file.dispose();
-            file = null;
+            Files[handle] = null;
         }
         return true;
     }
