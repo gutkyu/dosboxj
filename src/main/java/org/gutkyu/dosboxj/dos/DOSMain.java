@@ -59,6 +59,8 @@ public final class DOSMain {
     private static byte[] dosCopyBuf = new byte[DOS_COPYBUFSIZE];
 
 
+    public static String dbgCurLoadedProgram = "";
+
     // uint16(int)
     private static int doLong2Para(int size) {
         if (size > 0xFFFF0)
@@ -931,6 +933,7 @@ public final class DOSMain {
             {
                 name1 = Memory.strCopy(Register.segPhys(Register.SEG_NAME_DS) + Register.getRegDX(),
                         DOSNAMEBUF);
+                DOSMain.dbgCurLoadedProgram = name1;
                 Log.logging(Log.LogTypes.EXEC, Log.LogServerities.Error, "Execute %s %d", name1,
                         Register.getRegAL());
                 if (!execute(name1, Register.segPhys(Register.SEG_NAME_ES) + Register.getRegBX(),

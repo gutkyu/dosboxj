@@ -10,34 +10,9 @@ public final class Log {
     }
 
     public static void logging(LogTypes logType, LogServerities logSeverity, String logMsg,
-            double... values) {
+    Object... args) {
+        System.out.println(String.format(logMsg, args));
     }
-
-    public static void logging(LogTypes logType, LogServerities logSeverity, String logMsg,
-            String val0) {
-    }
-
-    public static void logging(LogTypes logType, LogServerities logSeverity, String logMsg,
-            String val0, double val1) {
-    }
-
-    public static void logging(LogTypes logType, LogServerities logSeverity, String logMsg,
-            String val0, double val1, double val2) {
-    }
-
-    public static void logging(LogTypes logType, LogServerities logSeverity, String logMsg,
-            double val0, String val1) {
-    }
-
-    public static void logging(LogTypes logType, LogServerities logSeverity, String logMsg,
-            double val0, double val1, String val2) {
-    }
-
-    public static void logging(LogTypes logType, LogServerities logSeverity, String logMsg,
-            String val0, String val1) {
-    }
-
-
 
     public static void logMsg(String msg, Object... args) {
 

@@ -1146,9 +1146,10 @@ public abstract class CPUCore {
     /*--------------------------- begin CpuCoreRunMethod -----------------------------*/
 
     public int runCPUCore() {
+        int ifet;
         main_loop: while (CPU.Cycles-- > 0) {
             loadIP();
-            Core.OPCodeIndex = CPU.Block.Code.Big ? 0x200 : 0;
+            ifet = Core.OPCodeIndex = CPU.Block.Code.Big ? 0x200 : 0;
             Core.Prefixes = CPU.Block.Code.Big ? 1 : 0;
             Core.EATable = EATable[Core.Prefixes];
             Core.BaseDS = Register.segPhys(Register.SEG_NAME_DS);
@@ -1157,8 +1158,12 @@ public abstract class CPUCore {
 
             restart_opcode: while (true) {
                 // TODO switch코드 원상복구
-                int ifet = Core.OPCodeIndex + fetchB();
-                // Console.WriteLine(ifet);
+                ifet = Core.OPCodeIndex + fetchB();
+                /*
+                 * if (DOSMain.dbgCurLoadedProgram.equalsIgnoreCase("open.exe")) { if (ifet != 236 &
+                 * ifet != 748 && ifet != 424 && ifet != 936 && ifet != 116 && ifet != 628 && ifet
+                 * != 0xa8) System.out.printf("ifet 0x%08X\n", ifet); }
+                 */
                 // Console.WriteLine(core.cseip);
                 // Console.WriteLine("{0}\t{1}\t{2}", cpuModule.CPU_Cycles, cpuModule.CPU_CycleLeft
                 // , ifet);
@@ -1592,13 +1597,13 @@ public abstract class CPUCore {
                         break;
                     case CASE_W_0x62: /* BOUND */
                     {
-                        int boundMin, boundMax;
+                        short boundMin, boundMax;
                         int rm = fetchB();
                         int rmrw = Register.Regs[lookupRMregw[rm]].getWord();
                         int eaa = Core.EATable[rm].get();
-                        boundMin = Memory.readW(eaa);
-                        boundMax = Memory.readW(eaa + 2);
-                        if ((rmrw < boundMin) || (rmrw > boundMax)) {
+                        boundMin = (short) Memory.readW(eaa);
+                        boundMax = (short) Memory.readW(eaa + 2);
+                        if ((((short) rmrw) < boundMin) || (((short) rmrw) > boundMax)) {
                             CPU.exception(5);
                             continue main_loop;// org_continue;
                         }
@@ -2042,7 +2047,7 @@ public abstract class CPUCore {
                         int which = (rm >>> 3) & 7;
                         if (rm >= 0xc0) {
                             int regId = lookupRMEAregw[rm];
-                            short iw = (short) fetchBS();
+                            int iw = 0xffff & (short) fetchBS();
                             switch (which) {
                                 case 0x00:
                                     ADDW(regId, iw);
@@ -2071,7 +2076,7 @@ public abstract class CPUCore {
                             }
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            short iw = (short) fetchBS();
+                            int iw = 0xffff & (short) fetchBS();
                             switch (which) {
                                 case 0x00:
                                     ADDW_M(eaa, iw);
@@ -2949,17 +2954,17 @@ public abstract class CPUCore {
                     }
                     case CASE_W_0xe8: /* CALL Jw */
                     {
-                        short addip = fetchWS();
+                        int addip = 0xffff & fetchWS();// uint16
                         saveIP();
                         CPU.push16(Register.getRegEIP());
-                        Register.setRegEIP(Register.getRegEIP() + addip);
+                        Register.setRegEIP(0xffff & (Register.getRegEIP() + addip));
                         continue main_loop;// org_continue;
                     }
                     case CASE_W_0xe9: /* JMP Jw */
                     {
-                        short addip = fetchWS();
+                        int addip = 0xffff & fetchWS();// uint16
                         saveIP();
-                        Register.setRegEIP(Register.getRegEIP() + addip);
+                        Register.setRegEIP(0xffff & (Register.getRegEIP() + addip));
                         continue main_loop;// org_continue;
                     }
                     case CASE_W_0xea: /* JMP Ap */
@@ -2980,7 +2985,7 @@ public abstract class CPUCore {
                     {
                         short addip = fetchBS();
                         saveIP();
-                        Register.setRegEIP(Register.getRegEIP() + addip);
+                        Register.setRegEIP(0xffff & (Register.getRegEIP() + addip));
                         continue main_loop;// org_continue;
                     }
                     case CASE_W_0xec:
@@ -4030,7 +4035,7 @@ public abstract class CPUCore {
                                     (Register.Regs[earwId].getWord() & mask));
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            eaa += (rmrw >>> 4) * 2;
+                            eaa += (((short) rmrw) >> 4) * 2;
                             int old = Memory.readW(eaa);
                             Register.setFlagBit(Register.FlagCF, old & mask);
                         }
@@ -4082,7 +4087,7 @@ public abstract class CPUCore {
                             Register.Regs[earwId].setWord(Register.Regs[earwId].getWord() | mask);
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            eaa += (rmrw >>> 4) * 2;
+                            eaa += (((short) rmrw) >> 4) * 2;
                             int old = Memory.readW(eaa);
                             Register.setFlagBit(Register.FlagCF, (old & mask));
                             Memory.writeW(eaa, old | mask);
@@ -4221,7 +4226,7 @@ public abstract class CPUCore {
                                     .setWord(Register.Regs[earwId].getWord() & (0xffff & ~mask));
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            eaa += ((0xffff & rmrw) >>> 4) * 2;
+                            eaa += (((short) rmrw) >> 4) * 2;
                             int old = Memory.readW(eaa);
                             Register.setFlagBit(Register.FlagCF, (old & mask));
                             Memory.writeW(eaa, 0xffff & (old & ~mask));
@@ -4359,7 +4364,7 @@ public abstract class CPUCore {
                             reg.setWord(0xffff & (reg.getWord() ^ mask));
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            eaa += (Register.Regs[rmrwId].getWord() >>> 4) * 2;
+                            eaa += (((short) Register.Regs[rmrwId].getWord()) >> 4) * 2;
                             int old = Memory.readW(eaa);
                             Register.setFlagBit(Register.FlagCF, (old & mask));
                             Memory.writeW(eaa, 0xffff & (old ^ mask));
@@ -8621,7 +8626,7 @@ public abstract class CPUCore {
     public void DECW_M(int op1) {
         Register.setFlagBit(Register.FlagCF, Flags.getCF());
         Flags.setLzFVar1w(Memory.readW(op1));
-        Flags.setLzFresw(0xffff & (Flags.getLzFVar1w() - 1));
+        Flags.setLzFresw(Flags.getLzFVar1w() - 1);
         Memory.writeW(op1, Flags.getLzFresw());
         Flags.LzFlags.Type = Flags.TypeFlag.DECw;
 
@@ -8630,7 +8635,7 @@ public abstract class CPUCore {
     public void DECW(int regId) {
         Register.setFlagBit(Register.FlagCF, Flags.getCF());
         Flags.setLzFVar1w(Register.Regs[regId].getWord());
-        Flags.setLzFresw(0xffff & (Flags.getLzFVar1w() - 1));
+        Flags.setLzFresw(Flags.getLzFVar1w() - 1);
         Register.Regs[regId].setWord(Flags.getLzFresw());
         Flags.LzFlags.Type = Flags.TypeFlag.DECw;
 
