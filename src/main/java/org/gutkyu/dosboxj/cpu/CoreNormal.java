@@ -53,9 +53,9 @@ public final class CoreNormal extends CPUCore {
 
     }
 
-    private static CPUCore _cpu = new CoreNormal();
+    private static CPUCore cpu = new CoreNormal();
 
     public static CPUCore instance() {
-        return _cpu;
+        return cpu;
     }
 }

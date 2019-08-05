@@ -183,14 +183,14 @@ public final class Register {
     }
 
     public static int getReg8(int reg) {
-        return (reg & 4) != 0 ? getReg8H(reg & 3) : getReg8L(reg & 3);
+        return (reg & 4) == 0 ? Regs[reg & 3].getByteL() : Regs[reg & 3].getByteH();
     }
 
-    public static void setReg8(int reg, byte val) {
-        if ((reg & 4) != 0)
-            Regs[reg & 3].setByteH(val);
-        else
+    public static void setReg8(int reg, int val) {
+        if ((reg & 4) == 0)
             Regs[reg & 3].setByteL(val);
+        else
+            Regs[reg & 3].setByteH(val);
     }
 
     public static int getReg16(int reg) {
