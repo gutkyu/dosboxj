@@ -3148,24 +3148,32 @@ public abstract class CPUCore {
                                 // RMEb(DIVB);
                                 if (rm >= 0xc0) {
                                     int earbRegId = lookupRMEAregbl[rm];
-                                    if (earbRegId >= 0)
-                                        DIVBL(earbRegId);
-                                    else
-                                        DIVBH(lookupRMEAregbh[rm]);
+                                    if (earbRegId >= 0) {
+                                        if (DIVBL(earbRegId) == SwitchReturn.Continue)
+                                            continue main_loop;// org_continue;
+                                    } else {
+                                        if (DIVBH(lookupRMEAregbh[rm]) == SwitchReturn.Continue)
+                                            continue main_loop;// org_continue;
+                                    }
                                 } else {
-                                    DIVB(Core.EATable[rm].get());
+                                    if (DIVB(Core.EATable[rm].get()) == SwitchReturn.Continue)
+                                        continue main_loop;// org_continue;
                                 }
                                 break;
                             case 0x07: /* IDIV Eb */
                                 // RMEb(IDIVB);
                                 if (rm >= 0xc0) {
                                     int earbRegId = lookupRMEAregbl[rm];
-                                    if (earbRegId >= 0)
-                                        IDIVBL(earbRegId);
-                                    else
-                                        IDIVBH(lookupRMEAregbh[rm]);
+                                    if (earbRegId >= 0) {
+                                        if (IDIVBL(earbRegId) == SwitchReturn.Continue)
+                                            continue main_loop;// org_continue;
+                                    } else {
+                                        if (IDIVBH(lookupRMEAregbh[rm]) == SwitchReturn.Continue)
+                                            continue main_loop;// org_continue;
+                                    }
                                 } else {
-                                    IDIVB(Core.EATable[rm].get());
+                                    if (IDIVB(Core.EATable[rm].get()) == SwitchReturn.Continue)
+                                        continue main_loop;// org_continue;
                                 }
                                 break;
                         }
@@ -4431,12 +4439,12 @@ public abstract class CPUCore {
                             int earbId = lookupRMEAregbl[rm];
                             // sbyte
                             Register.Regs[rmrwId]
-                                    .setWord(earbId >= 0 ? Register.Regs[earbId].getByteL()
-                                            : Register.Regs[lookupRMEAregbh[rm]].getByteH());
+                                    .setWord((byte) (earbId >= 0 ? Register.Regs[earbId].getByteL()
+                                            : Register.Regs[lookupRMEAregbh[rm]].getByteH()));
                         } else {
                             int eaa = Core.EATable[rm].get();
                             // sbyte
-                            Register.Regs[rmrwId].setWord(Memory.readB(eaa));
+                            Register.Regs[rmrwId].setWord((byte) Memory.readB(eaa));
                         }
                         break;
                     }
@@ -6712,13 +6720,13 @@ public abstract class CPUCore {
                         if (rm >= 0xc0) {
                             int earbId = lookupRMEAregbl[rm];
                             // sbyte
-                            Register.Regs[rwrdId].setDWord(
-                                    0xffff & (earbId >= 0 ? Register.Regs[earbId].getByteL()
+                            Register.Regs[rwrdId]
+                                    .setDWord((byte) (earbId >= 0 ? Register.Regs[earbId].getByteL()
                                             : Register.Regs[lookupRMEAregbh[rm]].getByteH()));
                         } else {
                             int eaa = Core.EATable[rm].get();
                             // sbyte
-                            Register.Regs[rwrdId].setDWord(0xffff & Memory.readB(eaa));
+                            Register.Regs[rwrdId].setDWord((byte) Memory.readB(eaa));
                         }
                         break;
                     }
@@ -8807,7 +8815,7 @@ public abstract class CPUCore {
 
 
     public void MULB(int op1) {
-        Register.setRegAX(0xffff & (Register.getRegAL() * Memory.readB(op1)));
+        Register.setRegAX(Register.getRegAL() * Memory.readB(op1));
         Flags.fillFlagsNoCFOF();
         Register.setFlagBit(Register.FlagZF, Register.getRegAL() == 0);
         if ((Register.getRegAX() & 0xff00) != 0) {
@@ -8821,7 +8829,7 @@ public abstract class CPUCore {
     }
 
     public void MULBL(int regId) {
-        Register.setRegAX(0xffff & (Register.getRegAL() * Register.Regs[regId].getByteL()));
+        Register.setRegAX(Register.getRegAL() * Register.Regs[regId].getByteL());
         Flags.fillFlagsNoCFOF();
         Register.setFlagBit(Register.FlagZF, Register.getRegAL() == 0);
         if ((Register.getRegAX() & 0xff00) != 0) {
@@ -8835,7 +8843,7 @@ public abstract class CPUCore {
     }
 
     public void MULBH(int regId) {
-        Register.setRegAX(0xffff & (Register.getRegAL() * Register.Regs[regId].getByteH()));
+        Register.setRegAX(Register.getRegAL() * Register.Regs[regId].getByteH());
         Flags.fillFlagsNoCFOF();
         Register.setFlagBit(Register.FlagZF, Register.getRegAL() == 0);
         if ((Register.getRegAX() & 0xff00) != 0) {
@@ -9065,7 +9073,7 @@ public abstract class CPUCore {
     }
 
     public SwitchReturn IDIVB(int op1) { // sbyte
-        int val = Memory.readB(op1);
+        int val = (byte) Memory.readB(op1);
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
@@ -9085,7 +9093,7 @@ public abstract class CPUCore {
     }
 
     public SwitchReturn IDIVBL(int regId) { // sbyte
-        int val = Register.Regs[regId].getByteL();
+        int val = (byte) Register.Regs[regId].getByteL();
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
@@ -9106,7 +9114,7 @@ public abstract class CPUCore {
 
     public SwitchReturn IDIVBH(int regId) {
         // sbyte
-        int val = Register.Regs[regId].getByteH();
+        int val = (byte) Register.Regs[regId].getByteH();
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
@@ -9220,7 +9228,7 @@ public abstract class CPUCore {
 
     public void IMULB(int op1) {
         // sbyte
-        Register.setRegAX((short) (Register.getRegAL() * Memory.readD(op1)));
+        Register.setRegAX((byte) Register.getRegAL() * (byte) Memory.readB(op1));
         Flags.fillFlagsNoCFOF();
         if ((Register.getRegAX() & 0xff80) == 0xff80 || (Register.getRegAX() & 0xff80) == 0x0000) {
             Register.setFlagBit(Register.FlagCF, false);
@@ -9233,8 +9241,7 @@ public abstract class CPUCore {
 
     public void IMULBL(int regId) {
         // sbyte
-        Register.setRegAX(
-                (short) ((byte) Register.getRegAL() * (byte) Register.Regs[regId].getByteL()));
+        Register.setRegAX((byte) Register.getRegAL() * (byte) Register.Regs[regId].getByteL());
         Flags.fillFlagsNoCFOF();
         if ((Register.getRegAX() & 0xff80) == 0xff80 || (Register.getRegAX() & 0xff80) == 0x0000) {
             Register.setFlagBit(Register.FlagCF, false);
@@ -9247,8 +9254,7 @@ public abstract class CPUCore {
 
     public void IMULBH(int regId) {
         // sbyte
-        Register.setRegAX(
-                (short) ((byte) Register.getRegAL() * (byte) Register.Regs[regId].getByteH()));
+        Register.setRegAX((byte) Register.getRegAL() * (byte) Register.Regs[regId].getByteH());
         Flags.fillFlagsNoCFOF();
         if ((Register.getRegAX() & 0xff80) == 0xff80 || (Register.getRegAX() & 0xff80) == 0x0000) {
             Register.setFlagBit(Register.FlagCF, false);
@@ -9260,9 +9266,10 @@ public abstract class CPUCore {
     }
 
     public void IMULW_M(int op1) {
-        int temps = Register.getRegAX() * Memory.readW(op1);
-        Register.setRegAX(temps);
-        Register.setRegDX(temps >>> 16);
+        // Bit16s
+        int temps = (short) Register.getRegAX() * (short) Memory.readW(op1);
+        Register.setRegAX((short) temps);
+        Register.setRegDX((short) (temps >> 16));//unsigned shift
         Flags.fillFlagsNoCFOF();
         if (((temps & 0xffff8000) == 0xffff8000 || (temps & 0xffff8000) == 0x0000)) {
             Register.setFlagBit(Register.FlagCF, false);
@@ -9274,9 +9281,9 @@ public abstract class CPUCore {
     }
 
     public void IMULW(int regId) {
-        int temps = Register.getRegAX() * Register.Regs[regId].getWord();
-        Register.setRegAX(temps);
-        Register.setRegDX(temps >>> 16);
+        int temps = (short) Register.getRegAX() * (short) Register.Regs[regId].getWord();
+        Register.setRegAX((short) temps);
+        Register.setRegDX((short) (temps >> 16));//unsigned shift
         Flags.fillFlagsNoCFOF();
         if (((temps & 0xffff8000) == 0xffff8000 || (temps & 0xffff8000) == 0x0000)) {
             Register.setFlagBit(Register.FlagCF, false);
@@ -9290,7 +9297,7 @@ public abstract class CPUCore {
     public void IMULD_M(int op1) {
         long temps = ((long) Register.getRegEAX()) * ((long) Memory.readD(op1));
         Register.setRegEAX((int) temps);
-        Register.setRegEDX((int) (temps >>> 32));
+        Register.setRegEDX((int) (temps >> 32));//unsigned shift
         Flags.fillFlagsNoCFOF();
         if ((Register.getRegEDX() == 0xffffffff) && (Register.getRegEAX() & 0x80000000) != 0) {
             Register.setFlagBit(Register.FlagCF, false);
@@ -9307,7 +9314,7 @@ public abstract class CPUCore {
     public void IMULD(int regId) {
         long temps = ((long) Register.getRegEAX() * (long) Register.Regs[regId].getDWord());
         Register.setRegEAX((int) (temps));
-        Register.setRegEDX((int) (temps >>> 32));
+        Register.setRegEDX((int) (temps >> 32));//unsigned shift
         Flags.fillFlagsNoCFOF();
         if ((Register.getRegEDX() == 0xffffffff) && (Register.getRegEAX() & 0x80000000) != 0) {
             Register.setFlagBit(Register.FlagCF, false);
