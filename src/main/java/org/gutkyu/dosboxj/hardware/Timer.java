@@ -102,8 +102,8 @@ public final class Timer {
                 return index * 2 < p.delay;
             case 4:
                 // Only low on terminal count
-                // if(fmod(index,(double)p.delay) == 0) return false; //Maybe take one rate tick in
-                // consideration
+                // if(fmod(index,(double)p.delay) == 0)
+                // return false; //Maybe take one rate tick in consideration
                 // Easiest solution is to report always high (Space marines uses this mode)
                 return true;
             default:
@@ -367,7 +367,7 @@ public final class Timer {
                      */
 
                     if (latch == 0) {
-                        PIC.removeEvents(Timer::PIT0Event);
+                        PIC.removeEvents(pit0EventWrap);
                         if (!doCounterOutput(0) && mode != 0) {
                             PIC.activateIRQ(0);
                             // Don't raise instantaniously. (Origamo)
@@ -578,7 +578,7 @@ public final class Timer {
             if (disposing) {
 
             }
-            PIC.removeEvents(Timer::PIT0Event);
+            PIC.removeEvents(pit0EventWrap);
             super.dispose(disposing);
         }
     }

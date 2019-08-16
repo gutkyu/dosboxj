@@ -80,7 +80,7 @@ public final class Keyboard {
     public void clrBuffer() {
         used = 0;
         pos = 0;
-        PIC.removeEvents(this::transferBuffer);
+        PIC.removeEvents(transferBufferWrap);
         scheduled = false;
     }
 
