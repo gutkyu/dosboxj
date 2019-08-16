@@ -201,7 +201,7 @@ public final class Memory {
 
     // uint16(int)
     public static int realSeg(int pt) {
-        return pt >>> 16;
+        return 0xffff & (pt >>> 16);
     }
 
     // uint16(int)
