@@ -56,7 +56,7 @@ public final class Callback {
     // UI32
     public static int allocate() {
         int i = 0;
-        i = CallbackHandlers.subList(1, CallbackHandlers.size()).indexOf(callbackIllegal) + 1;
+        i = CallbackHandlers.subList(1, CallbackHandlers.size()).indexOf(illegalHandlerWrap) + 1;
         if (i >= 1) {
             CallbackHandlers.set(i, null);
             return i;
@@ -66,7 +66,7 @@ public final class Callback {
     }
 
     public static void deallocate(int input) {
-        CallbackHandlers.set(input, callbackIllegal);
+        CallbackHandlers.set(input, illegalHandlerWrap);
     }
 
     public static void idle() {
@@ -439,7 +439,7 @@ public final class Callback {
             CallbackDescription[nr] = null;
     }
 
-    private static final DOSCallbackHandler callbackIllegal = Callback::illegalHandler;
+    private static final DOSCallbackHandler illegalHandlerWrap = Callback::illegalHandler;
 
     private static int illegalHandler() {
         Support.exceptionExit("Illegal CallBack Called");
@@ -503,7 +503,7 @@ public final class Callback {
     public static void init(Section sec) {
         int i;
         for (i = 0; i < MAX; i++) {
-            CallbackHandlers.add(i, callbackIllegal);
+            CallbackHandlers.add(i, illegalHandlerWrap);
         }
 
         /* Setup the Stop Handler */
