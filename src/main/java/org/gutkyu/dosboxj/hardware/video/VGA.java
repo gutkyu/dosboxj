@@ -778,8 +778,8 @@ public final class VGA {
         int vidmemIdx = currentTextMemwrapOffset;
 
         for (int cx = 0; cx < Draw.Blocks; cx++) {
-            int chr = 0xff & vidmem[cx * 2];
-            int attrib = 0xff & vidmem[cx * 2 + 1];
+            int chr = 0xff & vidmem[vidmemIdx + cx * 2];
+            int attrib = 0xff & vidmem[vidmemIdx + cx * 2 + 1];
             if ((attrib & 0x77) == 0) {
                 // 00h, 80h, 08h, 88h produce black space
                 TempLine[drawIdx++] = 0;
@@ -864,8 +864,8 @@ public final class VGA {
         int vidmemIdx = currentTextMemwrapOffset;
 
         for (int cx = 0; cx < Draw.Blocks; cx++) {
-            int chr = 0xff & vidmem[cx * 2];
-            int col = 0xff & vidmem[cx * 2 + 1];
+            int chr = 0xff & vidmem[vidmemIdx + cx * 2];
+            int col = 0xff & vidmem[vidmemIdx + cx * 2 + 1];
             // int font = vga.draw.font_tables[(col >>>3) & 1][chr * 32 + line];
             int font = 0xff & Draw.Font[Draw.FontTablesIdx[(col >>> 3) & 1] + chr * 32 + line];
             int mask1 = TXTFontTable[font >>> 4] & FontMask[col >>> 7];
@@ -925,8 +925,8 @@ public final class VGA {
         byte[] vidmem = currentTextMemwrap;
         int vidmemIdx = currentTextMemwrapOffset;
 
-        int chr = 0xff & vidmem[0];
-        int col = 0xff & vidmem[1];
+        int chr = 0xff & vidmem[vidmemIdx + 0];
+        int col = 0xff & vidmem[vidmemIdx + 1];
         // byte font = (byte)((vga.draw.font_tables[(col >>>3) & 1][chr * 32 + line]) <<
         // pel_pan);
         int font = 0xff & ((0xff
