@@ -68,6 +68,31 @@ public final class Render {
                 {null, null, null, this::Normal2x_32_32_R},
                 {null, null, null, this::Normal2x_9_32_R},};
 
+        ScaleNormalDh = new ScalerSimpleBlock();
+
+        ScaleNormalDh.name = "Normal";
+        ScaleNormalDh.gfxFlags = GFXFlag.CAN8 | GFXFlag.CAN15 | GFXFlag.CAN16 | GFXFlag.CAN32;
+        ScaleNormalDh.xscale = 1;
+        ScaleNormalDh.yscale = 2;
+        ScaleNormalDh.Linear = new ScalerLineHandler[][] {
+
+                {null, null, null, simpleLine32(SCALE_DH, BPP_8, SCALE_LINE_LIN)},
+                {null, null, null, simpleLine32(SCALE_DH, BPP_15, SCALE_LINE_LIN)},
+                {null, null, null, simpleLine32(SCALE_DH, BPP_16, SCALE_LINE_LIN)},
+                {null, null, null, simpleLine32(SCALE_DH, BPP_32, SCALE_LINE_LIN)},
+                {null, null, null, simpleLine32(SCALE_DH, BPP_9, SCALE_LINE_LIN)}
+
+        };
+        ScaleNormalDh.Random = new ScalerLineHandler[][] {
+
+                {null, null, null, simpleLine32(SCALE_DH, BPP_8, SCALE_LINE_RAN)},
+                {null, null, null, simpleLine32(SCALE_DH, BPP_15, SCALE_LINE_RAN)},
+                {null, null, null, simpleLine32(SCALE_DH, BPP_16, SCALE_LINE_RAN)},
+                {null, null, null, simpleLine32(SCALE_DH, BPP_32, SCALE_LINE_RAN)},
+                {null, null, null, simpleLine32(SCALE_DH, BPP_9, SCALE_LINE_RAN)}
+
+        };
+
     }
 
     private void increaseFrameSkip(boolean pressed) {
@@ -417,8 +442,7 @@ public final class Render {
             // simpleBlock = ScaleNormalDw;
             throw new DOSException("ScaleNormalDw 미구현");
         } else if (dblh) {
-            // simpleBlock = ScaleNormalDh;
-            throw new DOSException("ScaleNormalDh 미구현");
+            simpleBlock = ScaleNormalDh;
         } else {
 
             complexBlock = null;
@@ -788,6 +812,7 @@ public final class Render {
 
     ScalerSimpleBlock ScaleNormal1x;
     ScalerSimpleBlock ScaleNormal2x;
+    ScalerSimpleBlock ScaleNormalDh;
     // #if RENDER_USE_ADVANCED_SCALERS>0
     // extern ScalerSimpleBlock_t ScaleTV2x;
     // extern ScalerSimpleBlock_t ScaleTV3x;
@@ -2050,6 +2075,213 @@ public final class Render {
 
     // -- #endregion
 
+    // -- begin Normal Scaler Line
+    private final static int SCALE_1X = 0;
+    private final static int SCALE_2X = 1;
+    private final static int SCALE_DW = 2;
+    private final static int SCALE_DH = 3;
+    private final static int BPP_8 = 0;
+    private final static int BPP_9 = 1;
+    private final static int BPP_15 = 2;
+    private final static int BPP_16 = 3;
+    private final static int BPP_32 = 4;
+    private final static int SCALE_LINE_LIN = 0;
+    private final static int SCALE_LINE_RAN = 1;
+
+    private int getScalerWidth(int scale) {
+        int scalerWidth = 0;
+        switch (scale) {
+            case SCALE_1X:
+                scalerWidth = 1;
+                break;
+            case SCALE_2X:
+                scalerWidth = 2;
+                break;
+            case SCALE_DW:
+                scalerWidth = 2;
+                break;
+            case SCALE_DH:
+                scalerWidth = 1;
+                break;
+        }
+        return scalerWidth;
+    }
+
+    private int getScalerHeight(int scale) {
+        int scalerHeight = 0;
+        switch (scale) {
+            case SCALE_1X:
+                scalerHeight = 1;
+                break;
+            case SCALE_2X:
+                scalerHeight = 2;
+                break;
+            case SCALE_DW:
+                scalerHeight = 1;
+                break;
+            case SCALE_DH:
+                scalerHeight = 2;
+                break;
+        }
+        return scalerHeight;
+    }
+
+    // output 32 bpp scalerline handler builder
+    private ScalerLineHandler simpleLine32(int scale, int srcBpp, int scaleLineLR) {
+        final int scalerwidth = getScalerWidth(scale);
+        final int scalerHeight = getScalerHeight(scale);
+
+        return (byte[] src, int index) -> {
+            // 존재하지 않음 SCALERLINEAR
+
+            /* Clear the complete line marker */
+            int hadChange = 0;
+            // const SRCTYPE *src = (SRCTYPE*)s;
+            int sidx = index;
+            byte[] cache = scaleCacheRead;
+            int cidx = scaleCacheReadIndex;
+            scaleCacheReadIndex += scaleCachePitch;
+            int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
+            int line0idx = scaleOutWriteIndex;
+            // render.scale.outPitch, output pitch's pixel counts
+            int pixelsPerScaleOutLine = scaleOutPitch;
+            int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
+
+            int S = 0;
+            int P = 0;
+            int[] line1 = null;
+            int line1idx = 0;
+            boolean isEqualsSrcCache = false;
+            for (int x = srcWidth; x > 0;) {
+                isEqualsSrcCache = src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
+                        && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3];
+                if (srcBpp == BPP_9) {
+                    if (isEqualsSrcCache && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
+                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
+                        x -= 4;
+                        sidx += 4;
+                        cidx += 4;
+                        // line0+=4*SCALERWIDTH;
+                        line0idx += 4;
+                        continue;
+                    }
+                } else {
+                    if (isEqualsSrcCache) {
+                        x -= sizeOfUnit;
+                        sidx += sizeOfUnit;
+                        cidx += sizeOfUnit;
+                        // line0idx+=(SIZE_UINT/sizeof(SRCTYPE))*SCALERWIDTH;
+                        line0idx += sizeOfUnit * scalerwidth;
+                        continue;
+                    }
+                }
+
+                if (scalerHeight > 1) {// defined(SCALERLINEAR)
+                    if (scaleLineLR == SCALE_LINE_LIN) {
+                        line1 = scalerWriteCache;
+                        line1idx = 0;
+                    } else {
+                        line1 = line0;
+                        line1idx = line0idx + pixelsPerScaleOutLine;
+                    }
+                }
+
+                hadChange = 1;
+                for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
+                    switch (srcBpp) {
+                        case BPP_8:
+                        case BPP_9:
+                            S = 0xff & (cache[cidx++] = src[sidx++]);
+                            break;
+                        case BPP_15:
+                        case BPP_16:
+                            S = ByteConv.getShort(src, sidx);
+                            cache[cidx++] = src[sidx++];
+                            cache[cidx++] = src[sidx++];
+                            break;
+                        case BPP_32:
+                            S = ByteConv.getInt(src, sidx);
+                            cache[cidx++] = src[sidx++];
+                            cache[cidx++] = src[sidx++];
+                            cache[cidx++] = src[sidx++];
+                            cache[cidx++] = src[sidx++];
+                            break;
+                    }
+
+                    // const PTYPE P = PMAKE(S);
+                    switch (srcBpp) {
+                        case BPP_8:
+                        case BPP_9:
+                            P = pal.lut[S];
+                            break;
+                        case BPP_15:
+                            P = ((S & (0x1F << 10)) << 9) | ((S & (0x1F << 5)) << 6)
+                                    | ((S & 0x1F) << 3);
+                            break;
+                        case BPP_16:
+                            P = ((S & (0x1F << 11)) << 8) | ((S & (0x3F << 5)) << 5)
+                                    | ((S & 31) << 3);
+                            break;
+                        case BPP_32:
+                            P = S;
+                            break;
+                    }
+
+                    // SCALERFUNC;
+                    switch (scale) {
+                        case SCALE_1X:
+                            line0[line0idx] = P;
+                            break;
+                        case SCALE_2X:
+                            line0[line0idx] = P;
+                            line0[line0idx + 1] = P;
+                            line1[line1idx] = P;
+                            line1[line1idx + 1] = P;
+                            break;
+                        case SCALE_DW:
+                            line0[line0idx] = P;
+                            line0[line0idx + 1] = P;
+                            break;
+                        case SCALE_DH:
+                            line0[line0idx] = P;
+                            line1[line1idx] = P;
+                            break;
+                    }
+                    // line0idx += SCALERWIDTH;
+                    line0idx += scalerwidth;
+                    if (scalerHeight > 1) {
+                        // line1idx += SCALERWIDTH;
+                        line1idx += scalerwidth;
+                    }
+                }
+                if (scaleLineLR == SCALE_LINE_LIN) {
+                    int copyLen = line0idx;
+                    ArrayHelper.copy(line1, 0, line0, line0idx - copyLen + pixelsPerScaleOutLine,
+                            copyLen);
+                }
+            }
+
+            int scaleLines;
+            if (scaleLineLR == SCALE_LINE_LIN) {
+                scaleLines = scalerHeight;
+            } else {
+                scaleLines = ScalerAspect[scaleOutLine++];
+                // if ( scaleLines - SCALERHEIGHT && hadChange ) {
+                if ((scaleLines - scalerHeight) != 0 && hadChange != 0) {
+                    ArrayHelper.copy(scaleOutWrite,
+                            scaleOutWriteIndex + pixelsPerScaleOutLine * (scalerHeight - 1),
+                            scaleOutWrite,
+                            scaleOutWriteIndex + pixelsPerScaleOutLine * scalerHeight,
+                            srcWidth * scalerHeight);
+                }
+            }
+
+            ScalerAddLines(hadChange, scaleLines);
+        };
+
+    }
+
+    // -- end Normal Scaler Line
     /*--------------------------- end Render_Scalers -----------------------------*/
     /*--------------------------- begin Render_t -----------------------------*/
     public final class RenderPal {
