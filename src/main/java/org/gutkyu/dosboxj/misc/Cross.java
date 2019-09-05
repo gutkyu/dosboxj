@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.gutkyu.dosboxj.util.CStringPt;
 
 
 public final class Cross {
@@ -75,4 +76,14 @@ public final class Cross {
         }
     }
 
+    public static void convertSystemFileName(CStringPt fileName){
+        if(IS_WINDOWS)
+            return;
+        int idx = fileName.length();
+        while(idx > 0){
+            if(fileName.get(idx) == '\\')
+                fileName.set(idx, FILESPLIT);
+            idx--;
+        }
+    }
 }

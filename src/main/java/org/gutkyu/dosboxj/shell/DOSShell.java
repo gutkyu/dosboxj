@@ -1101,12 +1101,13 @@ public final class DOSShell extends DOSShellBase {
             if (!(DOSMain.Drives[drive] instanceof LocalDrive))
                 throw new DOSException("0");
             ldp = (LocalDrive) drv;
-            CStringPt newname = CStringPt.create(Cross.LEN);
-            CStringPt.copy(ldp.basedir, newname);
-            newname.concat(fullDir);
-            ldp.dirCache.expandName(newname);
+            CStringPt newName = CStringPt.create(Cross.LEN);
+            CStringPt.copy(ldp.basedir, newName);
+            newName.concat(fullDir);
+            Cross.convertSystemFileName(newName);
+            ldp.dirCache.expandName(newName);
             mountString.concat("\"");
-            mountString.concat(newname);
+            mountString.concat(newName);
             mountString.concat("\"");
             this.parseLine(mountString);
         } catch (DOSException appEx) {

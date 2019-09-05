@@ -3483,7 +3483,7 @@ public final class DOSMain {
         String fullName = returnedFullName;
         int drive = returnedFullNameDrive;
 
-        if (Drives[drive].tryFileAttr(fullName.toString())) {
+        if (Drives[drive].tryFileAttr(fullName)) {
             returnedFileAttr = Drives[drive].returnFileAttr();
             return true;
         } else {
@@ -4936,9 +4936,9 @@ public final class DOSMain {
         int dirSepIdx = fullname.lastIndexOf("\\");
         String namePart = "";
         if (dirSepIdx >= 0) {
-            name = fullname.substring(dirSepIdx + 1);
+            namePart = fullname.substring(dirSepIdx + 1);
             // Check validity of leading directory.
-            if (!Drives[drive].testDir(fullname))
+            if (!Drives[drive].testDir(fullname.substring(0,dirSepIdx)))
                 return DOS_DEVICES;
         } else
             namePart = fullname;

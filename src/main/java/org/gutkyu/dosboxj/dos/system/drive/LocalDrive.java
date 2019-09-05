@@ -65,16 +65,16 @@ public final class LocalDrive extends DOSDrive implements Disposable {
                 DOSMain.setError(DOSMain.DOSERR_ACCESS_CODE_INVALID);
                 return null;
         }
-        CStringPt newname = CStringPt.create(Cross.LEN);
-        CStringPt.copy(basedir, newname);
-        newname.concat(name);
-
-        dirCache.expandName(newname);
+        CStringPt newName = CStringPt.create(Cross.LEN);
+        CStringPt.copy(basedir, newName);
+        newName.concat(name);
+        Cross.convertSystemFileName(newName);
+        dirCache.expandName(newName);
         SeekableByteChannel chann = null;
         try {
-            chann = Files.newByteChannel(Paths.get(newname.toString()), openOptions);
+            chann = Files.newByteChannel(Paths.get(newName.toString()), openOptions);
         } catch (Exception ex) {
-            Log.logMsg("file :{0}\n{1}", newname, ex.toString());
+            Log.logMsg("file :{0}\n{1}", newName, ex.toString());
             return null;
         }
         // int err=errno;
@@ -87,11 +87,12 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     }
 
     public SeekableByteChannel getSystemFileChannel(String name, OpenOption... options) {
-        CStringPt newname = CStringPt.create(Cross.LEN);
-        CStringPt.copy(basedir, newname);
-        newname.concat(name);
-        dirCache.expandName(newname);
-        Path path = Paths.get(newname.toString());
+        CStringPt newName = CStringPt.create(Cross.LEN);
+        CStringPt.copy(basedir, newName);
+        newName.concat(name);
+        Cross.convertSystemFileName(newName);
+        dirCache.expandName(newName);
+        Path path = Paths.get(newName.toString());
         SeekableByteChannel chann = null;
         try {
             chann = Files.newByteChannel(path, options);
@@ -104,6 +105,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
     public boolean getSystemFilename(CStringPt sysName, String dosName) {
         CStringPt.copy(basedir, sysName);
         sysName.concat(dosName);
+        Cross.convertSystemFileName(sysName);
         dirCache.expandName(sysName);
         return true;
     }
@@ -115,6 +117,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
+        Cross.convertSystemFileName(newName);
         // Can only be used in till a new drive_cache action is preformed */
         CStringPt tempName = dirCache.getExpandName(newName);
         /* Test if file exists (so we need to truncate it). don't add to dirCache then */
@@ -148,6 +151,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
+        Cross.convertSystemFileName(newName);
         CStringPt fullname = dirCache.getExpandName(newName);
         Path path = Paths.get(fullname.toString());
         boolean isUnlink = false;
@@ -212,46 +216,49 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean removeDir(String dir) {
-        CStringPt newdir = CStringPt.create(Cross.LEN);
-        CStringPt.copy(basedir, newdir);
-        newdir.concat(dir);
+        CStringPt newDir = CStringPt.create(Cross.LEN);
+        CStringPt.copy(basedir, newDir);
+        newDir.concat(dir);
+        Cross.convertSystemFileName(newDir);
 
         try {
-            Files.delete(Paths.get(dirCache.getExpandName(newdir).toString()));
+            Files.delete(Paths.get(dirCache.getExpandName(newDir).toString()));
         } catch (Exception e) {
             return false;
         }
 
-        dirCache.deleteEntry(newdir, true);
+        dirCache.deleteEntry(newDir, true);
         return true;
     }
 
     @Override
     public boolean makeDir(String dir) {
-        CStringPt newdir = CStringPt.create(Cross.LEN);
-        CStringPt.copy(basedir, newdir);
-        newdir.concat(dir);
-        Path dirPath = Paths.get(dirCache.getExpandName(newdir).toString());
+        CStringPt newDir = CStringPt.create(Cross.LEN);
+        CStringPt.copy(basedir, newDir);
+        newDir.concat(dir);
+        Cross.convertSystemFileName(newDir);
+        Path dirPath = Paths.get(dirCache.getExpandName(newDir).toString());
         try {
             Files.createDirectory(dirPath);
         } catch (Exception e) {
             return false;
         }
-        dirCache.cacheOut(newdir, true);
+        dirCache.cacheOut(newDir, true);
 
         return true;// || ((temp!=0) && (errno==EEXIST));
     }
 
     @Override
     public boolean testDir(CStringPt dir) {
-        CStringPt newdir = CStringPt.create(Cross.LEN);
-        CStringPt.copy(basedir, newdir);
-        newdir.concat(dir);
-        dirCache.expandName(newdir);
-        Path path = Paths.get(newdir.toString());
+        CStringPt newDir = CStringPt.create(Cross.LEN);
+        CStringPt.copy(basedir, newDir);
+        newDir.concat(dir);
+        Cross.convertSystemFileName(newDir);
+        dirCache.expandName(newDir);
+        Path path = Paths.get(newDir.toString());
         // Skip directory test, if "\"
-        int len = newdir.length();
-        if (len > 0 && (newdir.get(len - 1) != '\\')) {
+        int len = newDir.length();
+        if (len > 0 && (newDir.get(len - 1) != '\\')) {
             // It has to be a directory !
             if (!Files.exists(path) || !Files.isDirectory(path))
                 return false;
@@ -262,14 +269,15 @@ public final class LocalDrive extends DOSDrive implements Disposable {
 
     @Override
     public boolean testDir(String dir) {
-        CStringPt newdir = CStringPt.create(Cross.LEN);
-        CStringPt.copy(basedir, newdir);
-        newdir.concat(dir);
-        dirCache.expandName(newdir);
-        Path path = Paths.get(newdir.toString());
+        CStringPt newDir = CStringPt.create(Cross.LEN);
+        CStringPt.copy(basedir, newDir);
+        newDir.concat(dir);
+        Cross.convertSystemFileName(newDir);
+        dirCache.expandName(newDir);
+        Path path = Paths.get(newDir.toString());
         // Skip directory test, if "\"
-        int len = newdir.length();
-        if (len > 0 && (newdir.get(len - 1) != '\\')) {
+        int len = newDir.length();
+        if (len > 0 && (newDir.get(len - 1) != '\\')) {
             // It has to be a directory !
             if (!Files.exists(path) || !Files.isDirectory(path))
                 return false;
@@ -283,6 +291,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         CStringPt tempDir = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, tempDir);
         tempDir.concat(dir);
+        Cross.convertSystemFileName(tempDir);
 
         if (allocation.mediaId == 0xF0) {
             emptyCache(); // rescan floppie-content on each findfirst
@@ -416,6 +425,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
+        Cross.convertSystemFileName(newName);
         dirCache.expandName(newName);
 
         Path path = Paths.get(newName.toString());
@@ -440,20 +450,21 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         CStringPt newOld = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newOld);
         newOld.concat(oldName);
-
+        Cross.convertSystemFileName(newOld);
         dirCache.expandName(newOld);
 
-        CStringPt newnew = CStringPt.create(Cross.LEN);
-        CStringPt.copy(basedir, newnew);
-        newnew.concat(newName);
+        CStringPt newNew = CStringPt.create(Cross.LEN);
+        CStringPt.copy(basedir, newNew);
+        newNew.concat(newName);
+        Cross.convertSystemFileName(newNew);
         Path src = Paths.get(newOld.toString());
-        Path trg = Paths.get(dirCache.getExpandName(newnew).toString());
+        Path trg = Paths.get(dirCache.getExpandName(newNew).toString());
         try {
             Files.move(src, trg);
         } catch (Exception e) {
             return false;
         }
-        dirCache.cacheOut(newnew);
+        dirCache.cacheOut(newNew);
         return true;
 
     }
@@ -474,7 +485,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
-
+        Cross.convertSystemFileName(newName);
         dirCache.expandName(newName);
         return Files.exists(Paths.get(newName.toString()));
     }
@@ -484,7 +495,7 @@ public final class LocalDrive extends DOSDrive implements Disposable {
         CStringPt newName = CStringPt.create(Cross.LEN);
         CStringPt.copy(basedir, newName);
         newName.concat(name);
-
+        Cross.convertSystemFileName(newName);
         dirCache.expandName(newName);
         Path path = Paths.get(newName.toString());
 
