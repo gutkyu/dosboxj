@@ -2418,7 +2418,7 @@ public abstract class CPUCore {
                         break;
                     case CASE_W_0x98: /* CBW */
                         // sbyte
-                        Register.setRegAX(Register.getRegAL());
+                        Register.setRegAX((byte)Register.getRegAL());
                         break;
                     case CASE_W_0x99: /* CWD */
                         if ((Register.getRegAX() & 0x8000) != 0)
@@ -2800,8 +2800,8 @@ public abstract class CPUCore {
                             Register.setRegAL(Memory.readB(
                                     Core.BaseDS + (Register.getRegEBX() + Register.getRegAL())));
                         } else {
-                            Register.setRegAL(Memory.readB(Core.BaseDS + 0xffff
-                                    & (Register.getRegBX() + Register.getRegAL())));
+                            Register.setRegAL(Memory.readB(Core.BaseDS + (0xffff
+                                    & (Register.getRegBX() + Register.getRegAL()))));
                         }
                         break;
                     case CASE_W_0xd8:
@@ -8949,7 +8949,7 @@ public abstract class CPUCore {
         }
 
         int quo = Register.getRegAX() / val;
-        int rem = 0xff & Register.getRegAX() % val;
+        int rem = 0xff & (Register.getRegAX() % val);
         int quo8 = quo & 0xff;
         if (quo > 0xff) {
             byte newNum = 0;

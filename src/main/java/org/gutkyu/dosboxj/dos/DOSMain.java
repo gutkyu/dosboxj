@@ -3815,11 +3815,11 @@ public final class DOSMain {
         }
         // savefcb:
         if (nextStep == saveFCB) {
-            if (!hasdrive & (parser & PARSE_DFLT_DRIVE) == 0)
+            if (!hasdrive & ((parser & PARSE_DFLT_DRIVE) == 0))
                 fcbNamePt.set(Off_FCB_drive + 0, (char) 0);
-            if (!hasname & (parser & PARSE_BLNK_FNAME) == 0)
+            if (!hasname & ((parser & PARSE_BLNK_FNAME) == 0))
                 CStringPt.copy("        ", CStringPt.clone(fcbNamePt, Off_FCB_name));
-            if (!hasext & (parser & PARSE_BLNK_FEXT) == 0)
+            if (!hasext & ((parser & PARSE_BLNK_FEXT) == 0))
                 CStringPt.copy("   ", CStringPt.clone(fcbNamePt, Off_FCB_ext));
             fcb.setName(0xff & fcbNamePt.get(Off_FCB_drive + 0),
                     CStringPt.clone(fcbNamePt, Off_FCB_name),
