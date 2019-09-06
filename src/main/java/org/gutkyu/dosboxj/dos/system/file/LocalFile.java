@@ -143,6 +143,7 @@ public final class LocalFile extends DOSFile {
                     // TODO Give some doserrorcode;
                     return -1;// ERROR
             }
+            pos = fChann.position();
         } catch (Exception e) {// Out of file range, pretend everythings ok
             // and move file pointer top end of file... ?! (Black Thorne)
             // fChann.Seek(0, SeekOrigin.End);

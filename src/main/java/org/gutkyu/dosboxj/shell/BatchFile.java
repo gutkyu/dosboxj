@@ -65,9 +65,10 @@ class BatchFile implements Disposable {
                      * Why are we filtering this ? Exclusion list: tab for batch files escape for
                      * ansi backspace for alien odyssey
                      */
-                    if (c > 31 || c == 0x1b || c == '\t' || c == 8)
+                    if (c > 31 || c == 0x1b || c == '\t' || c == 8) {
                         cmdWrite.set((char) c);
-                    cmdWrite.movePtToR1();
+                        cmdWrite.movePtToR1();
+                    }
                 }
             } while (c != '\n' && n != 0);
             cmdWrite.set((char) 0);
