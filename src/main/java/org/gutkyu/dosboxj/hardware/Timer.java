@@ -570,7 +570,7 @@ public final class Timer {
 
             latchedTimerStatusLocked = false;
             gate2 = false;
-            PIC.addEvent(Timer::PIT0Event, pit[0].delay);
+            PIC.addEvent(Timer.pit0EventWrap, pit[0].delay);
         }
 
         @Override
