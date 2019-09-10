@@ -245,7 +245,7 @@ public final class CStringPt {
     private int indexOf(char[] array, char search, int offset, int count) {
         for (int i = offset; i < count; i++) {
             if (array[i] == search) {
-                return i - this.index;
+                return i;
             }
         }
         return -1;
@@ -254,7 +254,7 @@ public final class CStringPt {
     // 현재 위치 _index가 0으로 대응됨
     public int indexOf(char value) {
         calcNullCharPos(this);
-        return indexOf(this.arrays, value, this.index, this.posNullChar - this.index);
+        return indexOf(this.arrays, value, this.index, this.posNullChar - this.index) - this.index;
     }
 
     private int lastIndexOf(char[] array, char search, int offset, int count) {
@@ -316,7 +316,7 @@ public final class CStringPt {
     // 현재 위치 _index이 0으로 대응됨
     public int lastIndexOf(char value) {
         calcNullCharPos(this);
-        return indexOf(this.arrays, value, this.posNullChar - 1, this.posNullChar - this.index)
+        return lastIndexOf(this.arrays, value, this.posNullChar - 1, this.posNullChar - this.index)
                 - this.index;
     }
 
