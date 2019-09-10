@@ -5760,7 +5760,7 @@ public abstract class CPUCore {
                                     TESTD(eardId, fetchD());
                                 } else {
                                     int eaa = Core.EATable[rm].get();
-                                    TESTD(eaa, fetchD());
+                                    TESTD_M(eaa, fetchD());
                                 }
                                 break;
                             }
