@@ -36,7 +36,10 @@ public final class LocalFile extends DOSFile {
         _lastAction = LastActionType.READ;
         ByteBuffer rBuf = ByteBuffer.wrap(buf, offset, size);
         try {
-            rdSz = size = fChann.read(rBuf);
+            long curPos = fChann.position();
+            size = fChann.read(rBuf);
+            rdSz = size == -1 ? (int)(fChann.position() - curPos) : size;
+
         } catch (Exception e) {
             return false;
         }

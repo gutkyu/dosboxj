@@ -244,7 +244,9 @@ public final class KeyboardLayout implements Disposable {
         } else {
             ByteBuffer rb = ByteBuffer.wrap(cpiBuf, 0, 5);
             try {
-                int dr = tempFile.read(rb);
+                long tmpPos = tempFile.position();
+                tempFile.read(rb);
+                int dr = (int)(tempFile.position() - tmpPos);
                 // check if file is valid
                 if (dr < 5) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -307,13 +309,17 @@ public final class KeyboardLayout implements Disposable {
                         // read in compressed CPX-file
                         tempFile.position(0);
                         rb = ByteBuffer.wrap(cpiBuf, 0, 65536);
-                        cpxDataSize = tempFile.read(rb);
+                        tmpPos = tempFile.position();
+                        tempFile.read(rb);
+                        cpxDataSize = (int)(tempFile.position() - tmpPos);
                     }
                 } else {
                     // standard uncompressed cpi-file
                     tempFile.position(0);
                     rb = ByteBuffer.wrap(cpiBuf, 0, 65536);
-                    cpiBufSize = tempFile.read(rb);
+                    tmpPos = tempFile.position();
+                    tempFile.read(rb);
+                    cpxDataSize = (int)(tempFile.position() - tmpPos);
                 }
             } catch (Exception e) {
                 Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -530,8 +536,10 @@ public final class KeyboardLayout implements Disposable {
             if (tempfile != null) {
                 ByteBuffer rb = ByteBuffer.wrap(readBuf, 0, 65535);
                 try {
-                    tempfile.position(startPos + 2);
-                    readBufSize = tempfile.read(rb);
+                    long tmpPos = startPos + 2;
+                    tempfile.position(tmpPos);
+                    tempfile.read(rb);
+                    readBufSize = (int)(tempfile.position() - tmpPos);
                     tempfile.close();
                 } catch (Exception e) {
                     // todo 오류 발생 처리 추가
@@ -546,7 +554,9 @@ public final class KeyboardLayout implements Disposable {
             ByteBuffer rb = ByteBuffer.wrap(readBuf, 0, 4);
 
             try {
-                int dr = tempfile.read(rb);
+                long tmpPos = tempfile.position();
+                tempfile.read(rb);
+                int dr = (int)(tempfile.position() - tmpPos);
                 if ((dr < 4) || (readBuf[0] != 0x4b) || (readBuf[1] != 0x4c)
                         || (readBuf[2] != 0x46)) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -556,7 +566,8 @@ public final class KeyboardLayout implements Disposable {
 
                 tempfile.position(0);
                 rb = ByteBuffer.wrap(readBuf, 0, 65535);
-                readBufSize = tempfile.read(rb);
+                tempfile.read(rb);
+                readBufSize = (int)tempfile.position();
                 tempfile.close();
             } catch (Exception e) {
                 // todo 오류 발생 처리 추가
@@ -893,9 +904,11 @@ public final class KeyboardLayout implements Disposable {
             }
             if (tempfile != null) {
                 try {
-                    tempfile.position(startIdx + 2);
+                    long tmpPos = startIdx + 2;
+                    tempfile.position(tmpPos);
                     ByteBuffer rb = ByteBuffer.wrap(readBuf, 0, 65535);
-                    readBufSize = tempfile.read(rb);
+                    tempfile.read(rb);
+                    readBufSize = (int)(tempfile.position() - tmpPos);
                     tempfile.close();
                 } catch (Exception e) {
                     // todo 오류 발생 처리 추가
@@ -909,7 +922,9 @@ public final class KeyboardLayout implements Disposable {
             // check ID-bytes of file
             ByteBuffer rb = ByteBuffer.wrap(readBuf, 0, 4);
             try {
-                int dr = tempfile.read(rb);
+                long tmpPos = tempfile.position();
+                tempfile.read(rb);
+                int dr = (int)(tempfile.position() - tmpPos);
                 if ((dr < 4) || (readBuf[0] != 0x4b) || (readBuf[1] != 0x4c)
                         || (readBuf[2] != 0x46)) {
                     Log.logging(Log.LogTypes.BIOS, Log.LogServerities.Error,
@@ -1188,7 +1203,9 @@ public final class KeyboardLayout implements Disposable {
         try {
             // check ID-bytes of file
             ByteBuffer rb = ByteBuffer.wrap(rbuf, 0, 7);
-            int dr = tempfile.read(rb);
+            long tmpPos = tempfile.position();
+            tempfile.read(rb);
+            int dr = (int)(tempfile.position() - tmpPos);
             if ((dr < 7) || (rbuf[0] != 0x4b) || (rbuf[1] != 0x43) || (rbuf[2] != 0x46)) {
                 tempfile.close();
                 return 0;
@@ -1199,7 +1216,8 @@ public final class KeyboardLayout implements Disposable {
             for (;;) {
                 int curPos = (int) tempfile.position();
                 rb = ByteBuffer.wrap(rbuf, 0, 5);
-                dr = tempfile.read(rb);
+                tempfile.read(rb);
+                dr = (int)(tempfile.position() - curPos);
                 if (dr < 5)
                     break;
                 int len = Memory.hostReadW(rbuf, 0);
