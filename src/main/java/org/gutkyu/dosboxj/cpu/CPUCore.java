@@ -6739,7 +6739,7 @@ public abstract class CPUCore {
                             Register.Regs[rwrdId].setDWord(Register.Regs[earwId].getWord());
                         } else {
                             int eaa = Core.EATable[rm].get();
-                            Register.Regs[rwrdId].setDWord(Memory.readW(eaa));
+                            Register.Regs[rwrdId].setDWord((short)Memory.readW(eaa));
                         }
                         break;
                     }
