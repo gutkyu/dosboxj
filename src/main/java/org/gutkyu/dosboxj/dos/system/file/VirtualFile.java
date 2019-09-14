@@ -5,7 +5,7 @@ import org.gutkyu.dosboxj.dos.*;
 
 public final class VirtualFile extends DOSFile {
     public VirtualFile(byte[] inData, int inSize) {
-        fileSize = inSize;
+        fileSize = 0xffffffffL & inSize;
         fileData = inData;
         filePos = 0;
         Date = DOSMain.packDate(2002, 10, 1);
@@ -15,15 +15,15 @@ public final class VirtualFile extends DOSFile {
 
     @Override
     public boolean read(byte[] buf, int offset, int size) {
-        int left = fileSize - filePos;
+        int left = (int)(fileSize - filePos);
         if (left <= size) {
             for (int i = 0; i < left; i++) {
-                buf[i + offset] = fileData[i + filePos];
+                buf[i + offset] = fileData[(int)(i + filePos)];
             }
             rdSz = left;
         } else {
             for (int i = 0; i < size; i++) {
-                buf[i + offset] = fileData[i + filePos];
+                buf[i + offset] = fileData[(int)(i + filePos)];
             }
             rdSz = size;
         }
@@ -75,28 +75,28 @@ public final class VirtualFile extends DOSFile {
 
     @Override
     public long seek(long pos, int type) {
-        pos &= 0xFFFFFFFF;
+        pos &= 0xFFFFFFFFL;
         switch (type) {
             case DOSSystem.DOS_SEEK_SET:
                 if (pos <= fileSize)
-                    filePos = (int) pos;
+                    filePos = pos;
                 else
                     return -1;
                 break;
             case DOSSystem.DOS_SEEK_CUR:
                 if ((pos + filePos) <= fileSize)
-                    filePos = (int) (pos + filePos);
+                    filePos = pos + filePos;
                 else
                     return -1;
                 break;
             case DOSSystem.DOS_SEEK_END:
                 if (pos <= fileSize)
-                    filePos = (int) (fileSize - pos);
+                    filePos = fileSize - pos;
                 else
                     return -1;
                 break;
         }
-        pos = filePos & 0xFFFFFFFF;
+        pos = filePos & 0xFFFFFFFFL;
         return pos;
     }
 
@@ -110,7 +110,7 @@ public final class VirtualFile extends DOSFile {
         return 0x40; // read-only drive
     }
 
-    private int fileSize;
-    private int filePos;
+    private long fileSize;
+    private long filePos;
     private byte[] fileData;
 }

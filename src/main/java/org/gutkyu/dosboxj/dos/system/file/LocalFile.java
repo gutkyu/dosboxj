@@ -131,25 +131,25 @@ public final class LocalFile extends DOSFile {
         try {
             switch (type) {
                 case DOSSystem.DOS_SEEK_SET:
-                    fChann.position(pos);
-
                     break;
                 case DOSSystem.DOS_SEEK_CUR:
-                    fChann.position(fChann.position() + pos);
-
+                    pos = fChann.position() + pos;
                     break;
                 case DOSSystem.DOS_SEEK_END:
-                    fChann.position(fChann.size() - 1 + fChann.position() + pos);
-
+                    pos = fChann.size() + pos;
                     break;
                 default:
                     // TODO Give some doserrorcode;
                     return -1;// ERROR
             }
-            pos = fChann.position();
-        } catch (Exception e) {// Out of file range, pretend everythings ok
+            long size = fChann.size();
+            if(pos > size || pos < 0){
+            // Out of file range, pretend everythings ok
             // and move file pointer top end of file... ?! (Black Thorne)
-            // fChann.Seek(0, SeekOrigin.End);
+                pos = size;
+            }
+            fChann.position(pos);
+        } catch (Exception e) {
             return -1;
         }
 

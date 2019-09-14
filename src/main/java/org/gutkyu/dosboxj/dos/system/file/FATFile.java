@@ -220,18 +220,18 @@ public final class FATFile extends DOSFile {
 
     @Override
     public long seek(long pos, int type) {
-        long seekTo = 0;
+        int seekTo = 0;//Bit32s
         pos &= 0xFFFFFFFF;
         switch (type) {
             case DOSSystem.DOS_SEEK_SET:
-                seekTo = pos;
+                seekTo = (int)pos;//Bit32s
                 break;
             case DOSSystem.DOS_SEEK_CUR:
                 /* Is this relative seek signed? */
-                seekTo = pos + SeekPos;
+                seekTo = (int)pos + (int)SeekPos;//Bit32s + Bit32s
                 break;
             case DOSSystem.DOS_SEEK_END:
-                seekTo = fileLength + pos;
+                seekTo = (int)fileLength + (int)pos;//Bit32s + Bit32s
                 break;
         }
         // Log.LOG_MSG("Seek to %d with type %d (absolute value %d)", *pos, type, seekto);
@@ -240,8 +240,8 @@ public final class FATFile extends DOSFile {
             seekTo = fileLength;
         if (seekTo < 0)
             seekTo = 0;
-        SeekPos = seekTo;
-        CurrentSector = myDrive.getAbsoluteSectFromBytePos(FirstCluster, (int) SeekPos);
+        SeekPos = 0xffffffffL & seekTo;
+        CurrentSector = myDrive.getAbsoluteSectFromBytePos(FirstCluster,  SeekPos);
         if (CurrentSector == 0) {
             /* not within file size, thus no sector is available */
             LoadedSector = false;
@@ -250,7 +250,7 @@ public final class FATFile extends DOSFile {
             myDrive.LoadedDisk.readAbsoluteSector(CurrentSector, SectorBuffer, 0);
         }
         pos = SeekPos;
-        return pos &= 0xFFFFFFFF;
+        return pos & 0xFFFFFFFFL;
     }
 
     @Override
