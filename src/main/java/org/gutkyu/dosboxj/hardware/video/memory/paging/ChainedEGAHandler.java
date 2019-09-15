@@ -13,7 +13,7 @@ public final class ChainedEGAHandler extends PageHandler {
     }
 
     public int readHandler(int addr) {
-        return 0xff & vga.Mem.LinearAlloc[addr];
+        return 0xff & vga.Mem.LinearAlloc[vga.Mem.LinearBase + addr];
     }
 
     // (int, byte)
@@ -22,7 +22,7 @@ public final class ChainedEGAHandler extends PageHandler {
         /* Update video memory and the pixel buffer */
         VGALatch pixels = new VGALatch();
         byte[] linearAlloc = vga.Mem.LinearAlloc;
-        linearAlloc[start] = (byte) val;
+        linearAlloc[vga.Mem.LinearBase + start] = (byte) val;
         start >>>= 2;
 
         // pixels.d = ((Bit32u*)vga.mem.linear)[start];

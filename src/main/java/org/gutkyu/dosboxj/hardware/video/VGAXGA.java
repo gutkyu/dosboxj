@@ -199,7 +199,7 @@ public final class VGAXGA {
             case LIN8:
                 if (memaddr >= vga.VMemSize)
                     break;
-                linearAlloc[memaddr] = (byte) c;
+                linearAlloc[vga.Mem.LinearBase + memaddr] = (byte) c;
                 break;
             case LIN15:
                 if (memaddr * 2 >= vga.VMemSize)
@@ -237,7 +237,7 @@ public final class VGAXGA {
             case LIN8:
                 if (memAddr >= vga.VMemSize)
                     break;
-                return 0xff & linearAlloc[memAddr];
+                return 0xff & linearAlloc[vga.Mem.LinearBase + memAddr];
             case LIN15:
             case LIN16:
                 if (memAddr * 2 >= vga.VMemSize)

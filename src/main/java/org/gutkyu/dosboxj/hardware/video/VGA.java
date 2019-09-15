@@ -2243,15 +2243,15 @@ public final class VGA {
 
         // 첫번째 번지를 가리키는 인덱스 0은 포인터가 0인 것처럼 사용하므로 사용하지 않음
         // 1바이트 더 크게 배열을 할당
-        Mem.LinearAlloc = new byte[vgaAllocsize + 1 + 16];
         Mem.LinearBase = 1; // 첫번째 바이트는 빼고 계산
-        Arrays.fill(Mem.LinearAlloc, 0, vgaAllocsize + 1, (byte) 0);
+        Mem.LinearAlloc = new byte[vgaAllocsize + Mem.LinearBase + 16];
+        Arrays.fill(Mem.LinearAlloc, 0, vgaAllocsize + Mem.LinearBase, (byte) 0);
 
         // 15비트 이동한 다음 주소숫자의 뒷자리 15비트부분을 깨끗하게 지우는 작업을 왜 하는지?
         // 일단, vga.fastmem_orgptr 없이 바로 할당
         // vga.fastmem_orgptr = new byte[(vga.vmemsize<<1)+4096+16];
-        FastMemAlloc = new byte[(VMemSize << 1) + 4096 + 1 + 16];
         FastMemBase = 1;// 첫번째 바이트는 빼고 계산
+        FastMemAlloc = new byte[(VMemSize << 1) + 4096 + FastMemBase + 16];
 
         // In most cases these values stay the same. Assumptions: vmemwrap is power of
         // 2,

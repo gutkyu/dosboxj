@@ -19,7 +19,7 @@ public final class ChangesHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
-        return 0xff & vga.Mem.LinearAlloc[addr];
+        return 0xff & vga.Mem.LinearAlloc[vga.Mem.LinearBase + addr];
     }
 
     @Override
@@ -27,7 +27,7 @@ public final class ChangesHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
-        return Memory.hostReadW(vga.Mem.LinearAlloc, addr);
+        return Memory.hostReadW(vga.Mem.LinearAlloc, vga.Mem.LinearBase + addr);
     }
 
     @Override
@@ -35,7 +35,7 @@ public final class ChangesHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
-        return Memory.hostReadD(vga.Mem.LinearAlloc, addr);
+        return Memory.hostReadD(vga.Mem.LinearAlloc, vga.Mem.LinearBase + addr);
     }
 
     @Override
@@ -46,7 +46,7 @@ public final class ChangesHandler extends PageHandler {
         /*
          * #if VGA_KEEP_CHANGES MEM_CHANGED(addr); #endif
          */
-        vga.Mem.LinearAlloc[addr] = (byte) val;
+        vga.Mem.LinearAlloc[vga.Mem.LinearBase + addr] = (byte) val;
     }
 
     @Override
@@ -57,7 +57,7 @@ public final class ChangesHandler extends PageHandler {
         /*
          * #if VGA_KEEP_CHANGES MEM_CHANGED(addr); #endif
          */
-        Memory.hostWriteW(vga.Mem.LinearAlloc, addr, val);
+        Memory.hostWriteW(vga.Mem.LinearAlloc, vga.Mem.LinearBase + addr, val);
     }
 
     @Override
@@ -68,6 +68,6 @@ public final class ChangesHandler extends PageHandler {
         /*
          * #if VGA_KEEP_CHANGES MEM_CHANGED(addr); #endif
          */
-        Memory.hostWriteD(vga.Mem.LinearAlloc, addr, val);
+        Memory.hostWriteD(vga.Mem.LinearAlloc, vga.Mem.LinearBase + addr, val);
     }
 }

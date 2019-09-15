@@ -15,54 +15,54 @@ public class ChainedVGAHandler extends PageHandler {
     }
 
     private int readBHandler(int addr) {
-        return 0xff & vga.Mem.LinearAlloc[((addr & ~3) << 2) + (addr & 3)];
+        return 0xff & vga.Mem.LinearAlloc[vga.Mem.LinearBase + ((addr & ~3) << 2) + (addr & 3)];
     }
 
     private int readWHandler(int addr) {
-        return Memory.hostReadW(vga.Mem.LinearAlloc, (addr & ~3) << 2) + (addr & 3);
+        return Memory.hostReadW(vga.Mem.LinearAlloc, vga.Mem.LinearBase + (addr & ~3) << 2) + (addr & 3);
     }
 
     private int readDHandler(int addr) {
-        return Memory.hostReadD(vga.Mem.LinearAlloc, (addr & ~3) << 2) + (addr & 3);
+        return Memory.hostReadD(vga.Mem.LinearAlloc, vga.Mem.LinearBase + (addr & ~3) << 2) + (addr & 3);
     }
 
     private void writeBCache(int addr, int val) {
-        vga.FastMemAlloc[addr] = (byte) val;
+        vga.FastMemAlloc[vga.FastMemBase + addr] = (byte) val;
         if (addr < 320) {
             // And replicate the first line
-            vga.FastMemAlloc[addr + 64 * 1024] = (byte) val;
+            vga.FastMemAlloc[vga.FastMemBase + addr + 64 * 1024] = (byte) val;
         }
     }
 
     private void writeWCache(int addr, int val) {
-        Memory.hostWriteW(vga.FastMemAlloc, addr, val);
+        Memory.hostWriteW(vga.FastMemAlloc, vga.FastMemBase + addr, val);
         if (addr < 320) {
             // And replicate the first line
-            Memory.hostWriteW(vga.FastMemAlloc, addr + 64 * 1024, val);
+            Memory.hostWriteW(vga.FastMemAlloc, vga.FastMemBase + addr + 64 * 1024, val);
         }
     }
 
     private void writeDCache(int addr, int val) {
-        Memory.hostWriteD(vga.FastMemAlloc, addr, val);
+        Memory.hostWriteD(vga.FastMemAlloc, vga.FastMemBase + addr, val);
         if (addr < 320) {
             // And replicate the first line
-            Memory.hostWriteD(vga.FastMemAlloc, addr + 64 * 1024, val);
+            Memory.hostWriteD(vga.FastMemAlloc, vga.FastMemBase + addr + 64 * 1024, val);
         }
     }
 
     private void writeBHandler(int addr, int val) {
         // No need to check for compatible chains here, this one is only enabled if that bit is set
-        vga.Mem.LinearAlloc[((addr & ~3) << 2) + (addr & 3)] = (byte) val;
+        vga.Mem.LinearAlloc[vga.Mem.LinearBase + ((addr & ~3) << 2) + (addr & 3)] = (byte) val;
     }
 
     private void writeDHandler(int addr, int val) {
         // No need to check for compatible chains here, this one is only enabled if that bit is set
-        Memory.hostWriteD(vga.Mem.LinearAlloc, ((addr & ~3) << 2) + (addr & 3), val);
+        Memory.hostWriteD(vga.Mem.LinearAlloc, vga.Mem.LinearBase + ((addr & ~3) << 2) + (addr & 3), val);
     }
 
     private void writeWHandler(int addr, int val) {
         // No need to check for compatible chains here, this one is only enabled if that bit is set
-        Memory.hostWriteW(vga.Mem.LinearAlloc, ((addr & ~3) << 2) + (addr & 3), val);
+        Memory.hostWriteW(vga.Mem.LinearAlloc, vga.Mem.LinearBase + ((addr & ~3) << 2) + (addr & 3), val);
     }
 
     @Override

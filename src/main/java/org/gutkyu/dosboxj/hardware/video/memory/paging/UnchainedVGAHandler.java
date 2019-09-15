@@ -5,7 +5,7 @@ import org.gutkyu.dosboxj.hardware.memory.paging.*;
 import org.gutkyu.dosboxj.hardware.video.*;
 
 
-public final class UnchainedVGAHandler extends ChainedVGAHandler {
+public final class UnchainedVGAHandler extends UnchainedReadHandler {
     VGA vga = null;
 
     public UnchainedVGAHandler(VGA vga) {
