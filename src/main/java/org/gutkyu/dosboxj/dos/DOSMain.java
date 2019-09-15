@@ -2725,7 +2725,7 @@ public final class DOSMain {
                     r++;
                     continue;
                 }
-                if (tempdir.charAt(0) == '.') {
+                if (tempdir.toString().equals(".")) {
                     // tempdir.setCharAt(0, (char) 0);
                     tempdir.setLength(0);
                     r++;
