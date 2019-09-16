@@ -9027,47 +9027,45 @@ public abstract class CPUCore {
     }
 
     public SwitchReturn DIVD_M(int op1) {
-        long val = Memory.readD(op1) & 0xffffffffL;
+        long val = Memory.readD(op1) & 0xffffffffL;//Bitu
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        long edx = Register.getRegEDX() & 0xffffffffL;
-
-        if (edx <= val) {// if (quo!=(Bit64u)quo32)
+        long num = ((Register.getRegEDX() & 0xffffffffL) << 32) | (Register.getRegEAX() & 0xffffffffL);//Bit64u
+        long quo = Long.divideUnsigned(num, val);//Bit64u (num / val)
+        long rem = (num % val) & 0xffffffffL;//Bit32u (num % val)
+        long quo32= quo & 0xffffffffL;//Bit32u
+        if (quo != quo32) {// if (quo!=(Bit64u)quo32)
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        long num = (edx << 32) | (Register.getRegEAX() & 0xffffffffL);
-        long quo = num / val;
-        int rem = (int) (num % val);
-        Register.setRegEDX(rem);
-        Register.setRegEAX((int) quo);
+        Register.setRegEDX((int)rem);
+        Register.setRegEAX((int)quo32);
 
         return SwitchReturn.None;
     }
 
     public SwitchReturn DIVD(int regId) {
-        long val = Register.Regs[regId].getDWord() & 0xffffffffL;
+        long val = Register.Regs[regId].getDWord() & 0xffffffffL;//Bitu
         if (val == 0) {
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        long edx = Register.getRegEDX() & 0xffffffffL;
-
-        if (edx <= val) {// if (quo!=(Bit64u)quo32)
+        long num = ((Register.getRegEDX() & 0xffffffffL) << 32) | (Register.getRegEAX() & 0xffffffffL);//Bit64u
+        long quo = Long.divideUnsigned(num, val);//Bit64u (num / val)
+        long rem = (num % val) & 0xffffffffL;//Bit32u (num % val)
+        long quo32= quo & 0xffffffffL;//Bit32u
+        if (quo != quo32) {// if (quo!=(Bit64u)quo32)
             byte newNum = 0;
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        long num = (edx << 32) | (Register.getRegEAX() & 0xffffffffL);
-        long quo = num / val;
-        int rem = (int) (num % val);
-        Register.setRegEDX(rem);
-        Register.setRegEAX((int) quo);
+        Register.setRegEDX((int)rem);
+        Register.setRegEAX((int)quo32);
 
         return SwitchReturn.None;
     }
