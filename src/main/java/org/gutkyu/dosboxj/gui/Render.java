@@ -870,7 +870,7 @@ public final class Render {
         int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위
         int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        byte S = 0;
+        int S = 0;
         int P = 0;
         for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
@@ -889,8 +889,7 @@ public final class Render {
                 // defined(SCALERLINEAR)
                 hadChange = 1;
                 for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
-                    S = src[sidx];
-                    cache[cidx] = S;
+                    S = 0xff & (cache[cidx] = src[sidx]);
                     sidx++;
                     cidx++;
                     //// const PTYPE P = PMAKE(S);
@@ -927,14 +926,15 @@ public final class Render {
         int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
         int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        byte S = 0;
+        int S = 0;
         int P = 0;
         for (int x = srcWidth; x > 0;) {
             // 있는 단위가 32비트라서?
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]
-                    && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
-                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
+                    && (pal.modified[0xff & src[sidx]] | pal.modified[0xff & src[sidx + 1]]
+                            | pal.modified[0xff & src[sidx + 2]]
+                            | pal.modified[0xff & src[sidx + 3]]) == 0) {
                 x -= 4;
                 sidx += 4;
                 cidx += 4;
@@ -949,8 +949,7 @@ public final class Render {
                 // defined(SCALERLINEAR)
                 hadChange = 1;
                 for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
-                    S = src[sidx];
-                    cache[cidx] = S;
+                    S = 0xff & (cache[cidx] = src[sidx]);
                     sidx++;
                     cidx++;
                     //// const PTYPE P = PMAKE(S);
@@ -1149,7 +1148,7 @@ public final class Render {
         int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
         int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        byte S = 0;
+        int S = 0;
         int P = 0;
         for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
@@ -1168,8 +1167,7 @@ public final class Render {
                 // defined(SCALERLINEAR)
                 hadChange = 1;
                 for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
-                    S = src[sidx];
-                    cache[cidx] = S;
+                    S = 0xff & (cache[cidx] = src[sidx]);
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
@@ -1208,13 +1206,14 @@ public final class Render {
         int[] line0 = scaleOutWrite;// 디스플레이 장치의 픽셀 해상도에 따라 처리, 원래는 32bit 단위이나 color로 변경
         int line0idx = scaleOutWriteIndex;
         int sizeOfUnit = SIZE_UINT / SIZE_UBYTE;
-        byte S = 0;
+        int S = 0;
         int P = 0;
         for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]
-                    && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
-                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
+                    && (pal.modified[0xff & src[sidx]] | pal.modified[0xff & src[sidx + 1]]
+                            | pal.modified[0xff & src[sidx + 2]]
+                            | pal.modified[0xff & src[sidx + 3]]) == 0) {
                 x -= 4;
                 sidx += 4;
                 cidx += 4;
@@ -1229,8 +1228,7 @@ public final class Render {
                 // defined(SCALERLINEAR)
                 hadChange = 1;
                 for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
-                    S = src[sidx];
-                    cache[cidx] = S;
+                    S = 0xff & (cache[cidx] = src[sidx]);
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
@@ -1453,7 +1451,7 @@ public final class Render {
         int PixelsPerScaleOutLine = scaleOutPitch;
         int scalerwidth = 2;
         int scalerheight = 2;
-        Byte S = 0;
+        int S = 0;
         int P = 0;
         for (int x = srcWidth; x > 0;) {
             // 있는 단위가 32비트라서?
@@ -1470,8 +1468,7 @@ public final class Render {
                 // defined(SCALERLINEAR)
                 hadChange = 1;
                 for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
-                    S = src[sidx];
-                    cache[cidx] = S;
+                    S = 0xff & (cache[cidx] = src[sidx]);
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
@@ -1512,13 +1509,14 @@ public final class Render {
         int scaleOutLinePixels = scaleOutPitch / 4;// render.scale.outPitch를 4바이트 단위로 조정
         int scalerwidth = 2;
         int scalerheight = 2;
-        byte S = 0;
+        int S = 0;
         int P = 0;
         for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]
-                    && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
-                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
+                    && (pal.modified[0xff & src[sidx]] | pal.modified[0xff & src[sidx + 1]]
+                            | pal.modified[0xff & src[sidx + 2]]
+                            | pal.modified[0xff & src[sidx + 3]]) == 0) {
                 x -= 4;
                 sidx += 4;
                 cidx += 4;
@@ -1531,8 +1529,7 @@ public final class Render {
                 // defined(SCALERLINEAR)
                 hadChange = 1;
                 for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
-                    S = src[sidx];
-                    cache[cidx] = S;
+                    S = 0xff & (cache[cidx] = src[sidx]);
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
@@ -1760,7 +1757,7 @@ public final class Render {
         int PixelsPerScaleOutLine = scaleOutPitch;
         int scalerwidth = 2;
         int scalerheight = 2;
-        byte S = 0;
+        int S = 0;
         int P = 0;
         for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
@@ -1776,8 +1773,7 @@ public final class Render {
                 // defined(SCALERLINEAR)
                 hadChange = 1;
                 for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
-                    S = src[sidx];
-                    cache[cidx] = S;
+                    S = 0xff & (cache[cidx] = src[sidx]);
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
@@ -1827,12 +1823,13 @@ public final class Render {
         int scalerwidth = 2;
         int scalerheight = 2;
         int P = 0;
-        byte S = 0;
+        int S = 0;
         for (int x = srcWidth; x > 0;) {
             if (src[sidx] == cache[cidx] && src[sidx + 1] == cache[cidx + 1]
                     && src[sidx + 2] == cache[cidx + 2] && src[sidx + 3] == cache[cidx + 3]
-                    && (pal.modified[src[sidx]] | pal.modified[src[sidx + 1]]
-                            | pal.modified[src[sidx + 2]] | pal.modified[src[sidx + 3]]) == 0) {
+                    && (pal.modified[0xff & src[sidx]] | pal.modified[0xff & src[sidx + 1]]
+                            | pal.modified[0xff & src[sidx + 2]]
+                            | pal.modified[0xff & src[sidx + 3]]) == 0) {
                 x -= 4;
                 sidx += 4;
                 cidx += 4;
@@ -1844,8 +1841,7 @@ public final class Render {
                 // defined(SCALERLINEAR)
                 hadChange = 1;
                 for (int i = x > 32 ? 32 : x; i > 0; i--, x--) {
-                    S = src[sidx];
-                    cache[cidx] = S;
+                    S = 0xff & (cache[cidx] = src[sidx]);
                     sidx++;
                     cidx++;
                     // const PTYPE P = PMAKE(S);
