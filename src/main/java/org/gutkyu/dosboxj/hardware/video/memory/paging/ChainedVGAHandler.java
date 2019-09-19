@@ -90,10 +90,10 @@ public class ChainedVGAHandler extends PageHandler {
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
         if ((addr & 3) != 0)
-            return (readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8)
-                    | (readBHandler(addr + 2) << 16) | (readBHandler(addr + 3) << 24);
+            return 0xffffffffL & ((readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8)
+                    | (readBHandler(addr + 2) << 16) | (readBHandler(addr + 3) << 24));
         else
-            return readDHandler(addr);
+            return 0xffffffffL & readDHandler(addr);
     }
 
     @Override

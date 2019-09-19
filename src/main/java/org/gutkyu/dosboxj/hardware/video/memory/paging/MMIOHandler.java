@@ -34,18 +34,18 @@ public final class MMIOHandler extends PageHandler {
     @Override
     public int readB(int addr) {
         int port = Paging.getPhysicalAddress(addr) & 0xffff;
-        return vga.XGA.read(port, 1);
+        return 0xff & vga.XGA.read(port, 1);
     }
 
     @Override
     public int readW(int addr) {
         int port = Paging.getPhysicalAddress(addr) & 0xffff;
-        return vga.XGA.read(port, 2);
+        return 0xffff & vga.XGA.read(port, 2);
     }
 
     @Override
     public long readD(int addr) {
         int port = Paging.getPhysicalAddress(addr) & 0xffff;
-        return vga.XGA.read(port, 4);
+        return 0xffffffffL & vga.XGA.read(port, 4);
     }
 }

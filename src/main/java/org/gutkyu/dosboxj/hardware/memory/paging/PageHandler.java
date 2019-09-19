@@ -15,8 +15,8 @@ public class PageHandler {
     }
 
     public long readD(int addr) {
-        return (readB(addr + 0) << 0) | (readB(addr + 1) << 8) | (readB(addr + 2) << 16)
-                | (readB(addr + 3) << 24);
+        return 0xffffffffL & ((readB(addr + 0) << 0) | (readB(addr + 1) << 8) | (readB(addr + 2) << 16)
+                | (readB(addr + 3) << 24));
     }
 
     public void writeB(int addr, int val) {

@@ -11,7 +11,7 @@ class UnchainedReadHandler extends PageHandler {
         this.vga = vga;
     }
 
-    public int readHandler(int start) {
+    public int readBHandler(int start) {
         // vga.latch.d = ((Bit32u*)vga.mem.linear)[start];
         int idx4 = vga.Mem.LinearBase + start * 4;// 1 uint(4 byte)단위
         byte[] linearAlloc = vga.Mem.LinearAlloc;
@@ -25,13 +25,13 @@ class UnchainedReadHandler extends PageHandler {
                 // return (vga.latch.b[vga.config.read_map_select]);
                 switch (vga.Config.ReadMapSelect) {
                     case 0:
-                        return vga.Latch.b0;
+                        return 0xff & vga.Latch.b0;
                     case 1:
-                        return vga.Latch.b1;
+                        return 0xff & vga.Latch.b1;
                     case 2:
-                        return vga.Latch.b2;
+                        return 0xff & vga.Latch.b2;
                     case 3:
-                        return vga.Latch.b3;
+                        return 0xff & vga.Latch.b3;
                 }
                 break;// 여기까지 도달 불가능
             case 1:
@@ -48,7 +48,7 @@ class UnchainedReadHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked2(addr);
-        return readHandler(addr);
+        return readBHandler(addr);
     }
 
     @Override
@@ -56,7 +56,7 @@ class UnchainedReadHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked2(addr);
-        return (readHandler(addr + 0) << 0) | (readHandler(addr + 1) << 8);
+        return (readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8);
     }
 
     @Override
@@ -64,7 +64,7 @@ class UnchainedReadHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked2(addr);
-        return (readHandler(addr + 0) << 0) | (readHandler(addr + 1) << 8)
-                | (readHandler(addr + 2) << 16) | (readHandler(addr + 3) << 24);
+        return 0xffffffffL & ((readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8)
+                | (readBHandler(addr + 2) << 16) | (readBHandler(addr + 3) << 24));
     }
 }

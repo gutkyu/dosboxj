@@ -112,7 +112,7 @@ public final class ChainedEGAHandler extends PageHandler {
         addr = Paging.getPhysicalAddress(addr) & vga.PageMask;
         addr += vga.SVGA.BankFeadFull;
         addr = vga.checked(addr);
-        return (readHandler(addr + 0) << 0) | (readHandler(addr + 1) << 8)
-                | (readHandler(addr + 2) << 16) | (readHandler(addr + 3) << 24);
+        return 0xffffffffL & ((readHandler(addr + 0) << 0) | (readHandler(addr + 1) << 8)
+                | (readHandler(addr + 2) << 16) | (readHandler(addr + 3) << 24));
     }
 }

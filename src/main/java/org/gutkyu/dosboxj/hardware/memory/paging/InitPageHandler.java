@@ -30,7 +30,7 @@ class InitPageHandler extends PageHandler {
         int needs_reset = initPage(addr, false);
         int val = Memory.readD(addr);
         Paging.initPageUpdateLink(needs_reset, addr);
-        return val;
+        return 0xffffffffL & val;
     }
 
     @Override

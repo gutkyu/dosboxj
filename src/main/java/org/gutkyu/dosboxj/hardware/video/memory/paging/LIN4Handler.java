@@ -49,7 +49,7 @@ public final class LIN4Handler extends UnchainedEGAHandler {
         addr = vga.SVGA.BankFeadFull + (Paging.getPhysicalAddress(addr) & 0xffff);
         // addr = CHECKED4(addr);
         addr = ((addr) & ((vga.VMemWrap >>> 2) - 1));
-        return readHandler(addr);
+        return readBHandler(addr);
     }
 
     @Override
@@ -57,7 +57,7 @@ public final class LIN4Handler extends UnchainedEGAHandler {
         addr = vga.SVGA.BankFeadFull + (Paging.getPhysicalAddress(addr) & 0xffff);
         // addr = CHECKED4(addr);
         addr = ((addr) & ((vga.VMemWrap >>> 2) - 1));
-        return (readHandler(addr + 0) << 0) | (readHandler(addr + 1) << 8);
+        return (readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8);
     }
 
     @Override
@@ -65,7 +65,7 @@ public final class LIN4Handler extends UnchainedEGAHandler {
         addr = vga.SVGA.BankFeadFull + (Paging.getPhysicalAddress(addr) & 0xffff);
         // addr = CHECKED4(addr);
         addr = ((addr) & ((vga.VMemWrap >>> 2) - 1));
-        return (readHandler(addr + 0) << 0) | (readHandler(addr + 1) << 8)
-                | (readHandler(addr + 2) << 16) | (readHandler(addr + 3) << 24);
+        return 0xffffffffL & ((readBHandler(addr + 0) << 0) | (readBHandler(addr + 1) << 8)
+                | (readBHandler(addr + 2) << 16) | (readBHandler(addr + 3) << 24));
     }
 }

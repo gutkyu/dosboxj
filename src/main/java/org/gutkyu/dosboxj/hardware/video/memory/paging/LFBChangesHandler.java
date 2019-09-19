@@ -33,7 +33,7 @@ public final class LFBChangesHandler extends PageHandler {
     public long readD(int addr) {
         addr = Paging.getPhysicalAddress(addr) - vga.Lfb.Addr;
         addr = vga.checked(addr);
-        return Memory.hostReadD(vga.Mem.LinearAlloc, vga.Mem.LinearBase + addr);
+        return 0xffffffffL & Memory.hostReadD(vga.Mem.LinearAlloc, vga.Mem.LinearBase + addr);
     }
 
     @Override
