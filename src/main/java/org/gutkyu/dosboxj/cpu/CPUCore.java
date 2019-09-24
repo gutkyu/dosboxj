@@ -1146,6 +1146,7 @@ public abstract class CPUCore {
     /*--------------------------- begin CpuCoreRunMethod -----------------------------*/
 
     public int runCPUCore() {
+        Debug.log("decode in" + CPU.Cycles + "\n");
         int ifet;
         main_loop: while (CPU.Cycles-- > 0) {
             loadIP();
@@ -1157,6 +1158,7 @@ public abstract class CPUCore {
             Core.BaseValDS = Register.SEG_NAME_DS;
 
             restart_opcode: while (true) {
+                Debug.increaseCount();
                 // TODO switch코드 원상복구
                 ifet = Core.OPCodeIndex + fetchB();
                 /*
@@ -1167,9 +1169,14 @@ public abstract class CPUCore {
                 // Console.WriteLine(core.cseip);
                 // Console.WriteLine("{0}\t{1}\t{2}", cpuModule.CPU_Cycles, cpuModule.CPU_CycleLeft
                 // , ifet);
-                // Console.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", ifet, flags.lf_resd,
-                // regsModule.regs[0].getDWord(), regsModule.regs[1].getDWord(),
-                // regsModule.regs[2].getDWord(), regsModule.regs[3].getDWord(), core.cseip);
+                //System.out.printf
+                Debug.log(String.format("%d\t%d\t%d\t%d\t%d\t%d\t%d\n", ifet,
+                        0xffffffffL & (long) Flags.getLzFResd(),
+                        0xffffffffL & (long) Register.Regs[0].getDWord(),
+                        0xffffffffL & (long) Register.Regs[1].getDWord(),
+                        0xffffffffL & (long) Register.Regs[2].getDWord(),
+                        0xffffffffL & (long) Register.Regs[3].getDWord(),
+                        0xffffffffL & (long) Core.CSEIP));
                 // Console.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", cpuModule.CPU_Cycles, ifet,
                 // regsModule.regs[0].getDWord(), regsModule.regs[1].getDWord(),
                 // regsModule.regs[2].getDWord(), core.cseip);
@@ -2048,6 +2055,11 @@ public abstract class CPUCore {
                         if (rm >= 0xc0) {
                             int regId = lookupRMEAregw[rm];
                             int iw = 0xffff & (short) fetchBS();
+                            if (false) {
+                                Debug.log(
+                                        String.format("ifet %d, rm %d, which %d, regId %d, iw %d\n",
+                                                ifet, rm, which, regId, iw));
+                            }
                             switch (which) {
                                 case 0x00:
                                     ADDW(regId, iw);
@@ -2077,6 +2089,10 @@ public abstract class CPUCore {
                         } else {
                             int eaa = Core.EATable[rm].get();
                             int iw = 0xffff & (short) fetchBS();
+                            if (true) {
+                                Debug.log(String.format("ifet %d, rm %d, which %d, eaa %d, iw %d\n",
+                                        ifet, rm, which, eaa, iw));
+                            }
                             switch (which) {
                                 case 0x00:
                                     ADDW_M(eaa, iw);
@@ -3342,6 +3358,8 @@ public abstract class CPUCore {
                                 int cb = fetchW();
                                 Flags.fillFlags();
                                 saveIP();
+                                if (cb != 15)
+                                    Debug.log(String.format("call callback %d\n", cb));
                                 return cb;
                             }
                             default:
@@ -5586,6 +5604,9 @@ public abstract class CPUCore {
                     }
                     case CASE_D_0xcf: /* IRET */
                     {
+                        Debug.log(String.format("IRET %d\t%d\n", 0xffffffffL & Register.Flags,
+                                PIC.IRQCheck));
+
                         CPU.iret(true, getIP());
                         // -- #region CPU_TRAP_CHECK
                         if (Register.getFlag(Register.FlagTF) != 0) {

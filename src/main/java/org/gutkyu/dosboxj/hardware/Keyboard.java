@@ -566,6 +566,8 @@ public final class Keyboard {
                 Support.exceptionExit("Unsupported key press");
                 break;
         }
+        Debug.onKeyboardClicked(ret);
+        
         /* Add the actual key in the keyboard queue */
         if (pressed) {
             if (repeatKey == keytype)

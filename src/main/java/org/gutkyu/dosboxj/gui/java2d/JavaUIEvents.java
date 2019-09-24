@@ -21,6 +21,7 @@ import org.gutkyu.dosboxj.gui.*;
 import org.gutkyu.dosboxj.gui.java2d.JavaGFX.PriorityLevels;
 import org.gutkyu.dosboxj.cpu.*;
 import org.gutkyu.dosboxj.interrupt.*;
+import org.gutkyu.dosboxj.misc.Debug;
 
 
 /*--------------------------- begin AWTEvent -----------------------------*/
@@ -357,6 +358,8 @@ final class JavaUIEventsBinder {
 
         // HandleMouseMotion
         public void handle(JavaGFX gfx) {
+            if (!Debug.mouseEnabled)
+                return;
             if (!gfx._mouseLocked && gfx._mouseAutoEnable)
                 return;
             double offX = 0.0f, offY = 0.0f;
@@ -392,6 +395,8 @@ final class JavaUIEventsBinder {
 
 
         public void handle(JavaGFX gfx) {
+            if (!Debug.mouseEnabled)
+                return;
             switch (ButtonStatus) {
                 case MOUSE_BUTTON_PRESSED:
                     if (gfx._mouseRequestLock && !gfx._mouseLocked) {
