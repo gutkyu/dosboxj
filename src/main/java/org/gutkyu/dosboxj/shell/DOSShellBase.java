@@ -54,13 +54,13 @@ public abstract class DOSShellBase extends Program {
         }
 
         /* Start a normal shell and check for a first command init */
-        /*
-         * writeOut(Message.get("SHELL_STARTUP_BEGIN"), StringHelper.padRight(DOSBox.VERSION, 8));
-         * 
-         * if (DOSBox.Machine == DOSBox.MachineType.CGA) writeOut(Message.get("SHELL_STARTUP_CGA"));
-         * if (DOSBox.Machine == DOSBox.MachineType.HERC)
-         * writeOut(Message.get("SHELL_STARTUP_HERC")); writeOut(Message.get("SHELL_STARTUP_END"));
-         */
+        
+          writeOut(Message.get("SHELL_STARTUP_BEGIN"), StringHelper.padRight(org.gutkyu.dosboxj.DOSBox.VERSION, 8));
+          
+          if (org.gutkyu.dosboxj.DOSBox.Machine == org.gutkyu.dosboxj.DOSBox.MachineType.CGA) writeOut(Message.get("SHELL_STARTUP_CGA"));
+          if (org.gutkyu.dosboxj.DOSBox.Machine == org.gutkyu.dosboxj.DOSBox.MachineType.HERC)
+          writeOut(Message.get("SHELL_STARTUP_HERC")); writeOut(Message.get("SHELL_STARTUP_END"));
+        
         if (cmd.findString("/INIT", true)) {
             line = cmd.returnedString;
             CStringPt.copy(line, inputLine);
