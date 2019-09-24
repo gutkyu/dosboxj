@@ -180,15 +180,15 @@ public final class PIC {
                     irqs[i + irq_base].masked = (val & (1 << i)) > 0;
                     if (port == 0x21) {
                         if (irqs[i + irq_base].active && !irqs[i + irq_base].masked)
-                            IRQCheck |= 0xffffffff & (1 << (i + irq_base));
+                            IRQCheck |= 0xffffffffL & (1 << (i + irq_base));
                         else
-                            IRQCheck &= 0xffffffff & ~(1 << (i + irq_base));
+                            IRQCheck &= 0xffffffffL & ~(1 << (i + irq_base));
                     } else {
                         if (irqs[i + irq_base].active && !irqs[i + irq_base].masked
                                 && !irqs[2].masked)
-                            IRQCheck |= 0xffffffff & (1 << (i + irq_base));
+                            IRQCheck |= 0xffffffffL & (1 << (i + irq_base));
                         else
-                            IRQCheck &= 0xffffffff & ~(1 << (i + irq_base));
+                            IRQCheck &= 0xffffffffL & ~(1 << (i + irq_base));
                     }
                 }
                 if (DOSBox.Machine == DOSBox.MachineType.PCJR) {
@@ -199,9 +199,9 @@ public final class PIC {
                     /* Irq 2 mask has changed recheck second pic */
                     for (i = 8; i <= 15; i++) {
                         if (irqs[i].active && !irqs[i].masked && !irqs[2].masked)
-                            IRQCheck |= 0xffffffff & (1 << i);
+                            IRQCheck |= 0xffffffffL & (1 << i);
                         else
-                            IRQCheck &= 0xffffffff & ~(1 << i);
+                            IRQCheck &= 0xffffffffL & ~(1 << i);
                     }
                 }
                 if (IRQCheck != 0) {
@@ -300,13 +300,13 @@ public final class PIC {
         if (irq < 8) {
             irqs[irq].active = true;
             if (!irqs[irq].masked) {
-                IRQCheck |= 0xffffffff & (1 << irq);
+                IRQCheck |= 0xffffffffL & (1 << irq);
             }
         } else if (irq < 16) {
             irqs[irq].active = true;
-            IRQOnSecondPicActive |= 0xffffffff & (1 << irq);
+            IRQOnSecondPicActive |= 0xffffffffL & (1 << irq);
             if (!irqs[irq].masked && !irqs[2].masked) {
-                IRQCheck |= (0xffffffff & (1 << irq));
+                IRQCheck |= (0xffffffffL & (1 << irq));
             }
         }
     }
@@ -314,8 +314,8 @@ public final class PIC {
     public static void deactivateIRQ(int irq) {
         if (irq < 16) {
             irqs[irq].active = false;
-            IRQCheck &= (0xffffffff & ~(1 << irq));
-            IRQOnSecondPicActive &= 0xffffffff & ~(1 << irq);
+            IRQCheck &= (0xffffffffL & ~(1 << irq));
+            IRQOnSecondPicActive &= 0xffffffffL & ~(1 << irq);
         }
     }
 
@@ -324,8 +324,8 @@ public final class PIC {
         if (i > 7 && irqs[2].masked)
             return false;
         irqs[i].active = false;
-        IRQCheck &= 0xffffffff & ~(1 << i);
-        IRQOnSecondPicActive &= 0xffffffff & ~(1 << i);
+        IRQCheck &= 0xffffffffL & ~(1 << i);
+        IRQOnSecondPicActive &= 0xffffffffL & ~(1 << i);
         // Console.WriteLine(irqs[i].vector);
         CPU.hwHInterrupt(irqs[i].vector);
         int pic = (i & 8) >>> 3;
@@ -396,24 +396,24 @@ public final class PIC {
         irqs[irq].masked = masked;
         if (irq < 8) {
             if (irqs[irq].active && !irqs[irq].masked) {
-                IRQCheck |= 0xffffffff & (1 << irq);
+                IRQCheck |= 0xffffffffL & (1 << irq);
             } else {
-                IRQCheck &= 0xffffffff & ~(1 << irq);
+                IRQCheck &= 0xffffffffL & ~(1 << irq);
             }
         } else {
             if (irqs[irq].active && !irqs[irq].masked && !irqs[2].masked) {
-                IRQCheck |= 0xffffffff & (1 << irq);
+                IRQCheck |= 0xffffffffL & (1 << irq);
             } else {
-                IRQCheck &= 0xffffffff & ~(1 << irq);
+                IRQCheck &= 0xffffffffL & ~(1 << irq);
             }
         }
         if (irqs[2].masked != old_irq2_mask) {
             /* Irq 2 mask has changed recheck second pic */
             for (int i = 8; i <= 15; i++) {
                 if (irqs[i].active && !irqs[i].masked && !irqs[2].masked)
-                    IRQCheck |= 0xffffffff & (1 << i);
+                    IRQCheck |= 0xffffffffL & (1 << i);
                 else
-                    IRQCheck &= 0xffffffff & ~(1 << i);
+                    IRQCheck &= 0xffffffffL & ~(1 << i);
             }
         }
         if (IRQCheck != 0) {

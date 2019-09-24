@@ -7680,17 +7680,17 @@ public abstract class CPUCore {
         // Console.WriteLine(cpuModule.CPU_Cycles);
 
         int siBase, diBase;
-        int siIndex, diIndex;
-        int addMask;
-        int count, countLeft = 0;
-        int addIndex;
+        int siIndex, diIndex;//uint32
+        int addMask;//uint32
+        long count, countLeft = 0;//uint32
+        int addIndex;//int32
 
         siBase = Core.BaseDS;
         diBase = Register.segPhys(Register.SEG_NAME_ES);
         addMask = AddrMaskTable[Core.Prefixes & PrefixAddr];
         siIndex = Register.getRegESI() & addMask;
         diIndex = Register.getRegEDI() & addMask;
-        count = Register.getRegECX() & addMask;
+        count = 0xffffffffL & (Register.getRegECX() & addMask);
         if ((Core.Prefixes & PrefixRep) == 0) {
             count = 1;
         } else {
@@ -7912,7 +7912,7 @@ public abstract class CPUCore {
         if ((Core.Prefixes & PrefixRep) != 0) {
             count += countLeft;
             Register.setRegECX(Register.getRegECX() & (~addMask));
-            Register.setRegECX(Register.getRegECX() | (count & addMask));
+            Register.setRegECX(Register.getRegECX() | (int)(count & addMask));
         }
     }
 
@@ -8992,8 +8992,8 @@ public abstract class CPUCore {
             return SwitchReturn.Continue;
         }
         int num = (Register.getRegDX() << 16) | Register.getRegAX();
-        int quo = num / val;
-        int rem = 0xffff & (num % val);
+        int quo = Integer.divideUnsigned(num, val);
+        int rem = 0xffff & Integer.remainderUnsigned(num, val);
         int quo16 = quo & 0xffff;
         if (quo != quo16) {
             byte newNum = 0;
@@ -9013,8 +9013,8 @@ public abstract class CPUCore {
             return SwitchReturn.Continue;
         }
         int num = (Register.getRegDX() << 16) | Register.getRegAX();
-        int quo = num / val;
-        int rem = 0xffff & (num % val);
+        int quo = Integer.divideUnsigned(num, val);
+        int rem = 0xffff & Integer.remainderUnsigned(num, val);
         int quo16 = quo & 0xffff;
         if (quo != quo16) {
             byte newNum = 0;
@@ -9140,8 +9140,8 @@ public abstract class CPUCore {
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        int num = ((Register.getRegDX() & 0xffff) << 16) | Register.getRegAX();
-        int quo = num / val;
+        int num = (Register.getRegDX() << 16) | Register.getRegAX();//Bit32s
+        int quo = num / val;//Bit32s
         short rem = (short) (num % val);// Bit16s
         short quo16s = (short) quo;// Bit16s
         if (quo != (int) quo16s) {
@@ -9162,8 +9162,8 @@ public abstract class CPUCore {
             CPU.exception(newNum, 0);
             return SwitchReturn.Continue;
         }
-        int num = ((Register.getRegDX() & 0xffff) << 16) | Register.getRegAX();
-        int quo = num / val;
+        int num = (Register.getRegDX() << 16) |  Register.getRegAX();//Bit32s
+        int quo = num / val;//Bit32s
         short rem = (short) (num % val);
         short quo16s = (short) quo;
         if (quo != (int) quo16s) {
@@ -9281,7 +9281,7 @@ public abstract class CPUCore {
     public void IMULW(int regId) {
         int temps = (short) Register.getRegAX() * (short) Register.Regs[regId].getWord();
         Register.setRegAX((short) temps);
-        Register.setRegDX((short) (temps >> 16));//unsigned shift
+        Register.setRegDX((short) (temps >> 16));
         Flags.fillFlagsNoCFOF();
         if (((temps & 0xffff8000) == 0xffff8000 || (temps & 0xffff8000) == 0x0000)) {
             Register.setFlagBit(Register.FlagCF, false);
@@ -9295,12 +9295,12 @@ public abstract class CPUCore {
     public void IMULD_M(int op1) {
         long temps = ((long) Register.getRegEAX()) * ((long) Memory.readD(op1));
         Register.setRegEAX((int) temps);
-        Register.setRegEDX((int) (temps >> 32));//unsigned shift
+        Register.setRegEDX((int) (temps >> 32));
         Flags.fillFlagsNoCFOF();
         if ((Register.getRegEDX() == 0xffffffff) && (Register.getRegEAX() & 0x80000000) != 0) {
             Register.setFlagBit(Register.FlagCF, false);
             Register.setFlagBit(Register.FlagOF, false);
-        } else if ((Register.getRegEDX() == 0x00000000) && (Register.getRegEAX() < 0x80000000)) {
+        } else if ((Register.getRegEDX() == 0x00000000) && ((Register.getRegEAX() & 0xffffffffL) < 0x80000000L)) {
             Register.setFlagBit(Register.FlagCF, false);
             Register.setFlagBit(Register.FlagOF, false);
         } else {
@@ -9317,7 +9317,7 @@ public abstract class CPUCore {
         if ((Register.getRegEDX() == 0xffffffff) && (Register.getRegEAX() & 0x80000000) != 0) {
             Register.setFlagBit(Register.FlagCF, false);
             Register.setFlagBit(Register.FlagOF, false);
-        } else if ((Register.getRegEDX() == 0x00000000) && (Register.getRegEAX() < 0x80000000)) {
+        } else if ((Register.getRegEDX() == 0x00000000) && ((Register.getRegEAX() & 0xffffffffL) < 0x80000000L)) {
             Register.setFlagBit(Register.FlagCF, false);
             Register.setFlagBit(Register.FlagOF, false);
         } else {

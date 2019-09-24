@@ -371,7 +371,7 @@ public final class XMS {
             }
                 break;
             case XMS_RESIZE_ANY_EXTENDED_MEMORY_BLOCK: /* 0x8f */
-                if (Register.getRegEBX() > Register.getRegBX())
+                if ((0xffffffffL & Register.getRegEBX()) > (0xffffL & Register.getRegBX()))
                     Log.logMsg("64MB memory limit!");
                 // goto GotoXMS_RESIZE_EXTENDED_MEMORY_BLOCK;
                 // fall through

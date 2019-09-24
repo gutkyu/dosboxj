@@ -1,7 +1,5 @@
 package org.gutkyu.dosboxj.cpu;
 
-
-
 import org.gutkyu.dosboxj.util.*;
 
 public final class Flags {
@@ -27,7 +25,6 @@ public final class Flags {
         Flags.LzFlags.Var2.setByteL(value);
     }
 
-
     // public static byte getLzFResb()
     public static int getLzFResb() {
         return Flags.LzFlags.Res.getByteL();
@@ -37,7 +34,6 @@ public final class Flags {
     public static void setLzFResb(int value) {
         Flags.LzFlags.Res.setByteL(value);
     }
-
 
     // public static short getLzFVar1w()
     public static int getLzFVar1w() {
@@ -68,7 +64,6 @@ public final class Flags {
         Flags.LzFlags.Res.setWord(value);
     }
 
-
     public static int getLzFVar1d() {
         return Flags.LzFlags.Var1.getDWord();
     }
@@ -92,8 +87,6 @@ public final class Flags {
     public static void setLzFResd(int value) {
         Flags.LzFlags.Res.setDWord(value);
     }
-
-
 
     public static void setFLagSb(int FLAGB) {
         Register.setFlagBit(Register.FlagOF, Flags.getOF());
@@ -176,7 +169,6 @@ public final class Flags {
         return (!Flags.getZF() && (Flags.getSF() == Flags.getOF()));
     }
 
-
     // Types of Flag changing instructions
     public enum TypeFlag {
         //@formatter:off
@@ -239,7 +231,7 @@ public final class Flags {
             case ADDw:
                 return (Flags.getLzFresw() < Flags.getLzFVar1w());
             case ADDd:
-                return (Flags.getLzFResd() < Flags.getLzFVar1d());
+                return ((0xffffffffL & Flags.getLzFResd()) < (0xffffffffL & Flags.getLzFVar1d()));
             case ADCb:
                 return (Flags.getLzFResb() < Flags.getLzFVar1b())
                         || (LzFlags.oldCF != 0 && (Flags.getLzFResb() == Flags.getLzFVar1b()));
@@ -247,7 +239,7 @@ public final class Flags {
                 return (Flags.getLzFresw() < Flags.getLzFVar1w())
                         || (LzFlags.oldCF != 0 && (Flags.getLzFresw() == Flags.getLzFVar1w()));
             case ADCd:
-                return (Flags.getLzFResd() < Flags.getLzFVar1d())
+                return ((0xffffffffL & Flags.getLzFResd()) < (0xffffffffL & Flags.getLzFVar1d()))
                         || (LzFlags.oldCF != 0 && (Flags.getLzFResd() == Flags.getLzFVar1d()));
             case SBBb:
                 return (Flags.getLzFVar1b() < Flags.getLzFResb())
@@ -256,7 +248,7 @@ public final class Flags {
                 return (Flags.getLzFVar1w() < Flags.getLzFresw())
                         || (LzFlags.oldCF != 0 && (Flags.getLzFvar2w() == 0xffff));
             case SBBd:
-                return (Flags.getLzFVar1d() < Flags.getLzFResd())
+                return ((0xffffffffL & Flags.getLzFVar1d()) < (0xffffffffL & Flags.getLzFResd()))
                         || (LzFlags.oldCF != 0 && (Flags.getLzFVar2d() == 0xffffffff));
             case SUBb:
             case CMPb:
@@ -266,7 +258,7 @@ public final class Flags {
                 return (Flags.getLzFVar1w() < Flags.getLzFvar2w());
             case SUBd:
             case CMPd:
-                return (Flags.getLzFVar1d() < Flags.getLzFVar2d());
+                return ((0xffffffffL & Flags.getLzFVar1d()) < (0xffffffffL & Flags.getLzFVar2d()));
             case SHLb:
                 if (Flags.getLzFVar2b() > 8)
                     return false;
@@ -326,7 +318,6 @@ public final class Flags {
         }
         return false;
     }
-
 
     /*
      * AF Adjust flag -- Set on carry from or borrow to the low order four bits of AL; cleared
@@ -632,7 +623,7 @@ public final class Flags {
                     return false;
             case SHRd:
                 if ((Flags.getLzFVar2b() & 0x1f) == 1)
-                    return (Flags.getLzFVar1d() > 0x80000000);
+                    return ((0xffffffffL & Flags.getLzFVar1d()) > 0x80000000L);
                 else
                     return false;
             case ORb:
@@ -717,7 +708,6 @@ public final class Flags {
         // return false;
     }
 
-
     private static void doFlagPF() {
         Register.Flags = (Register.Flags & ~Register.FlagPF) | ParityLookup[Flags.getLzFResb()];
     }
@@ -792,7 +782,8 @@ public final class Flags {
                 doFlagPF();
                 break;
             case ADDd:
-                setFlag(Register.FlagCF, (Flags.getLzFResd() < Flags.getLzFVar1d()));
+                setFlag(Register.FlagCF,
+                        ((0xffffffffL & Flags.getLzFResd()) < (0xffffffffL & Flags.getLzFVar1d())));
                 doFlagAF();
                 doFlagZFd();
                 doFlagSFd();
@@ -821,8 +812,10 @@ public final class Flags {
                 doFlagPF();
                 break;
             case ADCd:
-                setFlag(Register.FlagCF, (Flags.getLzFResd() < Flags.getLzFVar1d())
-                        || (LzFlags.oldCF != 0 && (Flags.getLzFResd() == Flags.getLzFVar1d())));
+                setFlag(Register.FlagCF,
+                        ((0xffffffffL & Flags.getLzFResd()) < (0xffffffffL & Flags.getLzFVar1d()))
+                                || (LzFlags.oldCF != 0
+                                        && (Flags.getLzFResd() == Flags.getLzFVar1d())));
                 doFlagAF();
                 doFlagZFd();
                 doFlagSFd();
@@ -830,7 +823,6 @@ public final class Flags {
                         & (Flags.getLzFResd() ^ Flags.getLzFVar1d())) & 0x80000000);
                 doFlagPF();
                 break;
-
 
             case SBBb:
                 setFlag(Register.FlagCF, (Flags.getLzFVar1b() < Flags.getLzFResb())
@@ -853,8 +845,9 @@ public final class Flags {
                 doFlagPF();
                 break;
             case SBBd:
-                setFlag(Register.FlagCF, (Flags.getLzFVar1d() < Flags.getLzFResd())
-                        || (LzFlags.oldCF != 0 && (Flags.getLzFVar2d() == 0xffffffff)));
+                setFlag(Register.FlagCF,
+                        ((0xffffffffL & Flags.getLzFVar1d()) < (0xffffffffL & Flags.getLzFResd()))
+                                || (LzFlags.oldCF != 0 && (Flags.getLzFVar2d() == 0xffffffff)));
                 doFlagAF();
                 doFlagZFd();
                 doFlagSFd();
@@ -862,7 +855,6 @@ public final class Flags {
                         & (Flags.getLzFVar1d() ^ Flags.getLzFResd()) & 0x80000000);
                 doFlagPF();
                 break;
-
 
             case SUBb:
             case CMPb:
@@ -886,7 +878,8 @@ public final class Flags {
                 break;
             case SUBd:
             case CMPd:
-                setFlag(Register.FlagCF, (Flags.getLzFVar1d() < Flags.getLzFVar2d()));
+                setFlag(Register.FlagCF, ((0xffffffffL & Flags.getLzFVar1d()) < (0xffffffffL
+                        & Flags.getLzFVar2d())));
                 doFlagAF();
                 doFlagZFd();
                 doFlagSFd();
@@ -894,7 +887,6 @@ public final class Flags {
                         & (Flags.getLzFVar1d() ^ Flags.getLzFResd()) & 0x80000000);
                 doFlagPF();
                 break;
-
 
             case ORb:
                 setFlag(Register.FlagCF, false);
@@ -920,7 +912,6 @@ public final class Flags {
                 setFlag(Register.FlagOF, false);
                 doFlagPF();
                 break;
-
 
             case TESTb:
             case ANDb:
@@ -950,7 +941,6 @@ public final class Flags {
                 doFlagPF();
                 break;
 
-
             case XORb:
                 setFlag(Register.FlagCF, false);
                 setFlag(Register.FlagAF, false);
@@ -975,7 +965,6 @@ public final class Flags {
                 setFlag(Register.FlagOF, false);
                 doFlagPF();
                 break;
-
 
             case SHLb:
                 if (Flags.getLzFVar2b() > 8)
@@ -1010,7 +999,6 @@ public final class Flags {
                 setFlag(Register.FlagAF, (Flags.getLzFVar2d() & 0x1f));
                 break;
 
-
             case DSHLw:
                 setFlag(Register.FlagCF, (Flags.getLzFVar1d() >>> (32 - Flags.getLzFVar2b())) & 1);
                 doFlagZFw();
@@ -1025,7 +1013,6 @@ public final class Flags {
                 setFlag(Register.FlagOF, (Flags.getLzFResd() ^ Flags.getLzFVar1d()) & 0x80000000);
                 doFlagPF();
                 break;
-
 
             case SHRb:
                 setFlag(Register.FlagCF, (Flags.getLzFVar1b() >>> (Flags.getLzFVar2b() - 1)) & 1);
@@ -1061,7 +1048,6 @@ public final class Flags {
                 setFlag(Register.FlagAF, (Flags.getLzFVar2d() & 0x1f));
                 break;
 
-
             case DSHRw: /* Hmm this is not correct for shift higher than 16 */
                 setFlag(Register.FlagCF, (Flags.getLzFVar1d() >>> (Flags.getLzFVar2b() - 1)) & 1);
                 doFlagZFw();
@@ -1076,7 +1062,6 @@ public final class Flags {
                 setFlag(Register.FlagOF, (Flags.getLzFResd() ^ Flags.getLzFVar1d()) & 0x80000000);
                 doFlagPF();
                 break;
-
 
             case SARb:
                 setFlag(Register.FlagCF, (Flags.getLzFVar1b() >>> (Flags.getLzFVar2b() - 1)) & 1);
@@ -1172,7 +1157,6 @@ public final class Flags {
                 doFlagPF();
                 break;
 
-
             case DIV:
             case MUL:
                 break;
@@ -1227,7 +1211,6 @@ public final class Flags {
                 doFlagPF();
                 break;
 
-
             case SBBb:
                 doFlagAF();
                 doFlagZFb();
@@ -1246,7 +1229,6 @@ public final class Flags {
                 doFlagSFd();
                 doFlagPF();
                 break;
-
 
             case SUBb:
             case CMPb:
@@ -1270,7 +1252,6 @@ public final class Flags {
                 doFlagPF();
                 break;
 
-
             case ORb:
                 setFlag(Register.FlagAF, false);
                 doFlagZFb();
@@ -1289,7 +1270,6 @@ public final class Flags {
                 doFlagSFd();
                 doFlagPF();
                 break;
-
 
             case TESTb:
             case ANDb:
@@ -1313,7 +1293,6 @@ public final class Flags {
                 doFlagPF();
                 break;
 
-
             case XORb:
                 setFlag(Register.FlagAF, false);
                 doFlagZFb();
@@ -1332,7 +1311,6 @@ public final class Flags {
                 doFlagSFd();
                 doFlagPF();
                 break;
-
 
             case SHLb:
                 doFlagZFb();
@@ -1353,7 +1331,6 @@ public final class Flags {
                 setFlag(Register.FlagAF, (Flags.getLzFVar2d() & 0x1f));
                 break;
 
-
             case DSHLw:
                 doFlagZFw();
                 doFlagSFw();
@@ -1364,7 +1341,6 @@ public final class Flags {
                 doFlagSFd();
                 doFlagPF();
                 break;
-
 
             case SHRb:
                 doFlagZFb();
@@ -1385,7 +1361,6 @@ public final class Flags {
                 setFlag(Register.FlagAF, (Flags.getLzFVar2d() & 0x1f));
                 break;
 
-
             case DSHRw: /* Hmm this is not correct for shift higher than 16 */
                 doFlagZFw();
                 doFlagSFw();
@@ -1396,7 +1371,6 @@ public final class Flags {
                 doFlagSFd();
                 doFlagPF();
                 break;
-
 
             case SARb:
                 doFlagZFb();
@@ -1474,7 +1448,6 @@ public final class Flags {
                 doFlagPF();
                 break;
 
-
             case DIV:
             case MUL:
                 break;
@@ -1486,7 +1459,6 @@ public final class Flags {
         }
         LzFlags.Type = Flags.TypeFlag.UNKNOWN;
     }
-
 
     public static void destroyConditionFlags() {
         LzFlags.Type = Flags.TypeFlag.UNKNOWN;
