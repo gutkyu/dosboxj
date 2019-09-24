@@ -828,7 +828,7 @@ public final class CPU {
                 setFlags(n_flags, mask);
                 Flags.destroyConditionFlags();
                 Log.logging(Log.LogTypes.CPU, Log.LogServerities.Normal,
-                        "IRET:Same level:%X:%X big %d", (double) n_cs_sel, (double) n_eip,
+                        "IRET:Same level:%X:%X big %d", n_cs_sel, n_eip,
                         Convert.toByte(Block.Code.Big));
             } else {
                 /* Return to outer level */
@@ -909,7 +909,7 @@ public final class CPU {
                 checkSegments();
 
                 Log.logging(Log.LogTypes.CPU, Log.LogServerities.Normal,
-                        "IRET:Outer level:%X:%X big %d", (double) n_cs_sel, (double) n_eip,
+                        "IRET:Outer level:%X:%X big %d", n_cs_sel, n_eip,
                         Convert.toByte(Block.Code.Big));
             }
             return;
