@@ -7,13 +7,16 @@ import java.nio.file.StandardOpenOption;
 
 public class Debug {
 
-    public static boolean mouseEnabled = false;
+    public static boolean mouseEnabled = true;
     public static boolean logOn = false;
-    public static long skippedLoggingCount = 0;// 4426544 + 3021597 + 2153103 + 4121869 + 3091062;
+    public static long skippedLoggingCount = -1;// CPUCore.runCPUCore loop count
     private static long count = 0;
 
     public static void increaseCount() {
-        logOn = count++ > skippedLoggingCount;
+        if (skippedLoggingCount < 0) {
+            return;
+        }
+        logOn = count++ >= skippedLoggingCount;
     }
 
     //private static int logClick = 0;

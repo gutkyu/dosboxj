@@ -1170,7 +1170,8 @@ public abstract class CPUCore {
                 // Console.WriteLine("{0}\t{1}\t{2}", cpuModule.CPU_Cycles, cpuModule.CPU_CycleLeft
                 // , ifet);
                 //System.out.printf
-                Debug.log(String.format("%d\t%d\t%d\t%d\t%d\t%d\t%d\n", ifet,
+                if(Debug.logOn)
+                    Debug.log(String.format("%d\t%d\t%d\t%d\t%d\t%d\t%d\n", ifet,
                         0xffffffffL & (long) Flags.getLzFResd(),
                         0xffffffffL & (long) Register.Regs[0].getDWord(),
                         0xffffffffL & (long) Register.Regs[1].getDWord(),
