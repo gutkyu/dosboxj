@@ -3,6 +3,8 @@ package org.gutkyu.dosboxj.interrupt;
 import org.gutkyu.dosboxj.misc.setup.*;
 import org.gutkyu.dosboxj.cpu.*;
 import org.gutkyu.dosboxj.util.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import org.gutkyu.dosboxj.DOSBox;
 import org.gutkyu.dosboxj.dos.*;
 import org.gutkyu.dosboxj.hardware.*;
@@ -34,9 +36,9 @@ public final class Mouse {
         return (short) (mouse.Y);
     }
 
-    private static final int CURSORX = 16;
-    private static final int CURSORY = 16;
-    private static final int HIGHESTBIT = (1 << (CURSORX - 1));
+    private static final int CURSOR_X = 16;
+    private static final int CURSOR_Y = 16;
+    private static final int HIGHESTBIT = (1 << (CURSOR_X - 1));
 
     private Mouse() {
         mouse = new MouseStruct();
@@ -116,7 +118,7 @@ public final class Mouse {
         }
     }
 
-    private int PS2Handler() {
+    private int ps2Handler() {
         CPU.pop16();
         CPU.pop16();
         CPU.pop16();
@@ -180,17 +182,16 @@ public final class Mouse {
         public int Buttons;// uint8
     }
 
-    private short[] userdefScreenMask = new short[CURSORY];
-    private short[] userdefCursorMask = new short[CURSORY];
+    private short[] userDefScreenMask = new short[CURSOR_Y];
+    private short[] userDefCursorMask = new short[CURSOR_Y];
 
-    private class MouseStruct implements ByteSequence {
-        //
+    private class MouseStruct {
+
         public byte Buttons; // 1
         public short[] TimesPressed; // 6
         public short[] TimesReleased; // 6
-
         public short[] LastReleasedX; // 6
-        public short[] LastReleasedy; // 6
+        public short[] LastReleasedY; // 6
         public short[] LastPressedX; // 6
         public short[] LastPressedY; // 6
         public short Hidden; // 2
@@ -206,18 +207,11 @@ public final class Mouse {
         public boolean Background; // 1
         public short BackPosX, BackPosY; // 2,2
         public byte[] BackData; // 256
-        // screenMask, cursorMask가 가리키는 값은 객체 내부에 이미 저장되어 있으므로 어떤값을 사용할건지만 정의하면됨
-        // 예를 들면, blockwrite시 screenMask를 사용할 수 없기 때문에 screenMask 포인터와 같은 크기의 자료형 uint로
-        // screenMaskIsDefault를 정의한 다음 default data를 사용할지 user define data를 사용할 지를 나타냄
-        // blockread시 이 screenMaskIsDefault값을 읽어 screenMask을 할당할 것
-        // uint
-        public int ScreenMaskIsDefault; // 자료가 default mask를 사용(값이 0)하는지 user define mask를 사용( 0이 아닌
-                                        // 값)하는지 확인하는 값
-        public short[] ScreenMask;// 초기화 필요없음 // 소스는 포인터 변수임 4
-        // uint
-        public int CursorMaskIsDefault; // 자료가 default mask를 사용(값이 0)하는지 user define mask를 사용( 0이 아닌
-                                        // 값)하는지 확인하는 값
-        public short[] CursorMask; // 소스는 포인터 변수임 4
+        // screenMask, cursorMask가 가리키는 값은 Mouse Instance 내부에 이미 존재하기 때문에 어떤 값(default or user
+        // defined)을 사용할건지만 정의하면됨
+        public short[] ScreenMask;// 원 소스는 포인터 변수임 4 or 8
+        public short[] CursorMask; // 원 소스는 포인터 변수임 4 or 8
+        public boolean MaskIsUserDefined; //사용자 정의 마스크를 사용하고 있는지 여부
         public short ClipX, ClipY; // 2,2
         public short HotX, HotY; // 2,2
         public short TextAndMask, TextXorMask; // 2,2
@@ -245,387 +239,151 @@ public final class Mouse {
         public int Mode; // 1
         public short GranMask; // 2
 
-        private static final int MASK_B0 = 0xff;
-        private static final int SHIFT_B1 = 8;
-        private static final int SHIFT_B2 = 16;
-        private static final int SHIFT_B3 = 24;
+        private byte[] rawData = null;
+        
+        public void unpack(){
+            ByteBuffer unpacker = ByteBuffer.wrap(rawData).order(ByteOrder.LITTLE_ENDIAN);
 
-
-        private int pos = 0;
-
-        public void goFirst() {
-            pos = 0;
-        }
-
-        // uint8()
-        public int next() throws DOSException {
-            return get(pos++);
-        }
-
-        public boolean hasNext() {
-            return pos < MOUSE_DATA_SIZE;
-        }
-
-        private int tmpF2I = 0;
-
-        // uint8(int)
-        private int get(int index) throws DOSException {
-            switch (index) {
-                case 0:
-                    return MASK_B0 & Buttons;
-                case 1:
-                    return MASK_B0 & TimesPressed[0];
-                case 2:
-                    return MASK_B0 & (TimesPressed[0] >>> SHIFT_B1);
-                case 3:
-                    return MASK_B0 & TimesPressed[1];
-                case 4:
-                    return MASK_B0 & (TimesPressed[1] >>> SHIFT_B1);
-                case 5:
-                    return MASK_B0 & TimesPressed[2];
-                case 6:
-                    return MASK_B0 & (TimesPressed[2] >>> SHIFT_B1);
-                case 7:
-                    return MASK_B0 & TimesReleased[0];
-                case 8:
-                    return MASK_B0 & (TimesReleased[0] >>> SHIFT_B1);
-                case 9:
-                    return MASK_B0 & TimesReleased[1];
-                case 10:
-                    return MASK_B0 & (TimesReleased[1] >>> SHIFT_B1);
-                case 11:
-                    return MASK_B0 & TimesReleased[2];
-                case 12:
-                    return MASK_B0 & (TimesReleased[2] >>> SHIFT_B1);
-                case 13:
-                    return MASK_B0 & LastReleasedX[0];
-                case 14:
-                    return MASK_B0 & (LastReleasedX[0] >>> SHIFT_B1);
-                case 15:
-                    return MASK_B0 & LastReleasedX[1];
-                case 16:
-                    return MASK_B0 & (LastReleasedX[1] >>> SHIFT_B1);
-                case 17:
-                    return MASK_B0 & LastReleasedX[2];
-                case 18:
-                    return MASK_B0 & (LastReleasedX[2] >>> SHIFT_B1);
-                case 19:
-                    return MASK_B0 & LastReleasedy[0];
-                case 20:
-                    return MASK_B0 & (LastReleasedy[0] >>> SHIFT_B1);
-                case 21:
-                    return MASK_B0 & LastReleasedy[1];
-                case 22:
-                    return MASK_B0 & (LastReleasedy[1] >>> SHIFT_B1);
-                case 23:
-                    return MASK_B0 & LastReleasedy[2];
-                case 24:
-                    return MASK_B0 & (LastReleasedy[2] >>> SHIFT_B1);
-                case 25:
-                    return MASK_B0 & LastPressedX[0];
-                case 26:
-                    return MASK_B0 & (LastPressedX[0] >>> SHIFT_B1);
-                case 27:
-                    return MASK_B0 & LastPressedX[1];
-                case 28:
-                    return MASK_B0 & (LastPressedX[1] >>> SHIFT_B1);
-                case 29:
-                    return MASK_B0 & LastPressedX[2];
-                case 30:
-                    return MASK_B0 & (LastPressedX[2] >>> SHIFT_B1);
-                case 31:
-                    return MASK_B0 & LastPressedY[0];
-                case 32:
-                    return MASK_B0 & (LastPressedY[0] >>> SHIFT_B1);
-                case 33:
-                    return MASK_B0 & LastPressedY[1];
-                case 34:
-                    return MASK_B0 & (LastPressedY[1] >>> SHIFT_B1);
-                case 35:
-                    return MASK_B0 & LastPressedY[2];
-                case 36:
-                    return MASK_B0 & (LastPressedY[2] >>> SHIFT_B1);
-                case 37:
-                    return MASK_B0 & Hidden;
-                case 38:
-                    return MASK_B0 & (Hidden >>> SHIFT_B1);
-                case 39:
-                    tmpF2I = Float.floatToIntBits(addX);
-                    return MASK_B0 & tmpF2I;
-                case 40:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 41:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 42:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 43:
-                    tmpF2I = Float.floatToIntBits(addY);
-                    return MASK_B0 & tmpF2I;
-                case 44:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 45:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 46:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 47:
-                    return MASK_B0 & MinX;
-                case 48:
-                    return MASK_B0 & (MinX >>> SHIFT_B1);
-                case 49:
-                    return MASK_B0 & MaxX;
-                case 50:
-                    return MASK_B0 & (MaxX >>> SHIFT_B1);
-                case 51:
-                    return MASK_B0 & MinY;
-                case 52:
-                    return MASK_B0 & (MinY >>> SHIFT_B1);
-                case 53:
-                    return MASK_B0 & MaxY;
-                case 54:
-                    return MASK_B0 & (MaxY >>> SHIFT_B1);
-                case 55:
-                    tmpF2I = Float.floatToIntBits(MickeyX);
-                    return MASK_B0 & tmpF2I;
-                case 56:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 57:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 58:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 59:
-                    tmpF2I = Float.floatToIntBits(MickeyY);
-                    return MASK_B0 & tmpF2I;
-                case 60:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 61:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 62:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 63:
-                    tmpF2I = Float.floatToIntBits(X);
-                    return MASK_B0 & tmpF2I;
-                case 64:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 65:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 66:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 67:
-                    tmpF2I = Float.floatToIntBits(Y);
-                    return MASK_B0 & tmpF2I;
-                case 68:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 69:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 70:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 135:
-                    return MASK_B0 & Events;
-                case 136:
-                    return MASK_B0 & SubSeg;
-                case 137:
-                    return MASK_B0 & (SubSeg >>> SHIFT_B1);
-                case 138:
-                    return MASK_B0 & SubOfs;
-                case 139:
-                    return MASK_B0 & (SubOfs >>> SHIFT_B1);
-                case 140:
-                    return MASK_B0 & SubMask;
-                case 141:
-                    return MASK_B0 & (SubMask >>> SHIFT_B1);
-                case 142:
-                    return MASK_B0 & (Background ? 1 : 0);
-                case 143:
-                    return MASK_B0 & BackPosX;
-                case 144:
-                    return MASK_B0 & (BackPosX >>> SHIFT_B1);
-                case 145:
-                    return MASK_B0 & BackPosY;
-                case 146:
-                    return MASK_B0 & (BackPosY >>> SHIFT_B1);
-                // screenMask,cursorMask가 원 소스에서 포인터 변수이므로 길이를 4바이트로 정의하고
-                // 가리키는 값은 별도의 메모리에 저장되어 있기 때문에 값을 저장할 필요없음
-                // default data 사용 유무만 확인
-                //
-                // screenMask, cursorMask가 가리키는 값은 객체 내부에 이미 저장되어 있으므로 어떤값을 사용할건지만 정의하면됨
-                case 403:
-                    return MASK_B0 & ScreenMaskIsDefault;
-                case 404:
-                    return MASK_B0 & (ScreenMaskIsDefault >>> SHIFT_B1);
-                case 405:
-                    return MASK_B0 & (ScreenMaskIsDefault >>> SHIFT_B2);
-                case 406:
-                    return MASK_B0 & (ScreenMaskIsDefault >>> SHIFT_B3);
-                case 407:
-                    return MASK_B0 & CursorMaskIsDefault;
-                case 408:
-                    return MASK_B0 & (CursorMaskIsDefault >>> SHIFT_B1);
-                case 409:
-                    return MASK_B0 & (CursorMaskIsDefault >>> SHIFT_B2);
-                case 410:
-                    return MASK_B0 & (CursorMaskIsDefault >>> SHIFT_B3);
-                case 411:
-                    return MASK_B0 & ClipX;
-                case 412:
-                    return MASK_B0 & (ClipX >>> SHIFT_B1);
-                case 413:
-                    return MASK_B0 & ClipY;
-                case 414:
-                    return MASK_B0 & (ClipY >>> SHIFT_B1);
-                case 415:
-                    return MASK_B0 & HotX;
-                case 416:
-                    return MASK_B0 & (HotX >>> SHIFT_B1);
-                case 417:
-                    return MASK_B0 & HotY;
-                case 418:
-                    return MASK_B0 & (HotY >>> SHIFT_B1);
-                case 419:
-                    return MASK_B0 & TextAndMask;
-                case 420:
-                    return MASK_B0 & (TextAndMask >>> SHIFT_B1);
-                case 421:
-                    return MASK_B0 & TextXorMask;
-                case 422:
-                    return MASK_B0 & (TextXorMask >>> SHIFT_B1);
-                case 423:
-                    tmpF2I = Float.floatToIntBits(MickeysPerPixelX);
-                    return MASK_B0 & tmpF2I;
-                case 424:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 425:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 426:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 427:
-                    tmpF2I = Float.floatToIntBits(MickeysPerPixelY);
-                    return MASK_B0 & tmpF2I;
-                case 428:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 429:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 430:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 431:
-                    tmpF2I = Float.floatToIntBits(PixelPerMickeyX);
-                    return MASK_B0 & tmpF2I;
-                case 432:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 433:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 434:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 435:
-                    tmpF2I = Float.floatToIntBits(PixelPerMickeyY);
-                    return MASK_B0 & tmpF2I;
-                case 436:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 437:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 438:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 439:
-                    return MASK_B0 & SenvXVal;
-                case 440:
-                    return MASK_B0 & (SenvXVal >>> SHIFT_B1);
-                case 441:
-                    return MASK_B0 & SenvYVal;
-                case 442:
-                    return MASK_B0 & (SenvYVal >>> SHIFT_B1);
-                case 443:
-                    return MASK_B0 & DSpeedVal;
-                case 444:
-                    return MASK_B0 & (DSpeedVal >>> SHIFT_B1);
-                case 445:
-                    tmpF2I = Float.floatToIntBits(SenvX);
-                    return MASK_B0 & tmpF2I;
-                case 446:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 447:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 448:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 449:
-                    tmpF2I = Float.floatToIntBits(SenvY);
-                    return MASK_B0 & tmpF2I;
-                case 450:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B1);
-                case 451:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B2);
-                case 452:
-                    return MASK_B0 & (tmpF2I >>> SHIFT_B3);
-                case 453:
-                    return MASK_B0 & UpdateRegionX[0];
-                case 454:
-                    return MASK_B0 & (UpdateRegionX[0] >>> SHIFT_B1);
-                case 455:
-                    return MASK_B0 & UpdateRegionX[1];
-                case 456:
-                    return MASK_B0 & (UpdateRegionX[1] >>> SHIFT_B1);
-                case 457:
-                    return MASK_B0 & UpdateRegionY[0];
-                case 458:
-                    return MASK_B0 & (UpdateRegionY[0] >>> SHIFT_B1);
-                case 459:
-                    return MASK_B0 & UpdateRegionY[1];
-                case 460:
-                    return MASK_B0 & (UpdateRegionY[1] >>> SHIFT_B1);
-                case 461:
-                    return MASK_B0 & DoubleSpeedThreshold;
-                case 462:
-                    return MASK_B0 & (DoubleSpeedThreshold >>> SHIFT_B1);
-                case 463:
-                    return MASK_B0 & Language;
-                case 464:
-                    return MASK_B0 & (Language >>> SHIFT_B1);
-                case 465:
-                    return MASK_B0 & CursorType;
-                case 466:
-                    return MASK_B0 & (CursorType >>> SHIFT_B1);
-                case 467:
-                    return MASK_B0 & OldHidden;
-                case 468:
-                    return MASK_B0 & (OldHidden >>> SHIFT_B1);
-                case 469:
-                    return Page;
-                case 470:
-                    return MASK_B0 & (Enabled ? 1 : 0);
-                case 471:
-                    return MASK_B0 & (InhibitDraw ? 1 : 0);
-                case 472:
-                    return MASK_B0 & (TimerInProgress ? 1 : 0);
-                case 473:
-                    return MASK_B0 & (InUIR ? 1 : 0);
-                case 474:
-                    return MASK_B0 & Mode;
-                case 475:
-                    return MASK_B0 & GranMask;
-                case 476:
-                    return MASK_B0 & (GranMask >>> SHIFT_B1);
-                default: {
-                    if (index < 135) {
-                        int idx = index - 71;
-                        if ((idx & 0b0001) == 0)
-                            return EventQueue[idx >>> 1].Type;
-                        else
-                            return EventQueue[idx >>> 1].Buttons;
-                    }
-                    if (index < 403) {
-                        int idx = index - 147;
-                        return MASK_B0 & BackData[idx - (idx & 0b0001)];
-                    }
-                    throw new DOSException("");
-
-
-                }
-
+            Buttons = unpacker.get();
+            for (int i = 0; i < TimesPressed.length; i++) {
+                TimesPressed[i] = unpacker.getShort();
             }
+            for (int i = 0; i < TimesReleased.length; i++) {
+                TimesReleased[i] = unpacker.getShort();
+            }
+            for (int i = 0; i < LastReleasedX.length; i++) {
+                LastReleasedX[i] = unpacker.getShort();
+            }
+            for (int i = 0; i < LastReleasedY.length; i++) {
+                LastReleasedY[i] = unpacker.getShort();
+            }
+            for (int i = 0; i < LastPressedX.length; i++) {
+                LastPressedX[i] = unpacker.getShort();
+            }
+            for (int i = 0; i < LastPressedY.length; i++) {
+                LastPressedY[i] = unpacker.getShort();
+            }
+            Hidden = unpacker.getShort();
+            addX = unpacker.getFloat();
+            addY = unpacker.getFloat();
+            MinX = unpacker.getShort();
+            MaxX = unpacker.getShort();
+            MinY = unpacker.getShort();
+            MaxY = unpacker.getShort();
+            MickeyX = unpacker.getFloat();
+            MickeyY = unpacker.getFloat();
+            X = unpacker.getFloat();
+            Y = unpacker.getFloat();
+
+            for (ButtonEvent ev : EventQueue) {
+                ev.Type = unpacker.getInt();
+                ev.Buttons = unpacker.getInt();
+            }
+            Events = unpacker.getInt();
+            SubSeg = unpacker.getShort();
+            SubOfs = unpacker.getShort();
+            SubMask = unpacker.getShort();
+            Background = unpacker.get() == 1;
+            BackPosX = unpacker.getShort();
+            BackPosY = unpacker.getShort();
+            for (int i = 0; i < BackData.length; i++) {
+                BackData[i] = unpacker.get();
+            }
+            MaskIsUserDefined = unpacker.get() == 1; // 사용자 정의 마스크를 사용하고 있는지 여부
+            
+            ClipX = unpacker.getShort();
+            ClipY = unpacker.getShort();
+            HotX = unpacker.getShort();
+            HotY = unpacker.getShort();
+            TextAndMask = unpacker.getShort();
+            TextXorMask = unpacker.getShort();
+            MickeysPerPixelX = unpacker.getFloat();
+            MickeysPerPixelY = unpacker.getFloat();
+            PixelPerMickeyX = unpacker.getFloat();
+            PixelPerMickeyY = unpacker.getFloat();
+            SenvXVal = unpacker.getInt();
+            SenvYVal = unpacker.getInt();
+            DSpeedVal = unpacker.getInt();
+            SenvX = unpacker.getFloat();
+            SenvY = unpacker.getFloat();
+            for (int i = 0; i < UpdateRegionX.length; i++) {
+                UpdateRegionX[i] = unpacker.getShort();
+            }
+            for (int i = 0; i < UpdateRegionY.length; i++) {
+                UpdateRegionY[i] = unpacker.getShort();
+            }
+            DoubleSpeedThreshold = unpacker.getShort();
+            Language = unpacker.getShort();
+            CursorType = unpacker.getShort();
+            OldHidden = unpacker.getShort();
+            Page = unpacker.getInt();
+            Enabled = unpacker.get() == 1;;
+            InhibitDraw = unpacker.get() == 1;
+            TimerInProgress = unpacker.get() == 1;
+            InUIR = unpacker.get() == 1;
+            Mode = unpacker.getInt();
+            GranMask = unpacker.getShort();
+
         }
 
+        public void pack() {
+            if(rawData == null)
+                rawData = new byte[MOUSE_DATA_SIZE];
+            ByteBuffer packer = ByteBuffer.wrap(rawData).order(ByteOrder.LITTLE_ENDIAN);
+            
+            packer.put(Buttons);
+            for (short val : TimesPressed) {
+                packer.putShort(val);
+            }
+            for (short val : TimesReleased) {
+                packer.putShort(val);
+            }
+            for (short val : LastReleasedX) {
+                packer.putShort(val);
+            }
+            for (short val : LastReleasedY) {
+                packer.putShort(val);
+            }
+            for (short val : LastPressedX) {
+                packer.putShort(val);
+            }
+            for (short val : LastPressedY) {
+                packer.putShort(val);
+            }
+            packer.putShort(Hidden).putFloat(addX).putFloat(addY).putShort(MinX).putShort(MaxX)
+                    .putShort(MinY).putShort(MaxY).putFloat(MickeyX).putFloat(MickeyY).putFloat(X)
+                    .putFloat(Y);
 
+            for (ButtonEvent ev : EventQueue) {
+                packer.putInt(ev.Type).putInt(ev.Buttons);
+            }
+            packer.putInt(Events).putShort(SubSeg).putShort(SubOfs).putShort(SubMask)
+                    .put(Background ? (byte) 1 : 0).putShort(BackPosX).putShort(BackPosY);
+            for (byte val : BackData) {
+                packer.put(val);
+            }
+            packer.put(MaskIsUserDefined ? (byte) 1 : 0) // 사용자 정의 마스크를 사용하고 있는지 여부
+                    .putShort(ClipX).putShort(ClipY).putShort(HotX).putShort(HotY)
+                    .putShort(TextAndMask).putShort(TextXorMask)
+                    //
+                    .putFloat(MickeysPerPixelX).putFloat(MickeysPerPixelY).putFloat(PixelPerMickeyX)
+                    .putFloat(PixelPerMickeyY).putInt(SenvXVal).putInt(SenvYVal).putInt(DSpeedVal)
+                    .putFloat(SenvX).putFloat(SenvY);
+            for (short val : UpdateRegionX) {
+                packer.putShort(val);
+            }
+            for (short val : UpdateRegionY) {
+                packer.putShort(val);
+            }
+            packer.putShort(DoubleSpeedThreshold).putShort(Language).putShort(CursorType)
+                    .putShort(OldHidden).putInt(Page).put(Enabled ? (byte) 1 : 0)
+                    .put(InhibitDraw ? (byte) 1 : 0).put(TimerInProgress ? (byte) 1 : 0)
+                    .put(InUIR ? (byte) 1 : 0).putInt(Mode).putShort(GranMask);
+
+        }
 
         // screenMask,cursorMask가 포인터 변수이므로 4바이트로 정의
-        private static final int MOUSE_DATA_SIZE = 477;
+        private static final int MOUSE_DATA_SIZE = 496;
 
         public int size() {
             return MOUSE_DATA_SIZE;
@@ -635,14 +393,14 @@ public final class Mouse {
             TimesPressed = new short[MOUSE_BUTTONS];
             TimesReleased = new short[MOUSE_BUTTONS];
             LastReleasedX = new short[MOUSE_BUTTONS];
-            LastReleasedy = new short[MOUSE_BUTTONS];
+            LastReleasedY = new short[MOUSE_BUTTONS];
             LastPressedX = new short[MOUSE_BUTTONS];
             LastPressedY = new short[MOUSE_BUTTONS];
             EventQueue = new ButtonEvent[QUEUE_SIZE];
             for (int i = 0; i < QUEUE_SIZE; i++) {
                 EventQueue[i] = new ButtonEvent();
             }
-            BackData = new byte[CURSORX * CURSORY];
+            BackData = new byte[CURSOR_X * CURSOR_Y];
             UpdateRegionX = new short[2];
             UpdateRegionY = new short[2];
 
@@ -653,8 +411,7 @@ public final class Mouse {
 
     private MouseStruct mouse;
 
-    // TODO 마우스 인터럽트 Int33 미구현 코드 구현할 것
-    private int INT33Handler() {
+    private int int33Handler() {
         // LOG(LOG_MOUSE,LOG_NORMAL)("MOUSE: %04X %X %X %d %d",reg_ax,reg_bx,reg_cx,POS_X,POS_Y);
         switch (Register.getRegAX()) {
             case 0x00: /* Reset Driver and Read Status */
@@ -727,7 +484,7 @@ public final class Mouse {
                 if (but >= MOUSE_BUTTONS)
                     but = MOUSE_BUTTONS - 1;
                 Register.setRegCX(mouse.LastReleasedX[but]);
-                Register.setRegDX(mouse.LastReleasedy[but]);
+                Register.setRegDX(mouse.LastReleasedY[but]);
                 Register.setRegBX(mouse.TimesReleased[but]);
                 mouse.TimesReleased[but] = 0;
                 break;
@@ -754,7 +511,7 @@ public final class Mouse {
                 /*
                  * Or alternatively this: mouse.x = (mouse.max_x - mouse.min_x + 1)/2;
                  */
-                // LOG(LOG_MOUSE, LOG_NORMAL)("Define Hortizontal range min:%d max:%d", min, max);
+                Log.logging(Log. LogTypes.Mouse, Log. LogServerities.Normal,"Define Hortizontal range min:%d max:%d", min, max);
             }
                 break;
             case 0x08: /* Define vertical cursor range */
@@ -779,24 +536,26 @@ public final class Mouse {
                 /*
                  * Or alternatively this: mouse.y = (mouse.max_y - mouse.min_y + 1)/2;
                  */
-                // LOG(LOG_MOUSE, LOG_NORMAL)("Define Vertical range min:%d max:%d", min, max);
+                Log.logging(Log. LogTypes.Mouse, Log. LogServerities.Normal,"Define Vertical range min:%d max:%d", min, max);
             }
                 break;
             case 0x09: /* Define GFX Cursor */
             {
-                throw new DOSException("INT33_Handler 0x09 미구현");
-
-                // int src = regsModule.SegPhys(regsModule.SEG_NAME_es) + regsModule.reg_dx;
-                // MEMORY.MEM_BlockRead(src, userdefScreenMask, CURSORY * 2);
-                // MEMORY.MEM_BlockRead(src + CURSORY * 2, userdefCursorMask, CURSORY * 2);
-                // mouse.screenMask = userdefScreenMask;
-                // mouse.screenMaskIsDefault = 1;
-                // mouse.cursorMask = userdefCursorMask;
-                // mouse.cursorMaskIsDefault = 1;
-                // mouse.hotx = (short)regsModule.reg_bx;
-                // mouse.hoty = (short)regsModule.reg_cx;
-                // mouse.cursorType = 2;
-                // DrawCursor();
+                int src = Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDX();
+                byte[] mask = new byte[CURSOR_Y * 2];
+                Memory.blockRead(src, mask, 0, CURSOR_Y * 2);
+                userDefScreenMask = ByteBuffer.wrap(mask).order(ByteOrder.LITTLE_ENDIAN)
+                        .asShortBuffer().array();
+                Memory.blockRead(src + CURSOR_Y * 2, mask, 0, CURSOR_Y * 2);
+                userDefCursorMask = ByteBuffer.wrap(mask).order(ByteOrder.LITTLE_ENDIAN)
+                        .asShortBuffer().array();
+                mouse.MaskIsUserDefined = true;
+                mouse.ScreenMask = userDefScreenMask;
+                mouse.CursorMask = userDefCursorMask;
+                mouse.HotX = (short) Register.getRegBX();
+                mouse.HotY = (short) Register.getRegCX();
+                mouse.CursorType = 2;
+                drawCursor();
             }
             // break;
             case 0x0a: /* Define Text Cursor */
@@ -853,24 +612,22 @@ public final class Mouse {
                 break;
             case 0x16: /* Save driver state */
             {
-                //// LOG(LOG_MOUSE, LOG_WARN)("Saving driver state...");
+                Log.logging(Log.LogTypes.Mouse, Log.LogServerities.Warn, "Saving driver state...");
                 int dest = Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDX();
-                Memory.blockWrite(dest, mouse, mouse.size());
+                mouse.pack();
+                Memory.blockWrite(dest, mouse.rawData, 0, mouse.size());
             }
                 break;
             case 0x17: /* load driver state */
             {
-                throw new DOSException("INT33_Handler 0x17 미구현");
-
-                //// LOG(LOG_MOUSE, LOG_WARN)("Loading driver state...");
-                // int src = regsModule. SegPhys(regsModule.SegNames. es) + regsModule.reg_dx;
-                // MEMORY.MEM_BlockRead(src, &mouse, mouse.Size);
-                // mouse.screenMask = mouse.screenMaskIsDefault == 0 ? defaultScreenMask :
-                //// userdefScreenMask;
-                // mouse.cursorMask = mouse.cursorMaskIsDefault == 0 ? defaultCursorMask :
-                //// userdefCursorMask;
+                Log.logging(Log.LogTypes.Mouse, Log.LogServerities.Warn, "Loading driver state...");
+                int src = Register.segPhys(Register.SEG_NAME_ES) + Register.getRegDX();
+                Memory.blockRead(src, mouse.rawData, 0, mouse.size());
+                mouse.unpack();
+                mouse.ScreenMask = mouse.MaskIsUserDefined ? defaultScreenMask : userDefScreenMask;
+                mouse.CursorMask = mouse.MaskIsUserDefined ? defaultCursorMask : userDefCursorMask;
             }
-            // break;
+            break;
             case 0x1a: /* Set mouse sensitivity */
                 // ToDo : double mouse speed value
                 setSensitivity(Register.getRegBX(), Register.getRegCX(), Register.getRegDX());
@@ -944,12 +701,78 @@ public final class Mouse {
         return Callback.ReturnTypeNone;
     }
 
-    private int BD_Handler() {
-        throw new DOSException("MOUSE_BD_Handler 미구현");
-        // return Callback.ReturnTypeNone;
+    private int bdHandler() {
+        // the stack contains offsets to register values
+        int raxpt = Memory.realReadW(Register.segValue(Register.SEG_NAME_SS),
+                Register.getRegSP() + 0x0a);
+        int rbxpt = Memory.realReadW(Register.segValue(Register.SEG_NAME_SS),
+                Register.getRegSP() + 0x08);
+        int rcxpt = Memory.realReadW(Register.segValue(Register.SEG_NAME_SS),
+                Register.getRegSP() + 0x06);
+        int rdxpt = Memory.realReadW(Register.segValue(Register.SEG_NAME_SS),
+                Register.getRegSP() + 0x04);
+
+        // read out the actual values, registers ARE overwritten
+        int rax = Memory.realReadW(Register.segValue(Register.SEG_NAME_DS), raxpt);
+        Register.setRegAX(rax);
+        Register.setRegBX(Memory.realReadW(Register.segValue(Register.SEG_NAME_DS), rbxpt));
+        Register.setRegCX(Memory.realReadW(Register.segValue(Register.SEG_NAME_DS), rcxpt));
+        Register.setRegDX(Memory.realReadW(Register.segValue(Register.SEG_NAME_DS), rdxpt));
+        // LOG_MSG("MOUSE BD: %04X %X %X %X %d %d",reg_ax,reg_bx,reg_cx,reg_dx,POS_X,POS_Y);
+
+        // some functions are treated in a special way (additional registers)
+        switch (rax) {
+            case 0x09: /* Define GFX Cursor */
+            case 0x16: /* Save driver state */
+            case 0x17: /* load driver state */
+                Register.segSet16(Register.SEG_NAME_ES, Register.segValue(Register.SEG_NAME_DS));
+                break;
+            case 0x0c: /* Define interrupt subroutine parameters */
+            case 0x14: /* Exchange event-handler */
+                if (Register.getRegBX() != 0)
+                    Register.segSet16(Register.SEG_NAME_ES, Register.getRegBX());
+                else
+                    Register.segSet16(Register.SEG_NAME_ES,
+                            Register.segValue(Register.SEG_NAME_DS));
+                break;
+            case 0x10: /* Define screen region for updating */
+                Register.setRegCX(Memory.realReadW(Register.segValue(Register.SEG_NAME_DS), rdxpt));
+                Register.setRegDX(
+                        Memory.realReadW(Register.segValue(Register.SEG_NAME_DS), rdxpt + 2));
+                Register.setRegSI(
+                        Memory.realReadW(Register.segValue(Register.SEG_NAME_DS), rdxpt + 4));
+                Register.setRegDI(
+                        Memory.realReadW(Register.segValue(Register.SEG_NAME_DS), rdxpt + 6));
+                break;
+            default:
+                break;
+        }
+
+        int33Handler();
+
+        // save back the registers, too
+        Memory.realWriteW(Register.segValue(Register.SEG_NAME_DS), raxpt, Register.getRegAX());
+        Memory.realWriteW(Register.segValue(Register.SEG_NAME_DS), raxpt, Register.getRegBX());
+        Memory.realWriteW(Register.segValue(Register.SEG_NAME_DS), raxpt, Register.getRegCX());
+        Memory.realWriteW(Register.segValue(Register.SEG_NAME_DS), raxpt, Register.getRegDX());
+        switch (rax) {
+            case 0x1f: /* Disable Mousedriver */
+                Memory.realWriteW(Register.segValue(Register.SEG_NAME_DS), rbxpt,
+                        Register.segValue(Register.SEG_NAME_ES));
+                break;
+            case 0x14: /* Exchange event-handler */
+                Memory.realWriteW(Register.segValue(Register.SEG_NAME_DS), rcxpt,
+                        Register.segValue(Register.SEG_NAME_ES));
+                break;
+            default:
+                break;
+        }
+
+        Register.setRegAX(rax);
+        return Callback.ReturnTypeNone;
     }
 
-    private int INT74Handler() {
+    private int int74Handler() {
         if (mouse.Events > 0) {
             mouse.Events--;
             /* Check for an active Interrupt Handler that will get called */
@@ -1098,11 +921,7 @@ public final class Mouse {
         mouse.HotY = 0;
         mouse.Background = false;
         mouse.ScreenMask = defaultScreenMask;
-        mouse.ScreenMaskIsDefault = 0;// screenMask가 Default 정의된 값을 사용한다고 표시, 메모리에
-                                      // blockwrite,blockread할때 적용
         mouse.CursorMask = defaultCursorMask;
-        mouse.CursorMaskIsDefault = 0;// cursorMask가 Default 정의된 값을 사용한다고 표시, 메모리에
-                                      // blockwrite,blockread할때 적용
         mouse.TextAndMask = defaultTextAndMask;
         mouse.TextXorMask = defaultTextXorMask;
         mouse.Language = 0;
@@ -1206,8 +1025,8 @@ public final class Mouse {
             int dataPos = 0;// uint16
             short x1 = mouse.BackPosX;
             short y1 = mouse.BackPosY;
-            short x2 = (short) (x1 + CURSORX - 1);
-            short y2 = (short) (y1 + CURSORY - 1);
+            short x2 = (short) (x1 + CURSOR_X - 1);
+            short y2 = (short) (y1 + CURSOR_Y - 1);
 
             clipCursorArea(x1, x2, y1, y2, addX1, addX2, addY);
             x1 = returnedClipCursorAreaX1;
@@ -1218,7 +1037,7 @@ public final class Mouse {
             addX2 = returnedClipCursorAreaAddX2;
             addY = returnedClipCursorAreaAddY;
 
-            dataPos = 0xffff & (addY * CURSORX);
+            dataPos = 0xffff & (addY * CURSOR_X);
             for (y = y1; y <= y2; y++) {
                 dataPos += addX1;
                 for (x = x1; x <= x2; x++) {
@@ -1329,8 +1148,8 @@ public final class Mouse {
         int dataPos = 0;// uint16
         short x1 = (short) (posX() / xratio - mouse.HotX);
         short y1 = (short) (posY() - mouse.HotY);
-        short x2 = (short) (x1 + CURSORX - 1);
-        short y2 = (short) (y1 + CURSORY - 1);
+        short x2 = (short) (x1 + CURSOR_X - 1);
+        short y2 = (short) (y1 + CURSOR_Y - 1);
 
         clipCursorArea(x1, x2, y1, y2, addX1, addX2, addY);
         x1 = returnedClipCursorAreaX1;
@@ -1341,7 +1160,7 @@ public final class Mouse {
         addX2 = returnedClipCursorAreaAddX2;
         addY = returnedClipCursorAreaAddY;
 
-        dataPos = 0xffff & (addY * CURSORX);
+        dataPos = 0xffff & (addY * CURSOR_X);
         if (INT10.canGetPixel()) {
             for (y = y1; y <= y2; y++) {
                 dataPos += addX1;
@@ -1356,7 +1175,7 @@ public final class Mouse {
         mouse.BackPosY = (short) (posY() - mouse.HotY);
 
         // Draw Mousecursor
-        dataPos = 0xffff & (addY * CURSORX);
+        dataPos = 0xffff & (addY * CURSOR_X);
         for (y = y1; y <= y2; y++) {
             int scMask = 0xffff & mouse.ScreenMask[addY + y - y1];// uint16
             int cuMask = 0xffff & mouse.CursorMask[addY + y - y1];// uint16
@@ -1486,7 +1305,7 @@ public final class Mouse {
         }
         mouse.TimesReleased[button]++;
         mouse.LastReleasedX[button] = (short) posX();
-        mouse.LastReleasedy[button] = (short) posY();
+        mouse.LastReleasedY[button] = (short) posY();
     }
 
 
@@ -1519,13 +1338,13 @@ public final class Mouse {
         callINT33 = Callback.allocate();
         // RealPt i33loc=RealMake(CB_SEG+1,(call_int33*CB_SIZE)-0x10);
         int i33Loc = Memory.realMake(DOSMain.getMemory(0x1) - 1, 0x10);
-        Callback.setup(callINT33, this::INT33Handler, Callback.Symbol.MOUSE,
+        Callback.setup(callINT33, this::int33Handler, Callback.Symbol.MOUSE,
                 Memory.real2Phys(i33Loc), "Mouse");
         // Wasteland needs low(seg(int33))!=0 and low(ofs(int33))!=0
         Memory.realWriteD(0, 0x33 << 2, i33Loc);
 
         callMouseBD = Callback.allocate();
-        Callback.setup(callMouseBD, this::BD_Handler, Callback.Symbol.RETF8, Memory.physMake(
+        Callback.setup(callMouseBD, this::bdHandler, Callback.Symbol.RETF8, Memory.physMake(
                 0xffff & Memory.realSeg(i33Loc), 0xffff & (Memory.realOff(i33Loc) + 2)), "MouseBD");
         // pseudocode for CB_MOUSE (including the special backdoor entry point):
         // jump near i33hd
@@ -1538,7 +1357,7 @@ public final class Mouse {
 
         // Callback for ps2 irq
         callINT74 = Callback.allocate();
-        Callback.setup(callINT74, this::INT74Handler, Callback.Symbol.IRQ12, "int 74");
+        Callback.setup(callINT74, this::int74Handler, Callback.Symbol.IRQ12, "int 74");
         // pseudocode for CB_IRQ12:
         // push ds
         // push es
@@ -1569,7 +1388,7 @@ public final class Mouse {
         usePS2Callback = false;
         ps2CallbackInit = false;
         callPS2 = Callback.allocate();
-        Callback.setup(callPS2, this::PS2Handler, Callback.Symbol.RETF, "ps2 bios callback");
+        Callback.setup(callPS2, this::ps2Handler, Callback.Symbol.RETF, "ps2 bios callback");
         ps2Callback = Callback.realPointer(callPS2);
 
         // memset(&mouse,0,sizeof(mouse));

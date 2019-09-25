@@ -47,8 +47,8 @@ final class JavaUIEventsBinder {
         _gfx._main.addFocusListener(focusListener);
 
         // TODO dosbox의 autolock을 제공할때 구현, 시스템 커서가 아닌 Dosbox의 고유 커서를 제공
-        // _gfx.surface.addMouseListener(mouseListener);
-        // _gfx.surface.addMouseMotionListener(mouseMotionListener);
+        _gfx.surface.addMouseListener(mouseListener);
+        _gfx.surface.addMouseMotionListener(mouseMotionListener);
         _gfx.surface.addKeyListener(keyListener);
     }
 
@@ -161,7 +161,7 @@ final class JavaUIEventsBinder {
             // if(_enableEvent) _events.AddLast(e);
             int keyCode = e.getKeyCode();
             if (!keyMap.containsKey(keyCode)) {
-                System.out.printf("%d : 처리할 수 없는 키입니다.", keyCode);
+                System.out.printf("%d : 처리할 수 없는 키입니다.\n", keyCode);
                 return;
             }
 
@@ -205,7 +205,7 @@ final class JavaUIEventsBinder {
             event.ButtonLocation = e.getButton();
             event.ButtonStatus = pressed ? 1 : 2;
             _events.addLast(event);
-            System.out.printf("mouse button down : %d", event.ButtonLocation);
+            System.out.printf("mouse button down : %d\n", event.ButtonLocation);
         }
     };
 
