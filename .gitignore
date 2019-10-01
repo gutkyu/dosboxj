@@ -1,6 +1,7 @@
 *
 !*/
 !.gitignore
+!pom.xml
 !Readme*
 !LICENSE*
 !COPYRIGHT*
