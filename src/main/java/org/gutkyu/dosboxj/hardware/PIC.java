@@ -19,6 +19,10 @@ public final class PIC {
         }
     }
 
+    public static int getTicks(){
+        return Ticks;
+    }
+
     public static float getTickIndex() {
         return (CPU.CycleMax - CPU.CycleLeft - CPU.Cycles) / (float) CPU.CycleMax;
     }

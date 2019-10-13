@@ -1,6 +1,6 @@
 package org.gutkyu.dosboxj.hardware;
 
 @FunctionalInterface
-interface TickHandler {
+public interface TickHandler {
         public void run();
 }
