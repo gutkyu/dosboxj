@@ -4,13 +4,13 @@ import org.gutkyu.dosboxj.misc.Support;
 
 class MixerObject {
     private boolean installed = false;
-    private String m_name = "";
+    private String mName = "";
 
     public MixerChannel install(MixerHandler handler, int freq, String name) {
         if (!installed) {
             if (name.length() > 31)
                 Support.exceptionExit("Too long mixer channel name");
-            m_name = name;
+            mName = name;
             installed = true;
             return MixerCore.instance().addChannel(handler, freq, name);
         } else {
@@ -22,6 +22,6 @@ class MixerObject {
     public void dispose() {
         if (!installed)
             return;
-        MixerCore.instance().delChannel(MixerCore.instance().findChannel(m_name));
+        MixerCore.instance().delChannel(MixerCore.instance().findChannel(mName));
     }
 }

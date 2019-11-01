@@ -3,7 +3,7 @@ package org.gutkyu.dosboxj.hardware;
 import org.gutkyu.dosboxj.misc.setup.*;
 import org.gutkyu.dosboxj.hardware.io.*;
 import org.gutkyu.dosboxj.hardware.memory.*;
-import org.gutkyu.dosboxj.hardware.sound.PCSpeaker;
+import org.gutkyu.dosboxj.hardware.sound.*;
 import org.gutkyu.dosboxj.DOSBox;
 import org.gutkyu.dosboxj.misc.*;
 
@@ -193,7 +193,7 @@ public final class Keyboard {
         if (((port61Data ^ val) & 3) != 0) {
             if (((port61Data ^ val) & 1) != 0)
                 Timer.setGate2((val & 0x1) != 0);
-            PCSpeaker.setType(val & 3);
+            PCSpeakerCore.instance().setType(val & 3);
         }
         port61Data = (byte) val;
     }

@@ -1,24 +1,48 @@
 package org.gutkyu.dosboxj;
 
-import org.gutkyu.dosboxj.dos.*;
-import org.gutkyu.dosboxj.dos.system.drive.*;
-import org.gutkyu.dosboxj.misc.*;
-import org.gutkyu.dosboxj.misc.setup.*;
+import org.gutkyu.dosboxj.cpu.CPU;
+import org.gutkyu.dosboxj.cpu.Callback;
+import org.gutkyu.dosboxj.dos.DOSMain;
+import org.gutkyu.dosboxj.dos.keyboardlayout.DOSKeyboardLayoutModule;
+import org.gutkyu.dosboxj.dos.software.Programs;
+import org.gutkyu.dosboxj.dos.system.drive.Drives;
+import org.gutkyu.dosboxj.gui.GUIPlatform;
+import org.gutkyu.dosboxj.gui.MapKeys;
+import org.gutkyu.dosboxj.gui.Mapper;
+import org.gutkyu.dosboxj.gui.Render;
+import org.gutkyu.dosboxj.hardware.CMOSModule;
+import org.gutkyu.dosboxj.hardware.Keyboard;
+import org.gutkyu.dosboxj.hardware.PIC;
+import org.gutkyu.dosboxj.hardware.Timer;
+import org.gutkyu.dosboxj.hardware.dma.DMAModule;
+import org.gutkyu.dosboxj.hardware.io.IOModule;
+import org.gutkyu.dosboxj.hardware.memory.Memory;
+import org.gutkyu.dosboxj.hardware.memory.paging.Paging;
+import org.gutkyu.dosboxj.hardware.sound.Mixer;
+import org.gutkyu.dosboxj.hardware.sound.PCSpeaker;
+import org.gutkyu.dosboxj.hardware.video.VGA;
+import org.gutkyu.dosboxj.interrupt.EMS;
+import org.gutkyu.dosboxj.interrupt.Mouse;
+import org.gutkyu.dosboxj.interrupt.XMS;
+import org.gutkyu.dosboxj.interrupt.bios.BIOS;
+import org.gutkyu.dosboxj.interrupt.int10.INT10;
+import org.gutkyu.dosboxj.misc.Message;
+import org.gutkyu.dosboxj.misc.Support;
+import org.gutkyu.dosboxj.misc.setup.Config;
+import org.gutkyu.dosboxj.misc.setup.Property;
+import org.gutkyu.dosboxj.misc.setup.PropertyBool;
+import org.gutkyu.dosboxj.misc.setup.PropertyHex;
+import org.gutkyu.dosboxj.misc.setup.PropertyInt;
+import org.gutkyu.dosboxj.misc.setup.PropertyMultival;
+import org.gutkyu.dosboxj.misc.setup.PropertyMultivalRemain;
+import org.gutkyu.dosboxj.misc.setup.PropertyString;
+import org.gutkyu.dosboxj.misc.setup.Section;
+import org.gutkyu.dosboxj.misc.setup.SectionLine;
+import org.gutkyu.dosboxj.misc.setup.SectionProperty;
+import org.gutkyu.dosboxj.misc.setup.Value;
 import org.gutkyu.dosboxj.misc.setup.Value.WrongType;
-import org.gutkyu.dosboxj.cpu.*;
-import org.gutkyu.dosboxj.gui.*;
-import org.gutkyu.dosboxj.interrupt.*;
-import org.gutkyu.dosboxj.interrupt.bios.*;
-import org.gutkyu.dosboxj.interrupt.int10.*;
-import org.gutkyu.dosboxj.dos.software.*;
-import org.gutkyu.dosboxj.hardware.*;
-import org.gutkyu.dosboxj.hardware.dma.*;
-import org.gutkyu.dosboxj.hardware.io.*;
-import org.gutkyu.dosboxj.hardware.memory.*;
-import org.gutkyu.dosboxj.hardware.memory.paging.*;
-import org.gutkyu.dosboxj.hardware.video.*;
-import org.gutkyu.dosboxj.shell.*;
-import org.gutkyu.dosboxj.dos.keyboardlayout.*;
+import org.gutkyu.dosboxj.shell.Autoexec;
+import org.gutkyu.dosboxj.shell.DOSShell;
 
 public final class DOSBox {
     public static final String VERSION = "0.74";
@@ -410,12 +434,39 @@ public final class DOSBox {
         secProp.addInitFunction(VGA::init);
         secProp.addInitFunction(Keyboard::init);
 
-        // TODO have to implement "mixer, midi, debug, sblaster, gus, speaker"
+        // TODO have to implement "midi, debug, sblaster, gus, speaker"
         /*
          * secprop=control.AddSection_prop("mixer",&MIXER_Init); ... Pbool.
          * Set_help("Enable Disney Sound Source emulation. (Covox Voice Master and Speech Thing compatible)."
          * );
          */
+        secProp = Control.addSectionProp("mixer", Mixer::init);
+        pBool = secProp.addBool("nosound", Property.Changeable.OnlyAtStart, false);
+        pBool.setHelp("Enable silent mode, sound is still emulated though.");
+
+        pInt = secProp.addInt("rate", Property.Changeable.OnlyAtStart, 44100);
+        pInt.setValues(rates);
+        pInt.setHelp(
+                "Mixer sample rate, setting any device's rate higher than this will probably lower their sound quality.");
+
+        final String[] blockSizes = {"1024", "2048", "4096", "8192", "512", "256"};
+        pInt = secProp.addInt("blocksize", Property.Changeable.OnlyAtStart, 1024);
+        pInt.setValues(blockSizes);
+        pInt.setHelp(
+                "Mixer block size, larger blocks might help sound stuttering but sound will also be more lagged.");
+
+        pInt = secProp.addInt("prebuffer", Property.Changeable.OnlyAtStart, 20);
+        pInt.setMinMax(0, 100);
+        pInt.setHelp("How many milliseconds of data to keep on top of the blocksize.");
+
+	secProp = Control.addSectionProp("speaker",PCSpeaker::init,true);//done
+	pBool = secProp.addBool("pcspeaker",Property.Changeable.WhenIdle,true);
+	pBool.setHelp("Enable PC-Speaker emulation.");
+
+	pInt = secProp.addInt("pcrate",Property.Changeable.WhenIdle,44100);
+	pInt.setValues(rates);
+    pInt.setHelp("Sample rate of the PC-Speaker sound generation.");
+    
 
         secProp = Control.addSectionProp("joystick", BIOS::init, false);// done
 

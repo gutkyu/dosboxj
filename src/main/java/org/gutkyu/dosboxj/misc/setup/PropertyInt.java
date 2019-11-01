@@ -1,7 +1,7 @@
 package org.gutkyu.dosboxj.misc.setup;
 
 import org.gutkyu.dosboxj.misc.setup.Value.WrongType;
-import org.gutkyu.dosboxj.util.*;
+import org.gutkyu.dosboxj.util.Log;
 
 public final class PropertyInt extends Property {
     private Value min, max;
@@ -22,6 +22,11 @@ public final class PropertyInt extends Property {
     public void setMinMax(Value min, Value max) {
         this.min = min;
         this.max = max;
+    }
+
+    public void setMinMax(int min, int max) {
+        this.min = new Value(min);
+        this.max = new Value(max);
     }
 
     @Override
